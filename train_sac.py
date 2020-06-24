@@ -34,7 +34,7 @@ def main():
             'use_state_preprocessor': True,
             'Q_model': {
                 'fcnet_activation': 'relu',
-                'hidden_layer_sizes': [512],
+                'fcnet_hiddens': [512],
             },
             'policy_model': {
                 'fcnet_activation': 'relu',
