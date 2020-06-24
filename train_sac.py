@@ -38,7 +38,7 @@ def main():
             },
             'policy_model': {
                 'fcnet_activation': 'relu',
-                'hidden_layer_sizes': [512],
+                'fcnet_hiddens': [512],
             },
             'tau': 1.0,
             'target_network_update_freq': 8000,
