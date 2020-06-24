@@ -33,11 +33,11 @@ def main():
             'gamma': 0.99,
             'use_state_preprocessor': True,
             'Q_model': {
-                'hidden_activation': 'relu',
+                'fcnet_activation': 'relu',
                 'hidden_layer_sizes': [512],
             },
             'policy_model': {
-                'hidden_activation': 'relu',
+                'fcnet_activation': 'relu',
                 'hidden_layer_sizes': [512],
             },
             'tau': 1.0,
