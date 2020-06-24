@@ -41,7 +41,7 @@ echo "=========================================================="
 
 # Use the SGE_TASK_ID environment variable to select the appropriate input file from bash array
 # Bash array index starts from 0, so we need to subtract one from SGE_TASK_ID value
-environments=(BreakoutNoFrameskip-v4 PongNoFrameskip-v4 )
+environments=(BreakoutNoFrameskip-v4 PongNoFrameskip-v4 SpaceInvadersNoFrameskip-v4 MsPacmanNoFrameskip-v4 AsteroidsNoFrameskip-v4)
 env_index=$(($SGE_TASK_ID-1))
 env=${environments[$env_index]}
 
@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-
+python train_ppo.py ${env}
