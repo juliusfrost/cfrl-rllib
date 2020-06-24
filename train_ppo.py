@@ -16,7 +16,14 @@ def main():
     ray.init()
     tune.run(
         'PPO',
-        # stop={"episode_reward_mean": 200},
+        name='PPO-Atari',
+        local_dir='./results',
+        checkpoint_freq=1000,
+        checkpoint_at_end=True,
+        checkpoint_score_attr='episode_reward_mean',
+        keep_checkpoints_num=50,
+        global_checkpoint_period=int(60 * 60 * 8),
+        stop={"time_total_s": int(60 * 60 * 47.5)},
         config={
             'env': args.env,
             'num_gpus': args.gpus,
