@@ -7,8 +7,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('env', type=str, help='environment name')
 parser.add_argument('--gpus', type=int, default=1)
 parser.add_argument('--workers', type=int, default=5)
-parser.add_argument('--output-dir', default='')
-parser.add_argument('--output-max-file-size', default=5000000)
+# parser.add_argument('--output-dir', default='')
+# parser.add_argument('--output-max-file-size', default=5000000)
 
 
 def main():
@@ -28,8 +28,8 @@ def main():
             'env': args.env,
             'num_gpus': args.gpus,
             'num_workers': args.workers,
-            'output': os.path.join(args.output_dir, args.env),
-            'output_max_file_size': args.output_max_file_size,
+            # 'output': os.path.join(args.output_dir, args.env),
+            # 'output_max_file_size': args.output_max_file_size,
             'rollout_fragment_length': 20,
             'clip_rewards': True,
             'num_envs_per_worker': 5,
