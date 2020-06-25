@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('env', type=str, help='environment name')
 parser.add_argument('--gpus', type=int, default=1)
 parser.add_argument('--workers', type=int, default=0)
-parser.add_argument('--output-dir', default='./data/sac')
+parser.add_argument('--output-dir', default=None)
 parser.add_argument('--output-max-file-size', default=5000000)
 
 
