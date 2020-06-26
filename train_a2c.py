@@ -30,8 +30,9 @@ def main():
             'num_workers': args.workers,
             # 'output': os.path.join(args.output_dir, args.env),
             # 'output_max_file_size': args.output_max_file_size,
+            'sample_batch_size': 20,  # deprecated
             'rollout_fragment_length': 20,
-            'clip_rewards': True,
+            # 'clip_rewards': True,
             'num_envs_per_worker': 5,
             'lr_schedule': [
                 [0, 0.0007],
