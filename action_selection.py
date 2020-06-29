@@ -13,3 +13,8 @@ def random_action(action_space, **kwargs):
 def policy_action(observation, policy, **kwargs):
     action = policy(observation)
     return action
+
+
+def user_action(observation, user, **kwargs):
+    action = user(observation)
+    return action
