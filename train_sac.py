@@ -50,7 +50,7 @@ def main():
             'prioritized_replay': True,
             'train_batch_size': 64,
             'timesteps_per_iteration': 4,
-            'learning_starts': 100000,
+            'learning_starts': 20000,
             'optimization': {
                 'actor_learning_rate': 0.0003,
                 'critic_learning_rate': 0.0003,
