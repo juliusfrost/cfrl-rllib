@@ -13,6 +13,7 @@ parser.add_argument('--config', type=str, default=None,
 parser.add_argument('--algo', type=str, default='ppo',
                     help='Choose algorithm from those implemented. Used if config argument not set.')
 parser.add_argument('--framework', choices=['torch', 'tf', 'tfe'], default='torch')
+parser.add_argument('--suite', default='atari')
 
 
 def main():
@@ -21,8 +22,8 @@ def main():
 
     if args.config is not None:
         algo_config = yaml.safe_load(open(args.config))
-    elif os.path.exists(os.path.join('config', args.algo + '.yaml')):
-        config_file = os.path.join('config', args.algo + '.yaml')
+    elif os.path.exists(os.path.join('config', args.suite, args.algo + '.yaml')):
+        config_file = os.path.join('config', args.suite, args.algo + '.yaml')
         algo_config = yaml.safe_load(open(config_file))
     else:
         raise FileNotFoundError(f'Config {args.config} or algorithm {args.algo} not found!')
