@@ -13,7 +13,7 @@ parser.add_argument('--config', type=str, default=None,
 parser.add_argument('--algo', type=str, default='ppo',
                     help='Choose algorithm from those implemented. Used if config argument not set.')
 parser.add_argument('--framework', choices=['torch', 'tf', 'tfe'], default='torch')
-parser.add_argument('--suite', default='atari')
+parser.add_argument('--suite', default='atari', help='used for config location')
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
 
     tune.run(
         algo_config['run'],
-        name='Atari-' + algo_config['run'],
+        name=f'{args.suite}-{args.algo}',
         local_dir='./results',
         checkpoint_freq=1000,
         checkpoint_at_end=True,
