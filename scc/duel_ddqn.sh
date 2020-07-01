@@ -15,13 +15,13 @@
 #$ -m bea
 
 # Give job a name
-#$ -N train_dqn
+#$ -N train_duel_ddqn
 
 # Combine output and error files into a single file
 #$ -j y
 
 # Specify the output file name
-#$ -o train_dqn.qlog
+#$ -o train_duel_ddqn.qlog
 
 # Request 8 CPUs
 #$ -pe omp 8
