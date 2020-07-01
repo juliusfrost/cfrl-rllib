@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-python train_dqn.py --env ${env} --algo duel-ddqn
+python ../train.py --env ${env} --algo duel-ddqn
