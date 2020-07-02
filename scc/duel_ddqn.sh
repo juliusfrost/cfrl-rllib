@@ -15,13 +15,13 @@
 #$ -m bea
 
 # Give job a name
-#$ -N train_sac
+#$ -N train_duel_ddqn
 
 # Combine output and error files into a single file
 #$ -j y
 
 # Specify the output file name
-#$ -o train_sac.qlog
+#$ -o train_duel_ddqn.qlog
 
 # Request 8 CPUs
 #$ -pe omp 8
@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-python train_sac.py ${env}
+python train.py --env ${env} --algo duel-ddqn

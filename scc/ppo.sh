@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-python train_ppo.py ${env}
+python train.py --env ${env} --algo ppo
