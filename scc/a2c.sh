@@ -52,7 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-cd $(dirname $(realpath $0))
-cd ..
-
 python train.py --env ${env} --algo a2c
