@@ -1,4 +1,7 @@
+import procgen
 import gym, ray
+
+gym.make('procgen:procgen-coinrun-v0')
 from gym import spaces
 from ray.rllib.agents import ppo
 import cv2
@@ -11,6 +14,7 @@ class ProcgenEnv(gym.Env):
         env_name = env_config["env_name"]
         env_config_copy = copy.deepcopy(env_config)
         del env_config_copy["env_name"]
+        print("ENV NAME", env_name)
         self.env = gym.make(env_name, **env_config_copy)
         self.action_space = self.env.action_space
         self.observation_space = spaces.Box(low=0, high=255, shape=(84, 84, 3), dtype=np.uint8)
@@ -39,31 +43,31 @@ filters = filters_84x84 = [
     ]
 
 
-ray.init()
-trainer = ppo.PPOTrainer(env=ProcgenEnv, config={
-    "entropy_coeff": 0.01,
-    "lambda": .95,
-    "clip_param": 0.2,
-    "gamma": 0.999,
-    "horizon": 256,
-    "num_workers": 1,
-    "num_envs_per_worker": 64,
-    "lr": 5e-4,
-    "model": {
-        "conv_filters": filters
-    },
-    "train_batch_size": 512,
-    "env_config": {
+ray.init(ignore_reinit_error=True)
+#trainer = ppo.PPOTrainer(env=ProcgenEnv, config={
+#    "entropy_coeff": 0.01,
+#    "lambda": .95,
+#    "clip_param": 0.2,
+#    "gamma": 0.999,
+#    "horizon": 256,
+#    "num_workers": 1,
+#    "num_envs_per_worker": 64,
+#    "lr": 5e-4,
+#    "model": {
+#        "conv_filters": filters
+#    },
+#    "train_batch_size": 512,
+#    "env_config": {
+#        "env_name": f'procgen:procgen-{args.env}-v0',
+#        "num_levels": args.num_levels,
+#        "distribution_mode": args.difficulty,
+#    },
+#})
+trainer = ppo.PPOTrainer(env=ProcgenEnv, config={"framework":"torch", "env_config":{
         "env_name": f'procgen:procgen-{args.env}-v0',
         "num_levels": args.num_levels,
         "distribution_mode": args.difficulty,
-    },
-})
-trainer = ppo.PPOTrainer(env=ProcgenEnv, "env_config": {
-        "env_name": f'procgen:procgen-{args.env}-v0',
-        "num_levels": args.num_levels,
-        "distribution_mode": args.difficulty,
-    })
+    }})
 
 
 
