@@ -1,0 +1,167 @@
+minigrid-a2c-primary:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [2, 2]
+            goal_pos: [2, 6]
+        evaluation_interval: 1
+        evaluation_config:
+            env_config:
+                agent_pos: [6, 2]
+                goal_pos: [2, 6]
+
+minigrid-a2c-alternative:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [2, 2]
+            goal_pos: [6, 2]
+
+minigrid-a2c-eval-1:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [2, 6]
+            goal_pos: [2, 2]
+
+minigrid-a2c-eval-2:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [2, 6]
+            goal_pos: [6, 2]
+
+minigrid-a2c-eval-3:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [2, 6]
+            goal_pos: [6, 6]
+
+minigrid-a2c-eval-4:
+    run: A2C
+    stop:
+        info/num_steps_sampled: 2000000
+    config:
+        rollout_fragment_length: 20
+        num_workers: 5
+        num_envs_per_worker: 5
+        num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]
+        model:
+            # Filter config. List of [out_channels, kernel, stride] for each filter
+            conv_filters: [
+                [32, [3, 3], 1],
+                [64, [3, 3], 3],
+                [128, [3, 3], 1],
+                [256, [3, 3], 3],
+            ]
+            fcnet_hiddens: [256]
+        env: MiniGrid-FourRooms-v0
+        env_config:
+            agent_pos: [6, 6]
+            goal_pos: [6, 2]
+
