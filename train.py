@@ -135,11 +135,12 @@ def create_parser(parser_creator=None):
         help="If specified, use config options from this file. Note that this "
              "overrides any trial-specific options set via flags above.")
     # Modified:
-    parser.add_argument('--algo', default='atari-rainbow',
-                        help='This will select an algorithm available from the configs folder.'
-                             'Updates the flags set to algorithm default if any overlap.')
+    parser.add_argument('--algo', default=None,
+                        help='use --experiment flag instead')
     parser.add_argument(
         "--env", type=str, help="The gym environment to use.")
+    parser.add_argument('--experiment', default=None, type=str,
+                        help='name of the experiment yaml file in the config folder')
     return parser
 
 
@@ -149,35 +150,32 @@ def run(args, parser):
             config_experiments = yaml.safe_load(f)
         experiments = config_experiments
     else:
-        if args.algo:
-            config_file = os.path.join('config', f'{args.algo}.yaml')
+        if args.algo is not None:
+            args.experiment = args.algo
+        if args.experiment:
+            config_file = os.path.join('config', f'{args.experiment}.yaml')
             with open(config_file) as f:
-                implemented_algo = yaml.safe_load(f)
-            experiment_name = list(implemented_algo.keys())[0]
-            args.run = implemented_algo[experiment_name]['run']
+                config_dict = yaml.safe_load(f)
         else:
-            implemented_algo = {}
-            experiment_name = args.experiment_name
+            config_dict = {args.name: {}}
 
-        config = dict(args.config, env=args.env)
-        if experiment_name in implemented_algo:
-            if 'config' in implemented_algo[experiment_name]:
-                config.update(implemented_algo[experiment_name]['config'])
+        experiments = {}
+        for experiment_name, experiment_settings in config_dict.items():
+            config = dict(args.config, env=args.env)
 
-        if 'time_total_s' not in args.stop:
-            args.stop['time_total_s'] = int(2 * 24 * 60 * 60 - 3600)  # limit two day training
-        if 'info/num_steps_sampled' not in args.stop:
-            args.stop['info/num_steps_sampled'] = 10000000  # 10M
-        if args.checkpoint_freq is None:
-            args.checkpoint_freq = 1000
-        if args.checkpoint_at_end is None:
-            args.checkpoint_at_end = True
-        if args.checkpoint_score_attr is None:
-            args.checkpoint_score_attr = 'episode_reward_mean'
+            if 'time_total_s' not in args.stop:
+                args.stop['time_total_s'] = int(2 * 24 * 60 * 60 - 3600)  # limit two day training
+            if 'info/num_steps_sampled' not in args.stop:
+                args.stop['info/num_steps_sampled'] = 10000000  # 10M
+            if args.checkpoint_freq is None:
+                args.checkpoint_freq = 1000
+            if args.checkpoint_at_end is None:
+                args.checkpoint_at_end = True
+            if args.checkpoint_score_attr is None:
+                args.checkpoint_score_attr = 'episode_reward_mean'
 
-        # Note: keep this in sync with tune/config_parser.py
-        args_experiments = {
-            experiment_name: {  # i.e. log to ~/ray_results/default
+            # Note: keep this in sync with tune/config_parser.py
+            settings_from_args = {  # i.e. log to ~/ray_results/default
                 "run": args.run,
                 "checkpoint_freq": args.checkpoint_freq,
                 "checkpoint_at_end": args.checkpoint_at_end,
@@ -193,8 +191,13 @@ def run(args, parser):
                 "num_samples": args.num_samples,
                 "upload_dir": args.upload_dir,
             }
-        }
-        experiments = args_experiments
+            # overwrite the settings from arguments with those in the experiment config file
+            settings_from_args.update(experiment_settings)
+            experiments.update({experiment_name: settings_from_args})
+
+        if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
+            from envs.minigrid import register
+            register()
 
     print('\nArguments:')
     pprint.pprint(args)
@@ -218,12 +221,13 @@ def run(args, parser):
             parser.error("the following arguments are required: --run")
         if not exp.get("env") and not exp.get("config", {}).get("env"):
             parser.error("the following arguments are required: --env")
-        if args.eager:
-            exp["config"]["framework"] = "tfe"
-        elif args.torch:
-            exp["config"]["framework"] = "torch"
-        else:
-            exp["config"]["framework"] = "tf"
+        if 'framework' not in exp['config']:
+            if args.eager:
+                exp["config"]["framework"] = "tfe"
+            elif args.torch:
+                exp["config"]["framework"] = "torch"
+            else:
+                exp["config"]["framework"] = "tf"
         if args.v:
             exp["config"]["log_level"] = "INFO"
             verbose = 2
