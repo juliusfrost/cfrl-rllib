@@ -15,13 +15,13 @@
 #$ -m bea
 
 # Give job a name
-#$ -N train_a2c
+#$ -N train_rainbow
 
 # Combine output and error files into a single file
 #$ -j y
 
 # Specify the output file name
-#$ -o train_a2c.qlog
+#$ -o train_rainbow.qlog
 
 # Request 8 CPUs
 #$ -pe omp 8
@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-python train.py --env ${env} --algo a2c
+python train.py --env ${env} --algo atari-rainbow

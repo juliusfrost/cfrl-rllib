@@ -15,13 +15,13 @@
 #$ -m bea
 
 # Give job a name
-#$ -N train_duel_ddqn
+#$ -N train_a2c
 
 # Combine output and error files into a single file
 #$ -j y
 
 # Specify the output file name
-#$ -o train_duel_ddqn.qlog
+#$ -o train_a2c.qlog
 
 # Request 8 CPUs
 #$ -pe omp 8
@@ -52,4 +52,4 @@ module load tensorflow/2.0.0
 
 source /projectnb/saenkog/juliusf/envs/ray/bin/activate
 
-python train.py --env ${env} --algo duel-ddqn
+python train.py --env ${env} --algo atari-a2c
