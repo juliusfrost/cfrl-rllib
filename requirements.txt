@@ -1,2 +1,4 @@
+gym
+gym-minigrid
 pyyaml
 ray[rllib]
