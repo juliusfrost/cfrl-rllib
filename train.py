@@ -158,7 +158,7 @@ def run(args, parser):
             with open(config_file) as f:
                 config_dict = yaml.safe_load(f)
         else:
-            config_dict = {"tempName": {}}
+            config_dict = {args.experiment_name: {}}
 
         experiments = {}
         for experiment_name, experiment_settings in config_dict.items():
