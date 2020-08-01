@@ -16,7 +16,7 @@ from ray.tune.tune import _make_scheduler, run_experiments
 from ray.tune.utils import merge_dicts
 
 # Try to import both backends for flag checking/warnings.
-tf1, tf, tfv = try_import_tf()
+# tf1, tf, tfv = try_import_tf()
 torch, _ = try_import_torch()
 
 DEFAULT_RESULTS_DIR = 'results'
@@ -158,7 +158,7 @@ def run(args, parser):
             with open(config_file) as f:
                 config_dict = yaml.safe_load(f)
         else:
-            config_dict = {args.name: {}}
+            config_dict = {"tempName": {}}
 
         experiments = {}
         for experiment_name, experiment_settings in config_dict.items():
@@ -252,7 +252,7 @@ def run(args, parser):
         ray.init(address=cluster.address)
     else:
         ray.init(
-            include_dashboard=not args.no_ray_ui,
+            # include_dashboard=not args.no_ray_ui,
             address=args.ray_address,
             object_store_memory=args.ray_object_store_memory,
             memory=args.ray_memory,

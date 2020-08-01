@@ -5,6 +5,8 @@ There is a lot to detail here.
 TODO: Implement
 """
 import numpy as np
+import ray
+from ray.tune.registry import get_trainable_cls
 
 
 class Data:
@@ -27,34 +29,35 @@ class Data:
     all_simulator_states
     """
     def __init__(self,
-                 all_time_steps=[],
-                 all_policy_infos=[],,
-                 all_trajectories=[],
-                 all_observations=[],
-                 all_actions=[],
-                 all_rewards=[],
-                 all_dones=[],
-                 all_policy_states=[],
-                 all_simulator_states=[],
+                 all_time_steps=(),
+                 all_policy_infos=(),
+                 all_trajectories=(),
+                 all_observations=(),
+                 all_image_observations=(),  # This can be blank if observations are images
+                 all_actions=(),
+                 all_rewards=(),
+                 all_dones=(),
+                 all_policy_states=(),
+                 all_simulator_states=(),
+                 policy=None, # TODO: it's probably better to have an index for each timestep in case diff policies were used in the same dataset
                  ):
         self.all_time_steps = np.array(all_time_steps)
         self.all_policy_infos = np.array(all_policy_infos)
-        self.all_trajectories = np.array(all_trajectories)
+        self.all_trajectories = np.array(all_trajectories) # Trajectory Id for each timestep
         self.all_observations = np.array(all_observations)
+        self.all_image_observations = np.array(all_image_observations)
         self.all_actions = np.array(all_actions)
         self.all_rewards = np.array(all_rewards)
         self.all_dones = np.array(all_dones)
         self.all_policy_states = np.array(all_policy_states)
         self.all_simulator_states = np.array(all_simulator_states)
-
-    def add_trajectory(self):
-        pass
-
-    def add_timestep(self, observation, action, reward, done, time_step, policy_info=None, ):
-        pass
+        self.all_trajectory_ids = np.unique(self.all_trajectories)
+        self.policy = policy
 
     def get_trajectory(self, trajectory_id):
-        pass
+        timesteps = [timestep for timestep, traj in enumerate(self.all_trajectories) if traj == trajectory_id]
+        return Trajectory(self.data, trajectory_id, timesteps[0], timesteps[-1] + 1)
+
 
     def get_timestep(self, time_step_id):
         trajectory_id = self.all_trajectories[time_step_id]
@@ -84,16 +87,68 @@ class Trajectory:
     policy_state_range
     simulation_state_range
     """
-    def __init__(self, data, trajectory_id):
+    # TODO: add in policy ID and stuff
+    def __init__(self, data, trajectory_id, range_start, range_end):
         self.data = data
         self.trajectory_id = trajectory_id
+        self.timestep_range_start = range_start
+        self.timestep_range_end = range_end
 
     @property
     def policy_info(self):
         return self.data.all_policy_infos[self.policy_id]
 
     def get_time_steps(self):
-        pass
+        timestep_range = range(self.timestep_range_start, self.timestep_range_end)
+        return [TimeStep(self.data, t, self.trajectory_id) for t in timestep_range]
+
+    @property
+    def observation_range(self):
+        return self.data.all_observations[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def image_observation_range(self):
+        if len(self.data.all_image_observations) == 0:
+            arr = self.data.all_observations
+        else:
+            arr = self.data.all_image_observations
+        return arr[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def action_range(self):
+        return self.data.all_actions[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def reward_range(self):
+        return self.data.all_rewards[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def next_observation_range(self):  # TODO: deal with edge cases
+        return self.data.all_observations[self.timestep_range_start + 1:self.timestep_range_end + 1]
+
+    @property
+    def prev_action_range(self): # TODO: deal with edge cases
+        return self.data.all_actions[self.timestep_range_start - 1:self.timestep_range_end - 1]
+
+    @property
+    def prev_reward_range(self): # TODO: deal with edge cases
+        return self.data.all_rewards[self.timestep_range_start - 1:self.timestep_range_end - 1]
+
+    @property
+    def done_range(self):
+        return self.data.all_dones[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def info_range(self):
+        return self.data.all_policy_infos[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def policy_state_range(self):
+        return self.data.all_policy_states[self.timestep_range_start:self.timestep_range_end]
+
+    @property
+    def simulator_state_range(self):
+        return self.data.all_simulator_states[self.timestep_range_start:self.timestep_range_end]
 
 
 class TimeStep:
@@ -119,7 +174,7 @@ class TimeStep:
     for an example see self.observation below
     we use the @property keyword that only references the data when called and does not explicitly store anything
     """
-    def __init__(self, data, time_step_id, trajectory_id): # TODO: should we be interacting with the trajectory more?
+    def __init__(self, data, time_step_id, trajectory_id): # TODO: should we be interacting with the trajectory more? Seems weird we can get next_ob from a different trajectory
         self.data = data
         self.time_step_id = time_step_id
         self.trajectory_id = trajectory_id
@@ -127,6 +182,14 @@ class TimeStep:
     @property
     def observation(self):
         return self.data.all_observations[self.time_step_id]
+
+    @property
+    def image_observation(self):
+        if len(self.data.all_image_observations) == 0:
+            arr = self.data.all_observations
+        else:
+            arr = self.data.all_image_observations
+        return arr[self.time_step_id]
 
     @property
     def action(self):
@@ -138,15 +201,15 @@ class TimeStep:
 
     @property
     def next_observation(self):
-        return self.data.all_observations[self.time_step_id + 1]  # TODO: handle case where we're on the last timestep
+        return self.data.all_observations[(self.time_step_id + 1) % len(self.data.all_observations)]
 
     @property
     def prev_action(self):
-        return self.data.all_actions[self.time_step_id - 1]  # TODO: handle case where we're on the first timestep
+        return self.data.all_actions[(self.time_step_id - 1) % len(self.data.all_actions)]
 
     @property
     def prev_reward(self):
-        return self.data.all_rewards[self.time_step_id - 1]  # TODO: handle case where we're on the first timestep
+        return self.data.all_rewards[(self.time_step_id - 1) % len(self.data.all_rewards)]
 
     @property
     def done(self):
@@ -172,4 +235,22 @@ class PolicyInfo:
     policy_initialization: information about how to initialize the policy, from weights and hidden_state
     policy_weights: pointer to policy weights
     """
-    pass
+    def __init__(self, id, policy_info):
+        self.id = id
+        self.policy_info = policy_info
+
+    def get_policy(self):
+        agent = self.get_agent()
+        return agent.get_policy()
+
+    def get_agent(self):
+        ray.init()
+        run = self.policy_info['run']
+        env = self.policy_info['env']
+        config = self.policy_info['config']
+        checkpoint = self.policy_info['checkpoint']
+        cls = get_trainable_cls(run)
+        agent = cls(env=env, config=config)
+        # Load state from checkpoint.
+        agent.restore(checkpoint)
+        return agent
