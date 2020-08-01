@@ -149,7 +149,7 @@ def run(args, parser):
     if args.config_file:
         with open(args.config_file) as f:
             config_experiments = yaml.safe_load(f)
-        experiments = config_experiments
+        config_dict = config_experiments
     else:
         if args.algo is not None:
             args.experiment = args.algo
@@ -160,45 +160,45 @@ def run(args, parser):
         else:
             config_dict = {args.experiment_name: {}}
 
-        experiments = {}
-        for experiment_name, experiment_settings in config_dict.items():
-            config = dict(args.config, env=args.env)
+    experiments = {}
+    for experiment_name, experiment_settings in config_dict.items():
+        config = dict(args.config, env=args.env)
 
-            if 'time_total_s' not in args.stop:
-                args.stop['time_total_s'] = int(2 * 24 * 60 * 60 - 3600)  # limit two day training
-            if 'info/num_steps_sampled' not in args.stop:
-                args.stop['info/num_steps_sampled'] = 10000000  # 10M
-            if args.checkpoint_freq is None:
-                args.checkpoint_freq = 1000
-            if args.checkpoint_at_end is None:
-                args.checkpoint_at_end = True
-            if args.checkpoint_score_attr is None:
-                args.checkpoint_score_attr = 'episode_reward_mean'
+        if 'time_total_s' not in args.stop:
+            args.stop['time_total_s'] = int(2 * 24 * 60 * 60 - 3600)  # limit two day training
+        if 'info/num_steps_sampled' not in args.stop:
+            args.stop['info/num_steps_sampled'] = 10000000  # 10M
+        if args.checkpoint_freq is None:
+            args.checkpoint_freq = 1000
+        if args.checkpoint_at_end is None:
+            args.checkpoint_at_end = True
+        if args.checkpoint_score_attr is None:
+            args.checkpoint_score_attr = 'episode_reward_mean'
 
-            # Note: keep this in sync with tune/config_parser.py
-            settings_from_args = {  # i.e. log to ~/ray_results/default
-                "run": args.run,
-                "checkpoint_freq": args.checkpoint_freq,
-                "checkpoint_at_end": args.checkpoint_at_end,
-                "keep_checkpoints_num": args.keep_checkpoints_num,
-                "checkpoint_score_attr": args.checkpoint_score_attr,
-                "local_dir": args.local_dir,
-                "resources_per_trial": (
-                        args.resources_per_trial and
-                        resources_to_json(args.resources_per_trial)),
-                "stop": args.stop,
-                "config": config,
-                "restore": args.restore,
-                "num_samples": args.num_samples,
-                "upload_dir": args.upload_dir,
-            }
-            # overwrite the settings from arguments with those in the experiment config file
-            settings = merge_dicts(settings_from_args, experiment_settings)
-            experiments.update({experiment_name: settings})
+        # Note: keep this in sync with tune/config_parser.py
+        settings_from_args = {  # i.e. log to ~/ray_results/default
+            "run": args.run,
+            "checkpoint_freq": args.checkpoint_freq,
+            "checkpoint_at_end": args.checkpoint_at_end,
+            "keep_checkpoints_num": args.keep_checkpoints_num,
+            "checkpoint_score_attr": args.checkpoint_score_attr,
+            "local_dir": args.local_dir,
+            "resources_per_trial": (
+                    args.resources_per_trial and
+                    resources_to_json(args.resources_per_trial)),
+            "stop": args.stop,
+            "config": config,
+            "restore": args.restore,
+            "num_samples": args.num_samples,
+            "upload_dir": args.upload_dir,
+        }
+        # overwrite the settings from arguments with those in the experiment config file
+        settings = merge_dicts(settings_from_args, experiment_settings)
+        experiments.update({experiment_name: settings})
 
-        if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
-            from envs.minigrid import register
-            register()
+    if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
+        from envs.minigrid import register
+        register()
 
     print('\nArguments:')
     pprint.pprint(args)
