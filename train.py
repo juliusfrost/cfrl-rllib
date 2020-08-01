@@ -194,7 +194,7 @@ def run(args, parser):
         }
         # overwrite the settings from arguments with those in the experiment config file
         settings = merge_dicts(settings_from_args, experiment_settings)
-        experiments.update({experiment_name: settings})
+        experiments.update({experiment_name + args.experiment_name: settings})
 
     if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
         from envs.minigrid import register
