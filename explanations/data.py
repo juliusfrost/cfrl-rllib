@@ -4,6 +4,7 @@ The Data Framework
 There is a lot to detail here.
 TODO: Implement
 """
+import numpy as np
 
 
 class Data:
@@ -25,7 +26,39 @@ class Data:
     all_policy_states
     all_simulator_states
     """
-    pass
+    def __init__(self,
+                 all_time_steps=[],
+                 all_policy_infos=[],,
+                 all_trajectories=[],
+                 all_observations=[],
+                 all_actions=[],
+                 all_rewards=[],
+                 all_dones=[],
+                 all_policy_states=[],
+                 all_simulator_states=[],
+                 ):
+        self.all_time_steps = np.array(all_time_steps)
+        self.all_policy_infos = np.array(all_policy_infos)
+        self.all_trajectories = np.array(all_trajectories)
+        self.all_observations = np.array(all_observations)
+        self.all_actions = np.array(all_actions)
+        self.all_rewards = np.array(all_rewards)
+        self.all_dones = np.array(all_dones)
+        self.all_policy_states = np.array(all_policy_states)
+        self.all_simulator_states = np.array(all_simulator_states)
+
+    def add_trajectory(self):
+        pass
+
+    def add_timestep(self, observation, action, reward, done, time_step, policy_info=None, ):
+        pass
+
+    def get_trajectory(self, trajectory_id):
+        pass
+
+    def get_timestep(self, time_step_id):
+        trajectory_id = self.all_trajectories[time_step_id]
+        return TimeStep(self, time_step_id, trajectory_id)
 
 
 class Trajectory:
@@ -51,6 +84,9 @@ class Trajectory:
     policy_state_range
     simulation_state_range
     """
+    def __init__(self, data, trajectory_id):
+        self.data = data
+        self.trajectory_id = trajectory_id
 
     @property
     def policy_info(self):
@@ -69,7 +105,6 @@ class TimeStep:
     data: reference to the data
     time_step_id: A unique identifier
     trajectory_id
-    time_step_id
     observation
     action
     reward
@@ -84,10 +119,50 @@ class TimeStep:
     for an example see self.observation below
     we use the @property keyword that only references the data when called and does not explicitly store anything
     """
+    def __init__(self, data, time_step_id, trajectory_id): # TODO: should we be interacting with the trajectory more?
+        self.data = data
+        self.time_step_id = time_step_id
+        self.trajectory_id = trajectory_id
 
     @property
     def observation(self):
-        return self.data.all_observation[self.time_step_id]
+        return self.data.all_observations[self.time_step_id]
+
+    @property
+    def action(self):
+        return self.data.all_actions[self.time_step_id]
+
+    @property
+    def reward(self):
+        return self.data.all_rewards[self.time_step_id]
+
+    @property
+    def next_observation(self):
+        return self.data.all_observations[self.time_step_id + 1]  # TODO: handle case where we're on the last timestep
+
+    @property
+    def prev_action(self):
+        return self.data.all_actions[self.time_step_id - 1]  # TODO: handle case where we're on the first timestep
+
+    @property
+    def prev_reward(self):
+        return self.data.all_rewards[self.time_step_id - 1]  # TODO: handle case where we're on the first timestep
+
+    @property
+    def done(self):
+        return self.data.all_dones[self.time_step_id]
+
+    @property
+    def info(self):
+        return self.data.all_policy_infos[self.time_step_id]
+
+    @property
+    def policy_state(self):
+        return self.data.all_policy_states[self.time_step_id]
+
+    @property
+    def simulator_state(self):
+        return self.data.all_simulator_states[self.time_step_id]
 
 
 class PolicyInfo:
