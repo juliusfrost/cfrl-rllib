@@ -199,6 +199,10 @@ def run(args, parser):
     if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
         from envs.minigrid import register
         register()
+    if any('Driving' in setting['config']['env'] for setting in experiments.values()):
+        from envs.driving import register
+        register()
+
 
     print('\nArguments:')
     pprint.pprint(args)

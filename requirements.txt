@@ -3,3 +3,6 @@ gym-minigrid
 pyyaml
 ray[rllib]
 matplotlib
+pygame
+numpy
+pillow
