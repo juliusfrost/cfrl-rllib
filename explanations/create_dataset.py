@@ -9,6 +9,10 @@ from ray.rllib.rollout import create_parser
 from rollout import rollout, run
 
 from data import Data, PolicyInfo
+from envs import register
+
+register()
+
 
 # Example usage
 # python explanations/create_dataset.py

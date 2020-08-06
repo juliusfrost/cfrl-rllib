@@ -1,8 +1,12 @@
 import pickle as pkl
+import os
 import numpy as npy
 import argparse
 from state_selection import random_state, critical_state, low_reward_state
 from matplotlib import pyplot as plt
+from envs import register
+
+register()
 
 
 # Example usage:
@@ -20,6 +24,8 @@ def select_states(args):
     state_selection_fn = state_selection_dict[args.state_selection_method]
     state_indices = state_selection_fn(dataset, args.num_states, policy)
     if args.save_name is not None:
+        if not os.path.exists(args.save_name):
+            os.makedirs(args.save_name)
         for i in state_indices:
             img = dataset.get_timestep(i).image_observation
             plt.imshow(img)
