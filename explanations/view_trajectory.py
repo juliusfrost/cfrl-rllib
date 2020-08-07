@@ -46,12 +46,29 @@ def select_states(args):
             write_video(imgs[split:], explanation_file, img_shape)
 
 
+def save_trajectories(args):
+    with open(args.dataset_file, "rb") as f:
+        dataset: Data = pkl.load(f)
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+    for t in dataset.all_trajectories:
+        trajectory = dataset.get_trajectory(t)
+        file = os.path.join(args.save_path, f'{trajectory.trajectory_id}.avi')
+        frames = trajectory.image_observation_range
+        img_shape = (frames.shape[2], frames.shape[1])
+        write_video(frames, file, img_shape)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
+    parser.add_argument('--save-trajectories', action='store_true')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
     args = parser.parse_args()
-    select_states(args)
+    if args.save_trajectories:
+        save_trajectories(args)
+    else:
+        select_states(args)
