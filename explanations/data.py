@@ -56,7 +56,7 @@ class Data:
 
     def get_trajectory(self, trajectory_id):
         timesteps = [timestep for timestep, traj in enumerate(self.all_trajectories) if traj == trajectory_id]
-        return Trajectory(self.data, trajectory_id, timesteps[0], timesteps[-1] + 1)
+        return Trajectory(self, trajectory_id, timesteps[0], timesteps[-1] + 1)
 
 
     def get_timestep(self, time_step_id):
@@ -95,19 +95,19 @@ class Trajectory:
         self.timestep_range_end = range_end
 
     @property
-    def policy_info(self):
+    def policy_info(self) -> list:
         return self.data.all_policy_infos[self.policy_id]
 
-    def get_time_steps(self):
+    def get_time_steps(self) -> list:
         timestep_range = range(self.timestep_range_start, self.timestep_range_end)
         return [TimeStep(self.data, t, self.trajectory_id) for t in timestep_range]
 
     @property
-    def observation_range(self):
+    def observation_range(self) -> np.ndarray:
         return self.data.all_observations[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def image_observation_range(self):
+    def image_observation_range(self) -> np.ndarray:
         if len(self.data.all_image_observations) == 0:
             arr = self.data.all_observations
         else:
@@ -115,39 +115,39 @@ class Trajectory:
         return arr[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def action_range(self):
+    def action_range(self) -> np.ndarray:
         return self.data.all_actions[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def reward_range(self):
+    def reward_range(self) -> np.ndarray:
         return self.data.all_rewards[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def next_observation_range(self):  # TODO: deal with edge cases
+    def next_observation_range(self) -> np.ndarray:  # TODO: deal with edge cases
         return self.data.all_observations[self.timestep_range_start + 1:self.timestep_range_end + 1]
 
     @property
-    def prev_action_range(self): # TODO: deal with edge cases
+    def prev_action_range(self) -> np.ndarray: # TODO: deal with edge cases
         return self.data.all_actions[self.timestep_range_start - 1:self.timestep_range_end - 1]
 
     @property
-    def prev_reward_range(self): # TODO: deal with edge cases
+    def prev_reward_range(self) -> np.ndarray: # TODO: deal with edge cases
         return self.data.all_rewards[self.timestep_range_start - 1:self.timestep_range_end - 1]
 
     @property
-    def done_range(self):
+    def done_range(self) -> np.ndarray:
         return self.data.all_dones[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def info_range(self):
+    def info_range(self) -> list:
         return self.data.all_policy_infos[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def policy_state_range(self):
+    def policy_state_range(self) -> list:
         return self.data.all_policy_states[self.timestep_range_start:self.timestep_range_end]
 
     @property
-    def simulator_state_range(self):
+    def simulator_state_range(self) -> list:
         return self.data.all_simulator_states[self.timestep_range_start:self.timestep_range_end]
 
 
