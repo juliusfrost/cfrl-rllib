@@ -1,10 +1,11 @@
 import pickle
 import uuid
 
-from ray.rllib.rollout import create_parser, run
+from ray.rllib.rollout import create_parser
 
 from envs import register
 from explanations.data import Data, PolicyInfo
+from explanations.rollout import run
 
 register()
 
