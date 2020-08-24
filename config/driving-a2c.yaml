@@ -1,4 +1,4 @@
-minigrid-a2c:
+driving-a2c:
     run: A2C
     config:
         rollout_fragment_length: 20

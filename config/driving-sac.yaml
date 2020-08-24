@@ -1,4 +1,4 @@
-atari-sac:
+driving-sac:
     run: SAC
     config:
         gamma: 0.99

@@ -198,6 +198,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.noop = np.array([0.0, 0.0])
         self.action_to_take = np.array(self.noop)
         self.COLLISION_PENALTY = COLLISION_PENALTY
+        self.time_steps = 0
 
     def _handle_player_events(self):
         self.dy = 0

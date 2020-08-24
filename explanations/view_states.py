@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 from envs import register
 
 register()
-
+from envs.driving import register as registerD
+registerD()
 
 # Example usage:
 # python explanations/view_states.py --dataset_dir  saved_dataset/testing.pkl --num_states 4 --save_name "found_states" --state_selection_method critical
