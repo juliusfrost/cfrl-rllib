@@ -9,10 +9,12 @@ from explanations.data import Data
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
 register()
+from envs.driving import register as registerD
+registerD()
 
 
 def write_video(frames, filename, image_shape, fps=5):
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(filename, fourcc, fps, image_shape)
     for img in frames:
         writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
@@ -39,11 +41,13 @@ def select_states(args):
             imgs = trajectory.image_observation_range
 
             img_shape = (imgs.shape[2], imgs.shape[1])
-            context_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_context.avi')
-            explanation_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_explanation.avi')
+            context_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_context.mp4')
+            explanation_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_explanation.mp4')
+            full_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_full.mp4')
 
             write_video(imgs[:split], context_file, img_shape)
             write_video(imgs[split:], explanation_file, img_shape)
+            write_video(imgs, full_file, img_shape)
 
 
 if __name__ == "__main__":

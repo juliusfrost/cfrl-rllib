@@ -10,8 +10,10 @@ from rollout import rollout, run
 
 from data import Data, PolicyInfo
 from envs import register
+from envs.driving import register as registerD
 
 register()
+registerD()
 
 
 # Example usage

@@ -7,7 +7,7 @@ from ray.tune.registry import register_env
 
 from envs.driving_env.ple_env import PLEEnv
 
-NUM_STEPS = 10
+NUM_STEPS = 5
 
 def env_creator(**kwargs):
     env = PLEEnv(

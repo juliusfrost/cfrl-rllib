@@ -2,7 +2,7 @@ minigrid-a2c:
     run: A2C
     config:
         rollout_fragment_length: 20
-        num_workers: 5
+        num_workers: 0
         num_envs_per_worker: 5
         num_gpus: 1
         lr_schedule: [
@@ -11,3 +11,4 @@ minigrid-a2c:
         ]
         env: DrivingPLE-v0
         evaluation_interval: 1
+        entropy_coeff: 0.03

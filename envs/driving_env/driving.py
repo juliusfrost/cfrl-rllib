@@ -123,7 +123,7 @@ class Driving(PyGameWrapper, gym.Env):
                  MAX_SCORE=1,
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
                  add_car_fn=add_car_top, COLLISION_PENALTY=-100., n_noops=230,
-                 default_dt=30, prob_car=50, **kwargs):
+                 default_dt=30, prob_car=50, time_reward=True, time_limit=500, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -141,6 +141,8 @@ class Driving(PyGameWrapper, gym.Env):
         self.get_reward_ft_fn = reward_ft_fn
         self.add_car_fn = add_car_fn
         self.theta = theta
+        self.time_reward = time_reward
+        self.time_limit = time_limit
 
         self.images = None  # Load in init(), after game screen is created
         self.backdrop = None  # Load in init()
@@ -286,7 +288,7 @@ class Driving(PyGameWrapper, gym.Env):
 
     def game_over(self):
         # Game is over if the player crashes
-        return self.crashed()
+        return self.crashed() or self.time_steps >= self.time_limit
         # return (self.n_crashes >= self.MAX_SCORE)
 
     def init(self):
@@ -311,6 +313,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.action_to_take = np.array(self.noop)
         for _ in range(self.n_noops):  # To get to more interesting position in game
             self.step(self.default_dt, add_reward=False)
+        self.time_steps = 0
 
     def reset(self):
         self.init()
@@ -345,18 +348,18 @@ class Driving(PyGameWrapper, gym.Env):
             if not self.n_crashes >= self.MAX_SCORE:
                 self.reset()
         elif add_reward:
-            reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
-                                              self.action_to_take,
-                                              **self.constants)
-            self.score_sum += np.dot(self.theta, reward_ft)
-            # print("reward_ft:", reward_ft)
-            # print("state:", self.agent_car.state)
-            # print("reward:", np.dot(self.theta, reward_ft))
-            # print("score_sum:", self.score_sum)
+            if self.time_reward:
+                self.score_sum += 1
+            else:
+                reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
+                                                  self.action_to_take,
+                                                  **self.constants)
+                self.score_sum += np.dot(self.theta, reward_ft)
 
         self.backdrop.update(self.ydiff)
         self.backdrop.draw_background(self.screen)
         self.cars_group.draw(self.screen)
+        self.time_steps += 1
 
     def getSamplerKeys(self):
         """

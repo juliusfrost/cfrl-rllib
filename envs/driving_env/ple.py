@@ -418,4 +418,4 @@ class PLE(object):
         reward = self.game.getScore() - self.previous_score
         self.previous_score = self.game.getScore()
 
-        return reward
+        return reward + 5
