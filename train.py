@@ -199,9 +199,17 @@ def run(args, parser):
     if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
         from envs.minigrid import register
         register()
-    if any('Driving' in setting['config']['env'] for setting in experiments.values()):
+    # for setting in experiments.values():
+    #     if 'config' in setting.keys():
+    #         print("In config")
+    #         if 'env' in setting['config'].keys():
+    #             print("Fucking deeper")
+    #             print(setting['config']['env'])
+    if any('Driving' in setting['config']['env']['env_name'] for setting in experiments.values()):
         from envs.driving import register
-        register()
+        for setting in experiments.values():
+            if 'config' in setting.keys():
+                register(**setting['config']['env'])
 
 
     print('\nArguments:')
