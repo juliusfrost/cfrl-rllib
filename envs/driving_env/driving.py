@@ -11,6 +11,8 @@ from envs.driving_env.pygamewrapper import PyGameWrapper
 from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, get_car_states_from_ft, get_n_cpu_cars_from_ft
 from envs.driving_env.driving_car import Car, Backdrop
 
+import random
+
 FILEDIR = osp.dirname(osp.realpath(__file__))
 
 
@@ -149,6 +151,8 @@ class Driving(PyGameWrapper, gym.Env):
         self.agent_img = "robot_car.png"
         if "agent_img" in kwargs:
             self.agent_img = kwargs["agent_img"]
+
+        self.switch_prob = kwargs.get('switch_prob', 0.0)
 
         # Define environment visualization constants
         n_lanes = 3
@@ -337,6 +341,9 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
+            should_switch = not car.switch_duration > 0 and random.random() < self.switch_prob
+            if should_switch:
+                car.start_switch_lane(**self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
             if out_of_bound(car, self.ydiff, **self.constants):
                 self.cpu_cars.remove(car)

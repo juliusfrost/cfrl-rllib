@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+import random
+
 import pygame
 
 def standardize_heading(h):
@@ -53,6 +55,13 @@ class Car(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y - ydiff)
+
+        self.switching = False
+        self.switching_direction = 0
+        self.switch_step = 0
+        self.switch_duration_remaining = 0
+        self.switch_duration = kwargs.get('switch_duration', 50)
+
 
     @property
     def game_pos(self):
@@ -120,10 +129,17 @@ class Car(pygame.sprite.Sprite):
     def update(self, ydiff=None, control=None, next_state=None, dt=1):
         if dt != 1:
             assert next_state is None
-
+        if self.switch_duration_remaining > 0:
+            self.x += self.switch_step
+            self.switch_duration_remaining -= 1
+            if self.switch_duration_remaining == 0:
+                # self.image = pygame.transform.rotate(self.image, math.degrees(self.switching_direction))
+                self.switching_direction = 0
+                self.state[0] = self.x
         if control is None and next_state is None:
             self.update_car_state(self.controls[self.control_idx], dt)
             self.control_idx = (self.control_idx + 1) % len(self.controls)
+            # If there are steps remaining to take, 
         elif control is not None:
             self.update_car_state(control, dt)
         elif next_state is not None:
@@ -134,6 +150,27 @@ class Car(pygame.sprite.Sprite):
             self.rect.center = self.x, self.y - ydiff
         else:
             self.rect.center = self.x, self.y - self.ydiff
+
+
+    def start_switch_lane(self, **kwargs):
+        self.switch_duration_remaining = self.swtich_duration
+        lane_centers = kwargs['lane_centers']
+        lane_width = kwargs['lane_width']
+        lane = np.argmin(list(map(lambda lane_coord: (lane_coord - self.x)**2, lane_centers)))
+        if lane == 1:
+            self.switching_direction = random.randint(0,1) * 2 - 1
+        elif lane == 0:
+            self.switching_direction = 1
+        else:
+            self.switching_direction = -1
+        # self.heading = self.switching_direction * 0.1
+        self.switch_step = (lane_width + 4) * self.switching_direction / self.switch_duration
+        self.switch_duration_remaining -= 1
+        # self.x += self.switch_step
+        
+        
+        
+
 
 class Backdrop():
     def __init__(self, **kwargs):
