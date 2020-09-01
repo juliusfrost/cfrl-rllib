@@ -35,3 +35,7 @@ driving-sac:
         num_workers: 0
         num_gpus: 1
         metrics_smoothing_episodes: 5
+        env: 
+            env_name: DrivingPLE-v0
+            switch_prob: 0.0
+            switch_duration: 50
