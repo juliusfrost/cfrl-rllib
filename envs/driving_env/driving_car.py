@@ -153,7 +153,7 @@ class Car(pygame.sprite.Sprite):
 
 
     def start_switch_lane(self, **kwargs):
-        self.switch_duration_remaining = self.swtich_duration
+        self.switch_duration_remaining = self.switch_duration
         lane_centers = kwargs['lane_centers']
         lane_width = kwargs['lane_width']
         lane = np.argmin(list(map(lambda lane_coord: (lane_coord - self.x)**2, lane_centers)))
