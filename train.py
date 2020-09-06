@@ -199,11 +199,11 @@ def run(args, parser):
     if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
         from envs.minigrid import register
         register()
-    if any('Driving' in setting['config']['env']['env_name'] for setting in experiments.values()):
+    if any('Driving' in setting['config']['env'] for setting in experiments.values()):
         from envs.driving import register
         for setting in experiments.values():
             if 'config' in setting.keys():
-                register(**setting['config']['env'])
+                register(**setting['config']['env_config'])
 
 
     print('\nArguments:')

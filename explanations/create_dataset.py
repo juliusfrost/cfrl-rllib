@@ -8,6 +8,10 @@ import ray
 from ray.rllib.rollout import create_parser
 from rollout import rollout, run
 
+import sys
+sys.path.append('/Users/ericweiner/Documents/cfrl-rllib/')
+# print(sys.path)
+
 from data import Data, PolicyInfo
 from envs import register
 from envs.driving import register as registerD
@@ -30,6 +34,7 @@ def create_dataset(policy_config):
         rewards = []
         dones = []
         env_infos = []
+        simulator_states = []
         trajectories = []
 
         data = pickle.load(f)
@@ -37,12 +42,12 @@ def create_dataset(policy_config):
         print(f"Saving {len(data)} trajectories")
         for trajectory_id, trajectory in enumerate(data):
             for time_step_id, timestep in enumerate(trajectory):
-                # Traj is a list with either 5 or 6 elements, depending on whether env info was saved or not.
-                if len(timestep) == 5:
-                    obs, act, img_obs, rew, done = timestep
+                # Traj is a list with either 6 or 7 elements, depending on whether env info was saved or not.
+                if len(timestep) == 6:
+                    obs, act, img_obs, rew, done, simulator_state = timestep
                     env_info = {}
                 else:
-                    obs, act, img_obs, rew, done, env_info = timestep
+                    obs, act, img_obs, rew, done, env_info, simulator_state = timestep
                 observations.append(obs)
                 actions.append(act)
                 image_observations.append(img_obs)
@@ -51,6 +56,7 @@ def create_dataset(policy_config):
                 env_infos.append(env_info)
                 trajectories.append(trajectory_id)
                 time_steps.append(time_step_id)
+                simulator_states.append(simulator_state)
     policy_dict = {
         "env": args.env,
         "config": policy_config,
@@ -68,6 +74,7 @@ def create_dataset(policy_config):
         all_rewards=rewards,
         all_dones=dones,
         policy=policy_info,
+        all_simulator_states=simulator_states
     )
     with open(args.out, "wb") as f:
         pickle.dump(dataset, f)
