@@ -123,7 +123,7 @@ class Driving(PyGameWrapper, gym.Env):
                  MAX_SCORE=1,
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
                  add_car_fn=add_car_top, COLLISION_PENALTY=-100., n_noops=230,
-                 default_dt=30, prob_car=50, time_reward=True, time_limit=500, **kwargs):
+                 default_dt=30, prob_car=50, time_reward=False, interpolate_reward=0.75, time_limit=500, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -143,6 +143,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.theta = theta
         self.time_reward = time_reward
         self.time_limit = time_limit
+        self.interpolate_reward = interpolate_reward
 
         self.images = None  # Load in init(), after game screen is created
         self.backdrop = None  # Load in init()
@@ -351,6 +352,14 @@ class Driving(PyGameWrapper, gym.Env):
         elif add_reward:
             if self.time_reward:
                 self.score_sum += 1
+            elif self.interpolate_reward:
+                time_reward = 1
+                reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
+                                                  self.action_to_take,
+                                                  **self.constants)
+                position_reward = np.dot(self.theta, reward_ft)
+                reward = self.interpolate_reward * time_reward + (1 - self.interpolate_reward) * position_reward
+                self.score_sum += reward
             else:
                 reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
                                                   self.action_to_take,
