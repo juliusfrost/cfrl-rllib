@@ -100,8 +100,7 @@ class RolloutSaver:
                  write_update_file=False,
                  target_steps=None,
                  target_episodes=None,
-                 save_info=False,
-                 save_env=False):
+                 save_info=False):
         self._outfile = outfile
         self._update_file = None
         self._use_shelve = use_shelve
@@ -114,7 +113,6 @@ class RolloutSaver:
         self._target_episodes = target_episodes
         self._target_steps = target_steps
         self._save_info = save_info
-        self._save_env = save_env
 
     def _get_tmp_progress_filename(self):
         outpath = Path(self._outfile)
@@ -314,3 +312,77 @@ def rollout(agent,
         print("Episode #{}: reward: {}".format(episodes, reward_total))
         if done:
             episodes += 1
+
+
+def rollout_env(agent,
+            env,
+            handoff_func,
+            obs,
+            saver=None,
+            no_render=True,
+            video_dir=None):
+    policy_agent_mapping = default_policy_agent_mapping
+
+    if saver is None:
+        saver = RolloutSaver()
+
+    try:
+        policy_map = {DEFAULT_POLICY_ID: agent.policy}
+    except AttributeError:
+        raise AttributeError(
+            "Agent ({}) does not have a `policy` property! This is needed "
+            "for performing (trained) agent rollouts.".format(agent))
+
+    action_init = {
+        p: flatten_to_single_ndarray(m.action_space.sample())
+        for p, m in policy_map.items()
+    }
+
+    # If monitoring has been requested, manually wrap our environment with a
+    # gym monitor, which is set to record every episode.
+    if video_dir:
+        env = gym.wrappers.Monitor(
+            env=env,
+            directory=video_dir,
+            video_callable=lambda x: True,
+            force=True)
+
+    mapping_cache = {}  # in case policy_agent_mapping is stochastic
+    saver.begin_rollout()
+    prev_actions = DefaultMapping(
+        lambda agent_id: action_init[mapping_cache[agent_id]])
+    prev_rewards = collections.defaultdict(lambda: 0.)
+    done = False
+    reward_total = 0.0
+    while not done:
+        action_dict = {}
+        a_obs = obs
+        agent_id = _DUMMY_AGENT_ID
+        if a_obs is not None:
+            policy_id = mapping_cache.setdefault(
+                agent_id, policy_agent_mapping(agent_id))
+            a_action = agent.compute_action(
+                a_obs,
+                prev_action=prev_actions[agent_id],
+                prev_reward=prev_rewards[agent_id],
+                policy_id=policy_id)
+            a_action = flatten_to_single_ndarray(a_action)
+            action_dict[agent_id] = a_action
+            prev_actions[agent_id] = a_action
+            done = handoff_func(a_obs, a_action)
+        action = action_dict
+
+        action = action[_DUMMY_AGENT_ID]
+        next_obs, reward, env_done, info = env.step(action)
+        done = done or env_done
+        prev_rewards[_DUMMY_AGENT_ID] = reward
+
+        reward_total += reward
+        if not no_render:
+            img = env.render(mode="rgb_array")
+        else:
+            img = None
+        saver.append_step(obs, action, img, reward, done, info, env.game_state.game.getGameStateSave())
+        obs = next_obs
+    saver.end_rollout()
+    return env, env_done
