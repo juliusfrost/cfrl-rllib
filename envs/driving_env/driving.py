@@ -12,6 +12,7 @@ from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_boun
 from envs.driving_env.driving_car import Car, Backdrop
 
 import random
+import copy
 
 FILEDIR = osp.dirname(osp.realpath(__file__))
 
@@ -82,7 +83,8 @@ def add_car_top(dt, robot_car, cars, img, speed_limit, speed_min, ydiff, rng, **
         return None
 
     chance_appear = 1 - (1 - prob_car) ** dt  # Insert a new car with this probability
-    if rng.random_sample() > chance_appear:
+    x = rng.random_sample()
+    if x > chance_appear:
         return None
 
     lane_idx = rng.randint(len(lane_centers))
@@ -246,13 +248,19 @@ class Driving(PyGameWrapper, gym.Env):
         """
         return self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
 
-    def setGameState(self, state):
+    def getGameStateSave(self):
+        obs_state = self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
+        return obs_state, self.time_steps, copy.deepcopy(self.rng)
+
+    def setGameState(self, state, time_steps, rng):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
         self.score_sum = 0.0  # reset cumulative reward
         self.n_crashes = 0
 
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
+        self.time_steps = time_steps
+        self.rng = copy.deepcopy(rng)
         self.agent_car = robot_car_from_state(self, robot_state)
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
