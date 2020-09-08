@@ -385,4 +385,4 @@ def rollout_env(agent,
         saver.append_step(obs, action, img, reward, done, info, env.game_state.game.getGameStateSave())
         obs = next_obs
     saver.end_rollout()
-    return env, env_done
+    return env, obs, env_done

@@ -36,3 +36,6 @@ def make_handoff_func(n_timesteps):
     def handoff(state, action):
         return next(gen)
     return handoff
+
+def until_end_handoff(state, action):
+    return False

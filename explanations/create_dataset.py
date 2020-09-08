@@ -25,7 +25,7 @@ registerD()
 # /home/olivia/Documents/XRL/cfrl-rllib/results/tempName/SAC_Pong-ram-v0_0_2020-08-01_12-27-152bzcg1rj/checkpoint_210/checkpoint-210
 # --run SAC --env Pong-ram-v0 --out saved_dataset/testing.pkl --episodes 2 --save-info
 
-def create_dataset(policy_config):
+def create_dataset(args, policy_config):
     with open(args.out, "rb") as f:
         time_steps = []
         observations = []
@@ -79,6 +79,8 @@ def create_dataset(policy_config):
     with open(args.out, "wb") as f:
         pickle.dump(dataset, f)
 
+    return dataset
+
 
 if __name__ == "__main__":
     # Load arguments
@@ -89,4 +91,4 @@ if __name__ == "__main__":
     policy, policy_config = run(args, parser)
 
     # Save them in a dataset
-    create_dataset(policy_config)
+    create_dataset(args, policy_config)
