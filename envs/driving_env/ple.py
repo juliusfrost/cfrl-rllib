@@ -5,6 +5,7 @@ import sys
 import pygame
 from envs.driving_env.pygamewrapper import PyGameWrapper
 
+
 class PLE(object):
     """
     ple.PLE(

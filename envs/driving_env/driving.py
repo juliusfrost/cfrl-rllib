@@ -8,7 +8,8 @@ from pygame.constants import K_w, K_s, K_a, K_d
 
 from envs.driving_env.utils import percent_round_int
 from envs.driving_env.pygamewrapper import PyGameWrapper
-from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, get_car_states_from_ft, get_n_cpu_cars_from_ft
+from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, \
+    get_car_states_from_ft, get_n_cpu_cars_from_ft
 from envs.driving_env.driving_car import Car, Backdrop
 
 import random
