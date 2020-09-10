@@ -4,22 +4,22 @@ import pickle as pkl
 from collections import namedtuple
 
 import cv2
-import sys
-sys.path.append('/Users/ericweiner/Documents/cfrl-rllib')
+import numpy as np
+from ray.tune.registry import _global_registry, ENV_CREATOR
+
 from envs import register
-from explanations.data import Data
-from explanations.state_selection import random_state, critical_state, low_reward_state
-from explanations.rollout import RolloutSaver, rollout_env
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
-
-import numpy as np
+from explanations.data import Data
+from explanations.rollout import RolloutSaver, rollout_env
+from explanations.state_selection import random_state, critical_state, low_reward_state
 
 register()
-from envs.driving import register as registerD
-registerD()
 
-from envs.driving import env_creator
+
+def get_env_creator(env_name):
+    return _global_registry.get(ENV_CREATOR, env_name)
+
 
 def write_video(frames, filename, image_shape, fps=5):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -27,7 +27,9 @@ def write_video(frames, filename, image_shape, fps=5):
     for img in frames:
         writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
+
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
+
 
 def select_states(args):
     with open(args.dataset_file, "rb") as f:
@@ -42,12 +44,13 @@ def select_states(args):
     state_indices = state_selection_fn(dataset, args.num_states, policy)
 
     exploration_rollout_saver = RolloutSaver(
-                 outfile=args.save_path + "/exploration.pkl",
-                 target_steps=None,
-                 target_episodes=args.num_states,
-                 save_info=True)
+        outfile=args.save_path + "/exploration.pkl",
+        target_steps=None,
+        target_episodes=args.num_states,
+        save_info=True)
     # Neither of these seem to be used, just required to save dataset
-    exploration_args = DatasetArgs(out=args.save_path + "/exploration.pkl", env="DrivingPLE-v0", run="PPO", checkpoint=1)
+    exploration_args = DatasetArgs(out=args.save_path + "/exploration.pkl", env="DrivingPLE-v0", run="PPO",
+                                   checkpoint=1)
     exploration_policy_config = {}
 
     counterfactual_rollout_saver = RolloutSaver(
@@ -56,10 +59,14 @@ def select_states(args):
         target_episodes=args.num_states,
         save_info=True)
     # Neither of these seem to be used, just required to save dataset
-    counterfactual_args = DatasetArgs(out=args.save_path + "/counterfactual.pkl", env="DrivingPLE-v0", run="PPO", checkpoint=1)
+    counterfactual_args = DatasetArgs(out=args.save_path + "/counterfactual.pkl", env="DrivingPLE-v0", run="PPO",
+                                      checkpoint=1)
     counterfactual_policy_config = {}
 
-    env = env_creator()
+    env_creator = get_env_creator(args.env)
+    # TODO: add way to pass env config from arguments
+    env_config = {}
+    env = env_creator(env_config)
     env.reset()
     cf_to_exp_index = {}
     cf_count = 0
@@ -70,13 +77,14 @@ def select_states(args):
             timestep = dataset.get_timestep(i)
             simulator_state = timestep.simulator_state
             obs = timestep.observation
-            env.game_state.game.setGameState(*simulator_state)
+            env.load_simulator_state(simulator_state)
             random_agent = RandomAgent(env.action_space)
             handoff_func = make_handoff_func(args.timesteps)
 
             with exploration_rollout_saver as saver:
-                exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver, no_render=False)
-            
+                exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
+                                                         no_render=False)
+
             if not env_done:
                 cf_to_exp_index[cf_count] = exp_index
                 cf_count += 1
@@ -93,7 +101,7 @@ def select_states(args):
             exp_id = exploration_dataset.all_trajectory_ids[i]
             state_index = state_indices[i]
             pre_timestep = dataset.get_timestep(state_index)
-            
+
             original_trajectory = dataset.get_trajectory(pre_timestep.trajectory_id)
             exp_trajectory = exploration_dataset.get_trajectory(exp_id)
             cf_trajectory = counterfactual_dataset.get_trajectory(cf_id)
@@ -118,9 +126,10 @@ def select_states(args):
             write_video(franken_video, new_trajectory_file, img_shape)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
+    parser.add_argument('--env', type=str, required=True, help='name of the environment')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
@@ -128,3 +137,7 @@ if __name__ == "__main__":
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     args = parser.parse_args()
     select_states(args)
+
+
+if __name__ == "__main__":
+    main()

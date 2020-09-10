@@ -1,19 +1,23 @@
-import gym
-import gym_minigrid
+import copy
 import random
 
+import gym
+import gym_minigrid
+from gym_minigrid.envs import MiniGridEnv, FourRoomsEnv
 from ray.tune.registry import register_env
+
+from envs.save import SimulatorStateWrapper
 
 ENV_IDS = [
     'MiniGrid-FourRooms-v0',
 ]
 
 
-class SmallFourRoomsEnv(gym_minigrid.envs.FourRoomsEnv):
+class SmallFourRoomsEnv(FourRoomsEnv):
     def __init__(self, agent_pos=None, goal_pos=None, grid_size=9, max_steps=100):
         self._agent_default_pos = agent_pos
         self._goal_default_pos = goal_pos
-        gym_minigrid.envs.MiniGridEnv.__init__(self, grid_size=grid_size, max_steps=max_steps)
+        MiniGridEnv.__init__(self, grid_size=grid_size, max_steps=max_steps)
 
 
 class MiniGridObservationWrapper(gym.ObservationWrapper):
@@ -39,6 +43,21 @@ class MiniGridActionWrapper(gym.ActionWrapper):
         return action
 
 
+class MiniGridSimulatorStateWrapper(SimulatorStateWrapper):
+    def get_simulator_state(self) -> MiniGridEnv:
+        return copy.deepcopy(self.env)
+
+    def load_simulator_state(self, state: MiniGridEnv) -> bool:
+        try:
+            self.env = None
+            self.env = copy.deepcopy(state)
+            success = True
+        except Exception as e:
+            print(e)
+            success = False
+        return success
+
+
 def env_creator(**kwargs):
     env = SmallFourRoomsEnv(
         agent_pos=kwargs.get('agent_pos', (2, 2)),
@@ -46,6 +65,7 @@ def env_creator(**kwargs):
         grid_size=kwargs.get('grid_size', 9),
         max_steps=kwargs.get('max_steps', 100),
     )
+    env = MiniGridSimulatorStateWrapper(env)
     env = gym_minigrid.wrappers.FullyObsWrapper(env)
     env = MiniGridObservationWrapper(env)
     env = MiniGridActionWrapper(env)
@@ -53,7 +73,7 @@ def env_creator(**kwargs):
     return env
 
 
-def register(**kwargs):
+def register():
     for env_name in ENV_IDS:
         def f(env_config):
             env_config['env_name'] = env_name

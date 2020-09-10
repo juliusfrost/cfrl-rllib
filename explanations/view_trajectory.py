@@ -9,8 +9,6 @@ from explanations.data import Data
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
 register()
-from envs.driving import register as registerD
-registerD()
 
 
 def write_video(frames, filename, image_shape, fps=5):
@@ -50,7 +48,7 @@ def select_states(args):
             write_video(imgs, full_file, img_shape)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
@@ -59,3 +57,7 @@ if __name__ == "__main__":
                         choices=['critical', 'random', 'low_reward'], default='critical')
     args = parser.parse_args()
     select_states(args)
+
+
+if __name__ == "__main__":
+    main()
