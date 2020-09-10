@@ -53,7 +53,7 @@ def env_creator(**kwargs):
     return env
 
 
-def register(**kwargs):
+def register():
     for env_name in ENV_IDS:
         def f(env_config):
             env_config['env_name'] = env_name

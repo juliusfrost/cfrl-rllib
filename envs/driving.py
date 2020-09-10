@@ -17,14 +17,17 @@ def env_creator(**kwargs):
     return env
 
 
-def register(**kwargs):
-    switch_prob = kwargs.get('switch_prob', 0.0)
-    switch_duration = kwargs.get('switch_duration', 50)
-    env_name = 'DrivingAccPLE-v0'
-    env_func = lambda _: env_creator(game_name="Driving", action_dim=2, switch_prob=switch_prob,
-                                     swtich_duration=switch_duration)
-    register_env(env_name, env_func)
+def register():
 
-    env_name = 'DrivingPLE-v0'
-    env_func = lambda _: env_creator(game_name="Driving")
-    register_env(env_name, env_func)
+    def driving_acc_env_factory(env_config):
+        env_creator(game_name="Driving",
+                    action_dim=env_config.get('action_dim', 2),
+                    switch_prob=env_config.get('switch_prob', 50),
+                    switch_duration=env_config.get('switch_duration', 50))
+
+    register_env('DrivingAccPLE-v0', driving_acc_env_factory)
+
+    def driving_env_factory(env_config):
+        return env_creator(game_name="Driving")
+
+    register_env('DrivingPLE-v0', driving_env_factory)
