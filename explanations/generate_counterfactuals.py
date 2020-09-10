@@ -119,7 +119,7 @@ def select_states(args):
             write_video(franken_video, new_trajectory_file, img_shape)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
@@ -129,3 +129,7 @@ if __name__ == "__main__":
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     args = parser.parse_args()
     select_states(args)
+
+
+if __name__ == "__main__":
+    main()

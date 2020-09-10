@@ -78,6 +78,7 @@ def run(args, parser):
                 args.no_render, video_dir)
     return agent.get_policy(), config
 
+
 class RolloutSaver:
     """Utility class for storing rollouts.
     Currently supports two behaviours: the original, which
@@ -197,6 +198,7 @@ class RolloutSaver:
                     [obs, action, next_obs, reward, done, simulator_state])
         self._total_steps += 1
 
+
 def rollout(agent,
             env_name,
             num_steps,
@@ -315,12 +317,12 @@ def rollout(agent,
 
 
 def rollout_env(agent,
-            env,
-            handoff_func,
-            obs,
-            saver=None,
-            no_render=True,
-            video_dir=None):
+                env,
+                handoff_func,
+                obs,
+                saver=None,
+                no_render=True,
+                video_dir=None):
     policy_agent_mapping = default_policy_agent_mapping
 
     if saver is None:

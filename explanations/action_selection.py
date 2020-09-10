@@ -17,6 +17,7 @@ def user_action(observation, user, **kwargs):
 
 Policy = namedtuple("Policy", "action_space")
 
+
 class RandomAgent:
     def __init__(self, action_space):
         self.action_space = action_space
@@ -31,11 +32,15 @@ def constant_generator(n_timesteps):
         yield False
     yield True
 
+
 def make_handoff_func(n_timesteps):
     gen = constant_generator(n_timesteps)
+
     def handoff(state, action):
         return next(gen)
+
     return handoff
+
 
 def until_end_handoff(state, action):
     return False

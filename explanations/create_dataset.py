@@ -1,23 +1,13 @@
-import argparse
-import copy
 import pickle
-import os
 import uuid
 
-import ray
 from ray.rllib.rollout import create_parser
-from rollout import rollout, run
 
-import sys
-sys.path.append('/Users/ericweiner/Documents/cfrl-rllib/')
-# print(sys.path)
-
-from data import Data, PolicyInfo
 from envs import register
-from envs.driving import register as registerD
+from explanations.data import Data, PolicyInfo
+from explanations.rollout import run
 
 register()
-registerD()
 
 
 # Example usage
@@ -82,7 +72,7 @@ def create_dataset(args, policy_config):
     return dataset
 
 
-if __name__ == "__main__":
+def main():
     # Load arguments
     parser = create_parser()
     args = parser.parse_args()
@@ -92,3 +82,7 @@ if __name__ == "__main__":
 
     # Save them in a dataset
     create_dataset(args, policy_config)
+
+
+if __name__ == "__main__":
+    main()
