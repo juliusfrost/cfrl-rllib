@@ -1,10 +1,11 @@
-import pickle as pkl
-import os
-import numpy as npy
 import argparse
-from state_selection import random_state, critical_state, low_reward_state
+import os
+import pickle as pkl
+
 from matplotlib import pyplot as plt
+
 from envs import register
+from explanations.state_selection import random_state, critical_state, low_reward_state
 
 register()
 
@@ -32,7 +33,7 @@ def select_states(args):
             plt.savefig(args.save_name + f"/state{i}.png")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_dir', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--num_states', type=int, default=10, help='Number of states to select.')
@@ -41,3 +42,7 @@ if __name__ == "__main__":
                         choices=['critical', 'random', 'low_reward'], default='critical')
     args = parser.parse_args()
     select_states(args)
+
+
+if __name__ == "__main__":
+    main()

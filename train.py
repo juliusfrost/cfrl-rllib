@@ -201,7 +201,9 @@ def run(args, parser):
         register()
     if any('Driving' in setting['config']['env'] for setting in experiments.values()):
         from envs.driving import register
-        register()
+        for setting in experiments.values():
+            if 'config' in setting.keys():
+                register(**setting['config']['env_config'])
 
 
     print('\nArguments:')

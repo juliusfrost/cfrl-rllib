@@ -12,7 +12,7 @@ register()
 
 
 def write_video(frames, filename, image_shape, fps=5):
-    fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(filename, fourcc, fps, image_shape)
     for img in frames:
         writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
@@ -39,14 +39,16 @@ def select_states(args):
             imgs = trajectory.image_observation_range
 
             img_shape = (imgs.shape[2], imgs.shape[1])
-            context_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_context.avi')
-            explanation_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_explanation.avi')
+            context_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_context.mp4')
+            explanation_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_explanation.mp4')
+            full_file = os.path.join(args.save_path, f'{trajectory.trajectory_id}_{i}_full.mp4')
 
             write_video(imgs[:split], context_file, img_shape)
             write_video(imgs[split:], explanation_file, img_shape)
+            write_video(imgs, full_file, img_shape)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
@@ -55,3 +57,7 @@ if __name__ == "__main__":
                         choices=['critical', 'random', 'low_reward'], default='critical')
     args = parser.parse_args()
     select_states(args)
+
+
+if __name__ == "__main__":
+    main()

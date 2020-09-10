@@ -5,6 +5,7 @@ import sys
 import pygame
 from envs.driving_env.pygamewrapper import PyGameWrapper
 
+
 class PLE(object):
     """
     ple.PLE(
@@ -418,4 +419,4 @@ class PLE(object):
         reward = self.game.getScore() - self.previous_score
         self.previous_score = self.game.getScore()
 
-        return reward
+        return reward + 5

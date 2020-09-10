@@ -50,8 +50,8 @@ class PyGameWrapper(object):
             "positive": 1.0,
             "negative": -1.0,
             "tick": 0,
-            "loss": 0, #-5.0,
-            "win": 0, #5.0
+            "loss": 0,  # -5.0,
+            "win": 0,  # 5.0
         }
 
     def _setup(self):

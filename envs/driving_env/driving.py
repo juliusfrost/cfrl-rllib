@@ -8,8 +8,12 @@ from pygame.constants import K_w, K_s, K_a, K_d
 
 from envs.driving_env.utils import percent_round_int
 from envs.driving_env.pygamewrapper import PyGameWrapper
-from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, get_car_states_from_ft, get_n_cpu_cars_from_ft
+from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, \
+    get_car_states_from_ft, get_n_cpu_cars_from_ft
 from envs.driving_env.driving_car import Car, Backdrop
+
+import random
+import copy
 
 FILEDIR = osp.dirname(osp.realpath(__file__))
 
@@ -80,7 +84,8 @@ def add_car_top(dt, robot_car, cars, img, speed_limit, speed_min, ydiff, rng, **
         return None
 
     chance_appear = 1 - (1 - prob_car) ** dt  # Insert a new car with this probability
-    if rng.random_sample() > chance_appear:
+    x = rng.random_sample()
+    if x > chance_appear:
         return None
 
     lane_idx = rng.randint(len(lane_centers))
@@ -123,7 +128,7 @@ class Driving(PyGameWrapper, gym.Env):
                  MAX_SCORE=1,
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
                  add_car_fn=add_car_top, COLLISION_PENALTY=-100., n_noops=230,
-                 default_dt=30, prob_car=50, **kwargs):
+                 default_dt=30, prob_car=50, time_reward=True, time_limit=500, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -141,12 +146,16 @@ class Driving(PyGameWrapper, gym.Env):
         self.get_reward_ft_fn = reward_ft_fn
         self.add_car_fn = add_car_fn
         self.theta = theta
+        self.time_reward = time_reward
+        self.time_limit = time_limit
 
         self.images = None  # Load in init(), after game screen is created
         self.backdrop = None  # Load in init()
         self.agent_img = "robot_car.png"
         if "agent_img" in kwargs:
             self.agent_img = kwargs["agent_img"]
+
+        self.switch_prob = kwargs.get('switch_prob', 0.0)
 
         # Define environment visualization constants
         n_lanes = 3
@@ -196,6 +205,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.noop = np.array([0.0, 0.0])
         self.action_to_take = np.array(self.noop)
         self.COLLISION_PENALTY = COLLISION_PENALTY
+        self.time_steps = 0
 
     def _handle_player_events(self):
         self.dy = 0
@@ -239,13 +249,19 @@ class Driving(PyGameWrapper, gym.Env):
         """
         return self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
 
-    def setGameState(self, state):
+    def getGameStateSave(self):
+        obs_state = self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
+        return obs_state, self.time_steps, copy.deepcopy(self.rng)
+
+    def setGameState(self, state, time_steps, rng):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
         self.score_sum = 0.0  # reset cumulative reward
         self.n_crashes = 0
 
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
+        self.time_steps = time_steps
+        self.rng = copy.deepcopy(rng)
         self.agent_car = robot_car_from_state(self, robot_state)
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
@@ -286,7 +302,7 @@ class Driving(PyGameWrapper, gym.Env):
 
     def game_over(self):
         # Game is over if the player crashes
-        return self.crashed()
+        return self.crashed() or self.time_steps >= self.time_limit
         # return (self.n_crashes >= self.MAX_SCORE)
 
     def init(self):
@@ -311,6 +327,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.action_to_take = np.array(self.noop)
         for _ in range(self.n_noops):  # To get to more interesting position in game
             self.step(self.default_dt, add_reward=False)
+        self.time_steps = 0
 
     def reset(self):
         self.init()
@@ -333,6 +350,9 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
+            should_switch = not car.switch_duration_remaining > 0 and random.random() < self.switch_prob
+            if should_switch:
+                car.start_switch_lane(**self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
             if out_of_bound(car, self.ydiff, **self.constants):
                 self.cpu_cars.remove(car)
@@ -345,18 +365,18 @@ class Driving(PyGameWrapper, gym.Env):
             if not self.n_crashes >= self.MAX_SCORE:
                 self.reset()
         elif add_reward:
-            reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
-                                              self.action_to_take,
-                                              **self.constants)
-            self.score_sum += np.dot(self.theta, reward_ft)
-            # print("reward_ft:", reward_ft)
-            # print("state:", self.agent_car.state)
-            # print("reward:", np.dot(self.theta, reward_ft))
-            # print("score_sum:", self.score_sum)
+            if self.time_reward:
+                self.score_sum += 1
+            else:
+                reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
+                                                  self.action_to_take,
+                                                  **self.constants)
+                self.score_sum += np.dot(self.theta, reward_ft)
 
         self.backdrop.update(self.ydiff)
         self.backdrop.draw_background(self.screen)
         self.cars_group.draw(self.screen)
+        self.time_steps += 1
 
     def getSamplerKeys(self):
         """

@@ -1,13 +1,17 @@
-minigrid-a2c:
+driving-a2c:
     run: A2C
     config:
         rollout_fragment_length: 20
-        num_workers: 5
+        num_workers: 0
         num_envs_per_worker: 5
         num_gpus: 1
         lr_schedule: [
             [0, 0.0007],
             [20000000, 0.000000000001],
         ]
-        env: DrivingPLE-v0
+        env:  DrivingPLE-v0
+        env_config:
+            switch_prob: 0.0
+            switch_duration: 50
         evaluation_interval: 1
+        entropy_coeff: 0.03
