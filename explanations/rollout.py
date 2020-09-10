@@ -384,7 +384,7 @@ def rollout_env(agent,
             img = env.render(mode="rgb_array")
         else:
             img = None
-        saver.append_step(obs, action, img, reward, done, info, env.game_state.game.getGameStateSave())
+        saver.append_step(obs, action, img, reward, done, info, env.get_simulator_state())
         obs = next_obs
     saver.end_rollout()
     return env, obs, env_done

@@ -5,9 +5,9 @@ from collections import namedtuple
 
 import cv2
 import numpy as np
+from ray.tune.registry import _global_registry, ENV_CREATOR
 
 from envs import register
-from envs.driving import env_creator
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
@@ -15,6 +15,10 @@ from explanations.rollout import RolloutSaver, rollout_env
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
 register()
+
+
+def get_env_creator(env_name):
+    return _global_registry.get(ENV_CREATOR, env_name)
 
 
 def write_video(frames, filename, image_shape, fps=5):
@@ -59,7 +63,10 @@ def select_states(args):
                                       checkpoint=1)
     counterfactual_policy_config = {}
 
-    env = env_creator()
+    env_creator = get_env_creator(args.env)
+    # TODO: add way to pass env config from arguments
+    env_config = {}
+    env = env_creator(env_config)
     env.reset()
     cf_to_exp_index = {}
     cf_count = 0
@@ -70,7 +77,7 @@ def select_states(args):
             timestep = dataset.get_timestep(i)
             simulator_state = timestep.simulator_state
             obs = timestep.observation
-            env.game_state.game.setGameState(*simulator_state)
+            env.load_simulator_state(simulator_state)
             random_agent = RandomAgent(env.action_space)
             handoff_func = make_handoff_func(args.timesteps)
 
@@ -122,6 +129,7 @@ def select_states(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
+    parser.add_argument('--env', type=str, required=True, help='name of the environment')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
