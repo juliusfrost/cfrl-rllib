@@ -116,6 +116,11 @@ def select_states(args):
             exploration_file = os.path.join(args.save_path, f'{cf_id}_exp.mp4')
             cf_explanation_file = os.path.join(args.save_path, f'{cf_id}_cf.mp4')
 
+            cf_window_explanation_file = os.path.join(args.save_path,
+                                                      f'{cf_id}_{args.window_len}_window_cf_explanation.mp4')
+            baseline_window_explanation_file = os.path.join(args.save_path,
+                                                            f'{cf_id}_{args.window_len}_window_baseline_explanation.mp4')
+
             split = state_index - original_trajectory.timestep_range_start
 
             write_video(original_imgs, old_trajectory_file, img_shape)
@@ -124,6 +129,12 @@ def select_states(args):
             write_video(cf_imgs, cf_explanation_file, img_shape)
             franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
             write_video(franken_video, new_trajectory_file, img_shape)
+            cf_window_video = franken_video[
+                              max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
+            write_video(cf_window_video, cf_window_explanation_file, img_shape)
+            baseline_window_video = original_imgs[
+                                    max(0, split - args.window_len):min(len(original_imgs), split + args.window_len)]
+            write_video(baseline_window_video, baseline_window_explanation_file, img_shape)
 
 
 def main():
@@ -132,6 +143,7 @@ def main():
     parser.add_argument('--env', type=str, required=True, help='name of the environment')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
+    parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
