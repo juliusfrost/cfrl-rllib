@@ -37,10 +37,10 @@ def env_creator(**kwargs):
 
 def register():
     def driving_acc_env_factory(env_config):
-        env_creator(game_name="Driving",
-                    action_dim=env_config.get('action_dim', 2),
-                    switch_prob=env_config.get('switch_prob', 50),
-                    switch_duration=env_config.get('switch_duration', 50))
+        return env_creator(game_name="Driving",
+                           action_dim=env_config.get('action_dim', 2),
+                           switch_prob=env_config.get('switch_prob', 50),
+                           switch_duration=env_config.get('switch_duration', 50))
 
     register_env('DrivingAccPLE-v0', driving_acc_env_factory)
 
