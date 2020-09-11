@@ -42,9 +42,4 @@ def register():
                            switch_prob=env_config.get('switch_prob', 50),
                            switch_duration=env_config.get('switch_duration', 50))
 
-    register_env('DrivingAccPLE-v0', driving_acc_env_factory)
-
-    def driving_env_factory(env_config):
-        return env_creator(game_name="Driving")
-
-    register_env('DrivingPLE-v0', driving_env_factory)
+    register_env('DrivingPLE-v0', driving_acc_env_factory)
