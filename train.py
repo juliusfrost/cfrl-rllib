@@ -15,6 +15,9 @@ from ray.tune.resources import resources_to_json
 from ray.tune.tune import _make_scheduler, run_experiments
 from ray.tune.utils import merge_dicts
 
+import envs
+envs.register()
+
 # Try to import both backends for flag checking/warnings.
 # tf1, tf, tfv = try_import_tf()
 torch, _ = try_import_torch()
@@ -195,16 +198,6 @@ def run(args, parser):
         # overwrite the settings from arguments with those in the experiment config file
         settings = merge_dicts(settings_from_args, experiment_settings)
         experiments.update({experiment_name + args.experiment_name: settings})
-
-    if any('MiniGrid' in setting['config']['env'] for setting in experiments.values()):
-        from envs.minigrid import register
-        register()
-    if any('Driving' in setting['config']['env'] for setting in experiments.values()):
-        from envs.driving import register
-        for setting in experiments.values():
-            if 'config' in setting.keys():
-                register(**setting['config']['env_config'])
-
 
     print('\nArguments:')
     pprint.pprint(args)
