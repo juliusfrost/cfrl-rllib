@@ -22,12 +22,9 @@ while not done:
     if 's' in a:
         action[1] -= 1
     if 'v' in a:
-        seed = np.random.randint(1e8)
-        np.random.seed(seed)
-        saved_state = env.game_state.game.getGameState()
+        saved_state, time_steps, sp, rng = env.game_state.game.getGameStateSave()
     if 'r' in a:
-        np.random.seed(seed)
-        env.game_state.game.setGameState(saved_state)
+        env.game_state.game.setGameState(saved_state, time_steps, sp, rng)
     _, _, done, _ = env.step(action)
     env.render()
 
