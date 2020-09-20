@@ -8,7 +8,7 @@ from pygame.constants import K_w, K_s, K_a, K_d
 
 from envs.driving_env.utils import percent_round_int
 from envs.driving_env.pygamewrapper import PyGameWrapper
-from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, \
+from envs.driving_env.driving_ft import get_state_ft, get_state_save_ft, get_reward_ft, out_of_bound, collision_exists, \
     get_car_states_from_ft, get_n_cpu_cars_from_ft
 from envs.driving_env.driving_car import Car, Backdrop
 
@@ -250,15 +250,14 @@ class Driving(PyGameWrapper, gym.Env):
         return self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
 
     def getGameStateSave(self):
-        obs_state = self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
-        return obs_state, self.time_steps, copy.deepcopy(self.rng)
+        obs_state = get_state_save_ft(self.agent_car, self.cpu_cars, **self.constants)
+        return obs_state, self.time_steps, self.switch_prob, copy.deepcopy(self.rng)
 
-    def setGameState(self, state, time_steps, rng):
+    def setGameState(self, state, time_steps, switch_prob, rng):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
         self.score_sum = 0.0  # reset cumulative reward
         self.n_crashes = 0
-
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
         self.time_steps = time_steps
         self.rng = copy.deepcopy(rng)
@@ -278,6 +277,7 @@ class Driving(PyGameWrapper, gym.Env):
 
             self.cpu_cars.append(car)
             self.cars_group.add(car)
+        print("Load: ", len(self.cpu_cars))
 
     def getScore(self):
         return self.score_sum

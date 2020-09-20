@@ -20,10 +20,10 @@ register()
 def get_env_creator(env_name):
     return _global_registry.get(ENV_CREATOR, env_name)
 
-
 def write_video(frames, filename, image_shape, fps=5):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(filename, fourcc, fps, image_shape)
+    # frames = add_text(frames, None)
     for img in frames:
         writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
@@ -106,9 +106,10 @@ def select_states(args):
             exp_trajectory = exploration_dataset.get_trajectory(exp_id)
             cf_trajectory = counterfactual_dataset.get_trajectory(cf_id)
             original_imgs = original_trajectory.image_observation_range
+            original_imgs = original_imgs
             exp_imgs = exp_trajectory.image_observation_range
             cf_imgs = cf_trajectory.image_observation_range
-            img_shape = (exp_imgs.shape[2], exp_imgs.shape[1])
+            img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
             pre_trajectory_file = os.path.join(args.save_path, f'{cf_id}_pre_old.mp4')
             old_trajectory_file = os.path.join(args.save_path, f'{cf_id}_full_old.mp4')
@@ -127,7 +128,10 @@ def select_states(args):
             write_video(original_imgs[:split], pre_trajectory_file, img_shape)
             write_video(exp_imgs, exploration_file, img_shape)
             write_video(cf_imgs, cf_explanation_file, img_shape)
-            franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
+            if split > 0:
+                franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
+            else:
+                franken_video = np.concatenate((exp_imgs, cf_imgs))
             write_video(franken_video, new_trajectory_file, img_shape)
             cf_window_video = franken_video[
                               max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
