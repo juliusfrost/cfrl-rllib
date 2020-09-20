@@ -3,9 +3,6 @@ import os
 import pickle as pkl
 from collections import namedtuple
 
-import sys
-sys.path.append('/Users/ericweiner/Documents/cfrl-rllib')
-
 import cv2
 import numpy as np
 from ray.tune.registry import _global_registry, ENV_CREATOR
@@ -162,7 +159,10 @@ def select_states(args):
             write_video(original_imgs[:split], pre_trajectory_file, img_shape)
             write_video(exp_imgs, exploration_file, img_shape)
             write_video(cf_imgs, cf_explanation_file, img_shape)
-            franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
+            if split > 0:
+                franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
+            else:
+                franken_video = np.concatenate((exp_imgs, cf_imgs))
             write_video(franken_video, new_trajectory_file, img_shape)
             cf_window_video = franken_video[
                               max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
