@@ -24,12 +24,6 @@ def parse_args():
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/script.projects']
 
-SAMPLE_CODE = '''
-function helloWorld() {
-  console.log("Hello, world!");
-}
-'''.strip()
-
 SAMPLE_MANIFEST = '''
 {
   "timeZone": "America/New_York",
@@ -52,15 +46,16 @@ def build_requests(gs_text: dict):
     request = {'files': []}
     for name, text in gs_text.items():
         file_req = {
-                       'name': name,
-                       'type': 'SERVER_JS',
-                       'source': text
-                   }, {
-                       'name': 'appsscript',
-                       'type': 'JSON',
-                       'source': SAMPLE_MANIFEST
-                   }
+            'name': name,
+            'type': 'SERVER_JS',
+            'source': text
+        }
         request['files'].append(file_req)
+    request['files'].append({
+        'name': 'appsscript',
+        'type': 'JSON',
+        'source': SAMPLE_MANIFEST
+    })
     return request
 
 
@@ -104,17 +99,6 @@ def main():
     try:
         # Upload two files to the project
         request = build_requests(load_gs_from_folder(args.app_script_dir))
-        # request = {
-        #     'files': [{
-        #         'name': 'hello',
-        #         'type': 'SERVER_JS',
-        #         'source': SAMPLE_CODE
-        #     }, {
-        #         'name': 'appsscript',
-        #         'type': 'JSON',
-        #         'source': SAMPLE_MANIFEST
-        #     }]
-        # }
         response = service.projects().updateContent(
             body=request,
             scriptId=response['scriptId']).execute()
