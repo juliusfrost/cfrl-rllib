@@ -11,10 +11,13 @@ from googleapiclient.discovery import build
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--video-dir', default='videos')
-    parser.add_argument('--app-script-dir', default='forms')
-    parser.add_argument('--token-file', default='token.pickle')
-    parser.add_argument('--project-name', default='cfrl')
+    parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')
+    parser.add_argument('--app-script-dir', default='forms', help='directory for the app script gs files')
+    parser.add_argument('--token-file', default='token.pickle', help='file to save authentication credentials')
+    parser.add_argument('--project-name', default='cfrl', help='name of the app script project')
+    parser.add_argument('--script-id', default=None, type=str,
+                        help='ID of the app script. '
+                             'You can find this in the google drive url.')
     args = parser.parse_args()
     if not os.path.exists(args.video_dir):
         raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
@@ -88,20 +91,23 @@ def main():
     service = build('script', 'v1', credentials=creds)
 
     # Call the Apps Script API
-    try:
-        # Create a new project
-        request = {'title': args.project_name}
-        response = service.projects().create(body=request).execute()
-    except errors.HttpError as error:
-        # The API encountered a problem.
-        print(error.content)
+    script_id = args.script_id
+    if script_id is None:
+        try:
+            # Create a new project
+            request = {'title': args.project_name}
+            response = service.projects().create(body=request).execute()
+            script_id = response['scriptId']
+        except errors.HttpError as error:
+            # The API encountered a problem.
+            print(error.content)
 
     try:
         # Upload two files to the project
         request = build_requests(load_gs_from_folder(args.app_script_dir))
         response = service.projects().updateContent(
             body=request,
-            scriptId=response['scriptId']).execute()
+            scriptId=script_id).execute()
         print('https://script.google.com/d/' + response['scriptId'] + '/edit')
     except errors.HttpError as error:
         # The API encountered a problem.
