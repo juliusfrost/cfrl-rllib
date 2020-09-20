@@ -157,6 +157,50 @@ def get_game_state_ft(robot_car, other_cars, **kwargs):
 
     return ft_dict
 
+def get_game_state_to_save_ft(robot_car, other_cars, **kwargs):
+    # Required for setting game state, in game.setGameStateSave
+    # Is different in that it saves all cpu cars, not dummy cars...
+    # Consists of the following:
+    #     state of robot car: x, y, heading, velocity
+    #     state of each cpu car: x, y, heading, velocity
+    #                            (x and y are offsets from robot car's)
+    #
+    # Note that ydiff is first subtracted from all y positions (because in
+    # setGameState, ydiff is assumed to be zero)
+    #
+    ydiff = robot_car.ydiff
+    drivable_width = kwargs["drivable_width"]
+    drivable_height = kwargs["drivable_height"]
+    speed_max = kwargs["speed_max"]
+    heading_max = kwargs["heading_max"]
+    road_bounds = kwargs["road_bounds"]
+
+    ft_dict = {}
+    ft_dict["agent_x"] = (robot_car.x - road_bounds[0]) / drivable_width
+    ft_dict["agent_y"] = (robot_car.y - ydiff) / drivable_height
+    ft_dict["agent_h"] = robot_car.heading / heading_max
+    ft_dict["agent_v"] = robot_car.speed / speed_max
+
+    cpu_cars = other_cars
+    for i, car in enumerate(cpu_cars):
+        # ft_dict["cpu"+str(i+1)+"_x"] = (car.x - road_bounds[0]) / drivable_width
+        # ft_dict["cpu"+str(i+1)+"_y"] = (car.y - ydiff) / drivable_height
+        ft_dict["cpu" + str(i + 1) + "_x"] = (car.x - robot_car.x) / (2 * drivable_width) + 0.5
+        ft_dict["cpu" + str(i + 1) + "_y"] = (car.y - robot_car.y) / (2 * drivable_height) + 0.5
+        ft_dict["cpu" + str(i + 1) + "_h"] = car.heading / heading_max
+        ft_dict["cpu" + str(i + 1) + "_v"] = car.speed / speed_max
+        ft_dict["cpu" + str(i + 1) + "_switch_duration"] = car.switch_duration
+        if hasattr(car, "dummy") and car.dummy:
+            # ft_dict["cpu"+str(i+1)+"_x"] = 0
+            # ft_dict["cpu"+str(i+1)+"_y"] = 0
+            # ft_dict["cpu"+str(i+1)+"_h"] = 0
+            # ft_dict["cpu"+str(i+1)+"_v"] = 0
+            ft_dict["cpu" + str(i + 1) + "_dummy"] = 1
+        else:
+            ft_dict["cpu" + str(i + 1) + "_dummy"] = 0
+
+    return ft_dict
+
 
 def get_state_ft(robot_car, other_cars, return_dist=True, **kwargs):
     lane_centers = kwargs["lane_centers"]
@@ -176,24 +220,29 @@ def get_state_ft(robot_car, other_cars, return_dist=True, **kwargs):
     n_ft += len(lane_ft)
     n_ft += len(speed_ft)
 
-    # for ratio in [4.0, 3.0, 2.0, 1.0, 1/2.0, 1/4.0]:
-    #    othercar_ft = get_othercar_ft(["front", "back"], s, s_other, True, \
-    #                                  car_height*ratio, return_dict=True, **kwargs)
-    #    othercar_ft_lr = get_othercar_ft(["left", "right"], s, s_other, True, \
-    #                                     car_height*ratio, shift=True, \
-    #                                     return_dict=True, **kwargs)
-    #    ft_dict.update(othercar_ft)
-    #    ft_dict.update(othercar_ft_lr)
-    #    n_ft += len(othercar_ft)
-    #    n_ft += len(othercar_ft_lr)
-
     assert len(ft_dict) == n_ft
 
-    # ft_vals = np.array(list(ft_dict.values()))
-    # if not (np.all(ft_vals <= 1.0) and np.all(ft_vals >= 0.0)):
-    #    import IPython as ipy
-    #    ipy.embed()
-    # assert np.all(ft_vals <= 1.0) and np.all(ft_vals >= 0.0)
+    return ft_dict
+
+def get_state_save_ft(robot_car, other_cars, return_dist=True, **kwargs):
+    lane_centers = kwargs["lane_centers"]
+    car_height = kwargs["car_height"]
+    s = robot_car.state
+    s_other = [car.state for car in other_cars]
+    ft_dict = {}
+    n_ft = 0
+    game_state_ft = get_game_state_to_save_ft(robot_car, other_cars, **kwargs)
+    ft_dict.update(game_state_ft)
+    n_ft += len(game_state_ft)
+
+    lane_ft = lane_indicator(s, lane_centers, return_dict=True)
+    speed_ft = speed_wrt_limit(s, robot_car.speed_limit, return_dict=True)
+    ft_dict.update(lane_ft)
+    ft_dict.update(speed_ft)
+    n_ft += len(lane_ft)
+    n_ft += len(speed_ft)
+
+    assert len(ft_dict) == n_ft
 
     return ft_dict
 

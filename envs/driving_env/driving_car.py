@@ -65,6 +65,8 @@ class Car(pygame.sprite.Sprite):
         self.switch_duration_remaining = 0
         self.switch_duration = kwargs.get('switch_duration', 50)
 
+        self.dummy = False
+
     @property
     def game_pos(self):
         x = int(round(self.x - self.width / 2))
