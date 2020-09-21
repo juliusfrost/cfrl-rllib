@@ -2,6 +2,7 @@ import argparse
 import os
 import pickle as pkl
 from collections import namedtuple
+import copy
 
 import cv2
 import numpy as np
@@ -36,25 +37,34 @@ def add_border(imgs, border_size=10, border_color=[255,255,255]):
         final_images.append(img_with_border)
     return final_images
 
-def add_text(images, trajectory_rewards):
+def add_text(images, traj_start, initial_reward, traj_rewards):
     final_images = []
     font = cv2.FONT_HERSHEY_SIMPLEX 
     org = (50, 50) 
+    rew_org = (50, 100)
     fontScale = 1
     color = (255, 0, 0) 
     thickness = 2
-    for i, image in enumerate(images):
-        new_image = cv2.putText(image, f'Timestep: {i}', org, font,  
+    cum_reward = initial_reward
+    for i, (image, reward) in enumerate(zip(images, traj_rewards)):
+        cum_reward += reward
+        new_image = cv2.putText(image, f'Timestep: {i + traj_start}', org, font,  
+                        fontScale, color, thickness, cv2.LINE_AA)
+        new_image = cv2.putText(new_image, f'Cumulative Reward: {cum_reward}', rew_org, font,  
                         fontScale, color, thickness, cv2.LINE_AA)
         final_images.append(new_image)
     return final_images
 
+def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=10, border_color=[255,255,255]):
+    final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward)
+    final_images = add_border(final_images, border_size, border_color)
+    return final_images
 
 
 def write_video(frames, filename, image_shape, fps=5):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(filename, fourcc, fps, image_shape)
-    frames = add_text(frames, None)
+    frames = copy.deepcopy(frames)
     for img in frames:
         writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
 
@@ -134,12 +144,28 @@ def select_states(args):
             pre_timestep = dataset.get_timestep(state_index)
 
             original_trajectory = dataset.get_trajectory(pre_timestep.trajectory_id)
+            split = state_index - original_trajectory.timestep_range_start
             exp_trajectory = exploration_dataset.get_trajectory(exp_id)
             cf_trajectory = counterfactual_dataset.get_trajectory(cf_id)
-            original_imgs = original_trajectory.image_observation_range
-            original_imgs = add_border(original_imgs, border_color=[255,255,255])
-            exp_imgs = add_border(exp_trajectory.image_observation_range, border_color=[255,0,255])
-            cf_imgs = add_border(cf_trajectory.image_observation_range, border_color=[0,255,0])
+            original_rewards = original_trajectory.reward_range
+            original_imgs = format_images(original_trajectory.image_observation_range,
+                                          start_timestep=0,
+                                          trajectory_reward=original_rewards,
+                                          initial_reward=0,
+                                          border_color=[255,255,255])
+            exp_rewards = exp_trajectory.reward_range
+            exp_rewards[0] = 10
+            exp_imgs = format_images(exp_trajectory.image_observation_range,
+                                     start_timestep=split, 
+                                     trajectory_reward=exp_rewards, 
+                                     initial_reward=original_rewards[:split].sum(),
+                                     border_color=[255,0,255])
+            cf_rewards = cf_trajectory.reward_range
+            cf_imgs = format_images(cf_trajectory.image_observation_range,
+                                     start_timestep=split + len(exp_imgs), 
+                                     trajectory_reward=cf_rewards, 
+                                     initial_reward=original_rewards[:split].sum() + exp_rewards.sum(),
+                                     border_color=[0,255,0])
             img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
             pre_trajectory_file = os.path.join(args.save_path, f'{cf_id}_pre_old.mp4')
@@ -153,7 +179,7 @@ def select_states(args):
             baseline_window_explanation_file = os.path.join(args.save_path,
                                                             f'{cf_id}_{args.window_len}_window_baseline_explanation.mp4')
 
-            split = state_index - original_trajectory.timestep_range_start
+            
 
             write_video(original_imgs, old_trajectory_file, img_shape)
             write_video(original_imgs[:split], pre_trajectory_file, img_shape)
