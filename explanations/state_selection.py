@@ -1,7 +1,6 @@
 """
 State selection methods
 Fill in necessary method parameters as needed
-TODO: Implement
 """
 import torch
 

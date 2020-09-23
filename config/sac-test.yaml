@@ -1,0 +1,12 @@
+sac-test:
+    run: SAC
+    config:
+        rollout_fragment_length: 20
+        num_workers: 3
+        num_envs_per_worker: 5
+        checkpoint-freq: 100
+        #num_gpus: 1
+        lr_schedule: [
+            [0, 0.0007],
+            [20000000, 0.000000000001],
+        ]

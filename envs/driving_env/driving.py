@@ -8,8 +8,12 @@ from pygame.constants import K_w, K_s, K_a, K_d
 
 from envs.driving_env.utils import percent_round_int
 from envs.driving_env.pygamewrapper import PyGameWrapper
-from envs.driving_env.driving_ft import get_state_ft, get_reward_ft, out_of_bound, collision_exists, get_car_states_from_ft, get_n_cpu_cars_from_ft
+from envs.driving_env.driving_ft import get_state_ft, get_state_save_ft, get_reward_ft, out_of_bound, collision_exists, \
+    get_car_states_from_ft, get_n_cpu_cars_from_ft
 from envs.driving_env.driving_car import Car, Backdrop
+
+import random
+import copy
 
 FILEDIR = osp.dirname(osp.realpath(__file__))
 
@@ -80,7 +84,8 @@ def add_car_top(dt, robot_car, cars, img, speed_limit, speed_min, ydiff, rng, **
         return None
 
     chance_appear = 1 - (1 - prob_car) ** dt  # Insert a new car with this probability
-    if rng.random_sample() > chance_appear:
+    x = rng.random_sample()
+    if x > chance_appear:
         return None
 
     lane_idx = rng.randint(len(lane_centers))
@@ -150,6 +155,8 @@ class Driving(PyGameWrapper, gym.Env):
         self.agent_img = "robot_car.png"
         if "agent_img" in kwargs:
             self.agent_img = kwargs["agent_img"]
+
+        self.switch_prob = kwargs.get('switch_prob', 0.0)
 
         # Define environment visualization constants
         n_lanes = 3
@@ -243,13 +250,18 @@ class Driving(PyGameWrapper, gym.Env):
         """
         return self.get_game_state_fn(self.agent_car, self.cpu_cars, **self.constants)
 
-    def setGameState(self, state):
+    def getGameStateSave(self):
+        obs_state = get_state_save_ft(self.agent_car, self.cpu_cars, **self.constants)
+        return obs_state, self.time_steps, self.switch_prob, copy.deepcopy(self.rng)
+
+    def setGameState(self, state, time_steps, switch_prob, rng):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
         self.score_sum = 0.0  # reset cumulative reward
         self.n_crashes = 0
-
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
+        self.time_steps = time_steps
+        self.rng = copy.deepcopy(rng)
         self.agent_car = robot_car_from_state(self, robot_state)
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
@@ -266,6 +278,7 @@ class Driving(PyGameWrapper, gym.Env):
 
             self.cpu_cars.append(car)
             self.cars_group.add(car)
+        print("Load: ", len(self.cpu_cars))
 
     def getScore(self):
         return self.score_sum
@@ -338,6 +351,9 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
+            should_switch = not car.switch_duration_remaining > 0 and random.random() < self.switch_prob
+            if should_switch:
+                car.start_switch_lane(**self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
             if out_of_bound(car, self.ydiff, **self.constants):
                 self.cpu_cars.remove(car)

@@ -1,8 +1,5 @@
 """
 The Data Framework
-
-There is a lot to detail here.
-TODO: Implement
 """
 import numpy as np
 import ray
@@ -28,6 +25,7 @@ class Data:
     all_policy_states
     all_simulator_states
     """
+
     def __init__(self,
                  all_time_steps=(),
                  all_policy_infos=(),
@@ -39,11 +37,12 @@ class Data:
                  all_dones=(),
                  all_policy_states=(),
                  all_simulator_states=(),
-                 policy=None, # TODO: it's probably better to have an index for each timestep in case diff policies were used in the same dataset
+                 policy=None,
+                 # TODO: it's probably better to have an index for each timestep in case diff policies were used in the same dataset
                  ):
         self.all_time_steps = np.array(all_time_steps)
         self.all_policy_infos = np.array(all_policy_infos)
-        self.all_trajectories = np.array(all_trajectories) # Trajectory Id for each timestep
+        self.all_trajectories = np.array(all_trajectories)  # Trajectory Id for each timestep
         self.all_observations = np.array(all_observations)
         self.all_image_observations = np.array(all_image_observations)
         self.all_actions = np.array(all_actions)
@@ -57,7 +56,6 @@ class Data:
     def get_trajectory(self, trajectory_id):
         timesteps = [timestep for timestep, traj in enumerate(self.all_trajectories) if traj == trajectory_id]
         return Trajectory(self, trajectory_id, timesteps[0], timesteps[-1] + 1)
-
 
     def get_timestep(self, time_step_id):
         trajectory_id = self.all_trajectories[time_step_id]
@@ -87,6 +85,7 @@ class Trajectory:
     policy_state_range
     simulation_state_range
     """
+
     # TODO: add in policy ID and stuff
     def __init__(self, data, trajectory_id, range_start, range_end):
         self.data = data
@@ -127,11 +126,11 @@ class Trajectory:
         return self.data.all_observations[self.timestep_range_start + 1:self.timestep_range_end + 1]
 
     @property
-    def prev_action_range(self) -> np.ndarray: # TODO: deal with edge cases
+    def prev_action_range(self) -> np.ndarray:  # TODO: deal with edge cases
         return self.data.all_actions[self.timestep_range_start - 1:self.timestep_range_end - 1]
 
     @property
-    def prev_reward_range(self) -> np.ndarray: # TODO: deal with edge cases
+    def prev_reward_range(self) -> np.ndarray:  # TODO: deal with edge cases
         return self.data.all_rewards[self.timestep_range_start - 1:self.timestep_range_end - 1]
 
     @property
@@ -174,7 +173,9 @@ class TimeStep:
     for an example see self.observation below
     we use the @property keyword that only references the data when called and does not explicitly store anything
     """
-    def __init__(self, data, time_step_id, trajectory_id): # TODO: should we be interacting with the trajectory more? Seems weird we can get next_ob from a different trajectory
+
+    def __init__(self, data, time_step_id,
+                 trajectory_id):  # TODO: should we be interacting with the trajectory more? Seems weird we can get next_ob from a different trajectory
         self.data = data
         self.time_step_id = time_step_id
         self.trajectory_id = trajectory_id
@@ -235,6 +236,7 @@ class PolicyInfo:
     policy_initialization: information about how to initialize the policy, from weights and hidden_state
     policy_weights: pointer to policy weights
     """
+
     def __init__(self, id, policy_info):
         self.id = id
         self.policy_info = policy_info
