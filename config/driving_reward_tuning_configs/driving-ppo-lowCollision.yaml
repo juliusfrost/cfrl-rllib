@@ -1,6 +1,7 @@
 driving-ppo:
     run: PPO
     config:
+        framework: torch
         lambda: 0.95
         kl_coeff: 0.5
         clip_rewards: True

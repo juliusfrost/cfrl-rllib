@@ -1,4 +1,5 @@
 driving-sac:
+    framework: torch
     run: SAC
     config:
         gamma: 0.99
@@ -39,3 +40,6 @@ driving-sac:
         env_config:
             switch_prob: 0.0
             switch_duration: 50
+            time_reward_proportion: 0
+            COLLISION_PENALTY: -100
+            normalize_reward: True
