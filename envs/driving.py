@@ -29,7 +29,10 @@ def env_creator(**kwargs):
         num_steps=NUM_STEPS,
         switch_prob=kwargs.get('switch_prob', 0.),
         switch_duration=kwargs.get('switch_duration', 50),
-        action_dim=kwargs.get('action_dim', 2)
+        action_dim=kwargs.get('action_dim', 2),
+        collision_penalty=kwargs.get('collision_penalty', -100),
+        time_reward_proportion=kwargs.get('time_reward_proportion', 1),
+        normalize_reward=kwargs.get('normalize_reward', True),
     )
     env = DrivingSimulatorStateWrapper(env)
     return env
@@ -40,6 +43,10 @@ def register():
         return env_creator(game_name="Driving",
                            action_dim=env_config.get('action_dim', 2),
                            switch_prob=env_config.get('switch_prob', 0.),
-                           switch_duration=env_config.get('switch_duration', 50))
+                           switch_duration=env_config.get('switch_duration', 50),
+                           collision_penalty=env_config.get('collision_penalty', -100),
+                           time_reward_proportion=env_config.get('time_reward_proportion', 1),
+                           normalize_reward=env_config.get('normalize_reward', True),
+                           )
 
     register_env('DrivingPLE-v0', driving_acc_env_factory)
