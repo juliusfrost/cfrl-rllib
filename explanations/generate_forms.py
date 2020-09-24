@@ -19,8 +19,8 @@ def parse_args():
                         help='ID of the app script. '
                              'You can find this in the google drive url.')
     args = parser.parse_args()
-    if not os.path.exists(args.video_dir):
-        raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
+    # if not os.path.exists(args.video_dir):
+    #     raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
     return args
 
 
@@ -62,6 +62,24 @@ def build_requests(gs_text: dict):
     return request
 
 
+def create_folder(drive_service, name='videos'):
+    file_metadata = {
+        'name': name,
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+    file = drive_service.files().create(body=file_metadata,
+                                        fields='id').execute()
+    return file
+
+
+def upload_videos(path, drive_service, folder_id):
+    if os.path.exists(path):
+        for video in os.listdir(path):
+            video_path = os.path.join(path, video)
+            file_metadata = {'name': video}
+            media = MediaFileUpload('files/photo.jpg', mimetype='image/jpeg')
+
+
 def main():
     """Calls the Apps Script API.
     """
@@ -88,7 +106,8 @@ def main():
         with open(token_file, 'wb') as token:
             pickle.dump(creds, token)
 
-    service = build('script', 'v1', credentials=creds)
+    script_service = build('script', 'v1', credentials=creds)
+    drive_service = build('drive', 'v3', credentials=creds)
 
     # Call the Apps Script API
     script_id = args.script_id
@@ -96,7 +115,7 @@ def main():
         try:
             # Create a new project
             request = {'title': args.project_name}
-            response = service.projects().create(body=request).execute()
+            response = script_service.projects().create(body=request).execute()
             script_id = response['scriptId']
         except errors.HttpError as error:
             # The API encountered a problem.
@@ -105,7 +124,7 @@ def main():
     try:
         # Upload two files to the project
         request = build_requests(load_gs_from_folder(args.app_script_dir))
-        response = service.projects().updateContent(
+        response = script_service.projects().updateContent(
             body=request,
             scriptId=script_id).execute()
         print('https://script.google.com/d/' + response['scriptId'] + '/edit')
