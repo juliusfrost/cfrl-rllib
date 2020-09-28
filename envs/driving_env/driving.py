@@ -364,7 +364,7 @@ class Driving(PyGameWrapper, gym.Env):
             if self.normalize_reward:
                 self.score_sum += 1
             else:
-                self.score_sum += self.COLLISION_PENALTY
+                self.score_sum += abs(self.COLLISION_PENALTY)
             self.n_crashes += 1
             # print("# crashes:", self.n_crashes)
             if not self.n_crashes >= self.MAX_SCORE:
@@ -378,7 +378,7 @@ class Driving(PyGameWrapper, gym.Env):
             position_reward = np.dot(self.theta, reward_ft)
             reward = self.time_reward_proportion * time_reward + (1 - self.time_reward_proportion) * position_reward
             if self.normalize_reward:
-                reward = reward / self.COLLISION_PENALTY
+                reward = reward / abs(self.COLLISION_PENALTY)
             self.score_sum += reward
 
         self.backdrop.update(self.ydiff)
