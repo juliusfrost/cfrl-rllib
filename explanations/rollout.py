@@ -307,7 +307,7 @@ def rollout(agent,
                 reward_total += reward
             if not no_render:
                 img = env.render(mode="rgb_array")
-            saver.append_step(obs, action, img, reward, done, info, env.game_state.game.getGameStateSave())
+            saver.append_step(obs, action, img, reward, done, info, env.get_simulator_state())
             steps += 1
             obs = next_obs
         saver.end_rollout()
