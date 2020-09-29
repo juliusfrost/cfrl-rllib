@@ -127,8 +127,9 @@ class Driving(PyGameWrapper, gym.Env):
                  # theta=np.array([-1.,1.,-10.,-1.,1.]),\
                  MAX_SCORE=1,
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
-                 add_car_fn=add_car_top, COLLISION_PENALTY=-100., n_noops=230,
-                 default_dt=30, prob_car=50, time_reward=True, time_limit=500, **kwargs):
+                 add_car_fn=add_car_top, collision_penalty=-100., n_noops=230,
+                 default_dt=30, prob_car=50, time_reward_proportion=1, time_limit=500,
+                 normalize_reward=True, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -146,8 +147,9 @@ class Driving(PyGameWrapper, gym.Env):
         self.get_reward_ft_fn = reward_ft_fn
         self.add_car_fn = add_car_fn
         self.theta = theta
-        self.time_reward = time_reward
+        self.time_reward_proportion = time_reward_proportion
         self.time_limit = time_limit
+        self.normalize_reward = normalize_reward
 
         self.images = None  # Load in init(), after game screen is created
         self.backdrop = None  # Load in init()
@@ -204,7 +206,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.full_action_dim = 2  # [turning, acceleration]
         self.noop = np.array([0.0, 0.0])
         self.action_to_take = np.array(self.noop)
-        self.COLLISION_PENALTY = COLLISION_PENALTY
+        self.COLLISION_PENALTY = collision_penalty
         self.time_steps = 0
 
     def _handle_player_events(self):
@@ -359,19 +361,25 @@ class Driving(PyGameWrapper, gym.Env):
                 self.cars_group.remove(car)
 
         if self.crashed():
-            self.score_sum += self.COLLISION_PENALTY
+            if self.normalize_reward:
+                self.score_sum += 1
+            else:
+                self.score_sum += abs(self.COLLISION_PENALTY)
             self.n_crashes += 1
             # print("# crashes:", self.n_crashes)
             if not self.n_crashes >= self.MAX_SCORE:
                 self.reset()
         elif add_reward:
-            if self.time_reward:
-                self.score_sum += 1
-            else:
-                reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
-                                                  self.action_to_take,
-                                                  **self.constants)
-                self.score_sum += np.dot(self.theta, reward_ft)
+            # Score is 1 * (time_proportion) + (fancy reward) * (1 - time_proportion)
+            time_reward = 1
+            reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
+                                              self.action_to_take,
+                                              **self.constants)
+            position_reward = np.dot(self.theta, reward_ft)
+            reward = self.time_reward_proportion * time_reward + (1 - self.time_reward_proportion) * position_reward
+            if self.normalize_reward:
+                reward = reward / abs(self.COLLISION_PENALTY)
+            self.score_sum += reward
 
         self.backdrop.update(self.ydiff)
         self.backdrop.draw_background(self.screen)

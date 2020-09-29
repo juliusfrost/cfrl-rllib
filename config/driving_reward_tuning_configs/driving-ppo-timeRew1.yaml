@@ -22,6 +22,6 @@ driving-ppo:
         env_config:
             switch_prob: 0.0
             switch_duration: 50
-            time_reward_proportion: 0
+            time_reward_proportion: 1
             COLLISION_PENALTY: -100
-            normalize_reward: True
+            normalize_reward: False

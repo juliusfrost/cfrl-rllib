@@ -1,7 +1,7 @@
 driving-sac:
-    framework: torch
     run: SAC
     config:
+        framework: torch
         gamma: 0.99
         # state-preprocessor=Our default Atari Conv2D-net.
         use_state_preprocessor: true

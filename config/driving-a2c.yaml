@@ -1,4 +1,5 @@
 driving-a2c:
+    framework: torch
     run: A2C
     config:
         rollout_fragment_length: 20

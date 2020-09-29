@@ -24,4 +24,4 @@ driving-ppo:
             switch_duration: 50
             time_reward_proportion: 0
             COLLISION_PENALTY: -100
-            normalize_reward: True
+            normalize_reward: False

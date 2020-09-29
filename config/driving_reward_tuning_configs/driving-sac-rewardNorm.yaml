@@ -1,7 +1,7 @@
 driving-sac:
-    framework: torch
     run: SAC
     config:
+        framework: torch
         gamma: 0.99
         # state-preprocessor=Our default Atari Conv2D-net.
         use_state_preprocessor: true
@@ -38,8 +38,8 @@ driving-sac:
         metrics_smoothing_episodes: 5
         env:  DrivingPLE-v0
         env_config:
-            switch_prob: 0.0
-            switch_duration: 50
-            time_reward_proportion: 0
-            COLLISION_PENALTY: -100
-            normalize_reward: True
+          switch_prob: 0.0
+          switch_duration: 50
+          time_reward_proportion: 0
+          COLLISION_PENALTY: -100
+          normalize_reward: True
