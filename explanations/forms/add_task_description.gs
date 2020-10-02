@@ -1,7 +1,7 @@
-function add_task_description(form, data, counterfactual_version) {
+function add_task_description(form, task, data, counterfactual_version) {
   // Describe task
   var section_title = form.addSectionHeaderItem();
-  section_title.setTitle("The Robot Task");
+  section_title.setTitle("The Task");
   section_title.setHelpText("The red triangle is a robot trying to find objects in a gridworld. "
                            +"The robot can move forward and turn left or right. "
                            +"The robot has succeeded when it is adjacent to the goal object "
@@ -10,12 +10,12 @@ function add_task_description(form, data, counterfactual_version) {
   var img = DriveApp.getFileById('1Tx94475CdzQ02q5-c_SJb4nnMeyn27H_');
   // Show image of the gridworld.
   var image_item = form.addImageItem().setImage(img).setTitle("Example Gridworld and Task");
-  
+
   add_video_description(form, data);
   if (counterfactual_version) {
     add_counterfactual_description(form, data);
   }
-  
+
   form.addSectionHeaderItem()
       .setHelpText("On the next page, we will show you another (possibly) suboptimal robot behavior "
                    +"and ask you some questions about it.");
@@ -53,7 +53,7 @@ function add_video_description(form, data) {
       img.setTitle("Here are a two examples of an expert robot solving the task.");
     }
   }
-  
+
   // Add suboptimal demos
   for (var id in data["instruction_phase"]["example_suboptimal"]) {
     var bot_video = data["instruction_phase"]["example_suboptimal"][id];
