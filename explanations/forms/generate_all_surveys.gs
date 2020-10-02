@@ -2,7 +2,7 @@ const NUM_EXAMPLE_EXPERT = 2;
 const NUM_EXAMPLE_SUBOPTIMAL = 2;
 const NUM_EXAMPLE_COUNTERFACTUAL = 2;
 const NUM_TRAINING = 7;
-const NUM_COMPARISONS = 3; // each
+// const NUM_COMPARISONS = 3; // each
 
 function generate_all_surveys() {
   /**
