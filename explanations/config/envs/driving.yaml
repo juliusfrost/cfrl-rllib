@@ -7,7 +7,7 @@ train:
     time_reward_proportion: 1
     normalize_reward: true
     time_limit: 5000
-test:
+eval:
   env: DrivingPLE-v0
   env_config:
     switch_prob: 0.2
