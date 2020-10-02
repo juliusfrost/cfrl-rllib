@@ -1,0 +1,10 @@
+train:
+  env: MiniGrid-FourRooms-v0
+  env_config:
+    agent_pos: [2, 2]
+    goal_pos: [2, 6]
+test:
+  env: MiniGrid-FourRooms-v0
+  env_config:
+    agent_pos: [6, 2]
+    goal_pos: [2, 6]
