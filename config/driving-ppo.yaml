@@ -1,5 +1,8 @@
 driving-ppo:
     run: PPO
+    checkpoint_freq: 1
+    checkpoint_at_end: true
+    keep_checkpoints_num: 1
     config:
         framework: torch
         lambda: 0.95
