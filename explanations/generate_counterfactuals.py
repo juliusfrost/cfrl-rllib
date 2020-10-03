@@ -124,24 +124,24 @@ def select_states(args):
 
             split = state_index - original_trajectory.timestep_range_start
 
-            write_video(original_imgs, old_trajectory_file, img_shape)
-            write_video(original_imgs[:split], pre_trajectory_file, img_shape)
-            write_video(exp_imgs, exploration_file, img_shape)
-            write_video(cf_imgs, cf_explanation_file, img_shape)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
+            write_video(original_imgs[:split], pre_trajectory_file, img_shape, args.fps)
+            write_video(exp_imgs, exploration_file, img_shape), args.fps
+            write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
             if split > 0:
                 franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
             else:
                 franken_video = np.concatenate((exp_imgs, cf_imgs))
-            write_video(franken_video, new_trajectory_file, img_shape)
+            write_video(franken_video, new_trajectory_file, img_shape, args.fps)
             cf_window_video = franken_video[
                               max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
-            write_video(cf_window_video, cf_window_explanation_file, img_shape)
+            write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps)
             baseline_window_video = original_imgs[
                                     max(0, split - args.window_len):min(len(original_imgs), split + args.window_len)]
-            write_video(baseline_window_video, baseline_window_explanation_file, img_shape)
+            write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
 
 
-def main():
+def main(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--env', type=str, required=True, help='name of the environment')
@@ -151,7 +151,8 @@ def main():
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
-    args = parser.parse_args()
+    parser.add_argument('--fps', type=int, default=5)
+    args = parser.parse_args(parser_args)
     select_states(args)
 
 

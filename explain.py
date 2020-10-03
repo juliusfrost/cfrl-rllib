@@ -1,11 +1,13 @@
 import argparse
 import os
 import pickle
+import shutil
 
 import yaml
 from ray.tune.utils import merge_dicts
 
 from explanations.create_dataset import main as create_dataset_main
+from explanations.generate_counterfactuals import main as generate_counterfactuals_main
 
 DEFAULT_CONFIG = {
     # REQUIRED
@@ -17,7 +19,7 @@ DEFAULT_CONFIG = {
         'run': None,
     },
     # number of rollouts in the train environment used to generate explanations
-    'sample_episodes': 20,
+    'episodes': 10,
     # location to save results and logs
     'result_dir': 'experiments',
     # number of frames before and after the branching state
@@ -25,17 +27,19 @@ DEFAULT_CONFIG = {
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # use counterfactual states
-    'counterfactual': False,
+    'counterfactual': True,
     # path to the environment configuration yaml file
     # this config defines the environment train and test split
     'env_config': None,
     'counterfactual_config': {
         # policy to continue after counterfactual state
         'rollout_policy': 'behavior',  # [behavior, random]
+        # number of time steps to use the counterfactual policy
+        'timesteps': 3,
     },
     'video_config': {
-        # directory to store videos locally
-        'video_dir': 'videos',
+        # directory name to store videos in result directory
+        'dir_name': 'videos',
         # frames per second
         'fps': 5,
     },
@@ -105,16 +109,30 @@ def load_policy_config_from_checkpoint(checkpoint_path):
     return config
 
 
-def create_dataset(config, out_path):
+def create_dataset(config, dataset_file):
     behavior_policy_config = load_policy_config_from_checkpoint(config['behavior_policy_config']['checkpoint'])
     args = []
     args += [config['behavior_policy_config']['checkpoint']]
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--env', behavior_policy_config['env']]
     args += ['--episodes', str(config['sample_episodes'])]
-    args += ['--out', out_path]
+    args += ['--out', dataset_file]
     args += config['create_dataset_arguments']
     create_dataset_main(args)
+
+
+def generate_counterfactuals(config, dataset_file, video_dir):
+    behavior_policy_config = load_policy_config_from_checkpoint(config['behavior_policy_config']['checkpoint'])
+    args = []
+    args += ['--dataset-file', dataset_file]
+    args += ['--env', behavior_policy_config['env']]
+    args += ['--num-states', str(config['eval_config']['num_trials'])]
+    args += ['--save-path', video_dir]
+    args += ['--window-len', str(config['window_size'])]
+    args += ['--state-selection-method', config['state_selection']]
+    args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
+    args += ['--fps', str(config['video_config']['fps'])]
+    generate_counterfactuals_main(args)
 
 
 def main():
@@ -138,6 +156,25 @@ def main():
     else:
         print('dataset file already exists.')
         print(dataset_file)
+
+    video_dir = os.path.join(experiment_dir, config['video_config']['dir_name'])
+    if config['counterfactual']:
+        generate_videos = True
+        if os.path.exists(video_dir):
+            if len(os.listdir(video_dir)) > 0:
+                print(f'files exist at {video_dir}')
+                if not args.overwite:
+                    generate_videos = False
+                    print('skipping generating videos.')
+                else:
+                    print('overwriting files...')
+                    shutil.rmtree(video_dir)
+                    os.mkdir(video_dir)
+        if generate_videos:
+            generate_counterfactuals(config, dataset_file, video_dir)
+    else:
+        raise NotImplementedError
+
 
 
 if __name__ == '__main__':
