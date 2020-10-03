@@ -72,10 +72,10 @@ def create_dataset(args, policy_config):
     return dataset
 
 
-def main():
+def main(parser_args=None):
     # Load arguments
     parser = create_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(parser_args)
 
     # Collect Rollouts
     policy, policy_config = run(args, parser)
