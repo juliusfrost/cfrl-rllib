@@ -1,17 +1,16 @@
 import argparse
+import json
 import os
 import os.path
 import pickle
-import json
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient import errors
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
 
-def parse_args():
+def parse_args(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')
     parser.add_argument('--app-script-dir', default='forms', help='directory for the app script gs files')
@@ -19,7 +18,9 @@ def parse_args():
     parser.add_argument('--project-name', default='cfrl', help='name google api project')
     parser.add_argument('--deployment-folder-id', default='1OEO0oGm8eSr2P7Vn3LMYuk64SIOmnBwA',
                         help='deployment folder google id')
-    args = parser.parse_args()
+    parser.add_argument('--credentials', default='credentials.json', help='path to credentials json file')
+    parser.add_argument('--config', type=json.loads, default="{}", help='experiment configuration')
+    args = parser.parse_args(parser_args)
     # if not os.path.exists(args.video_dir):
     #     raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
     return args
@@ -34,7 +35,7 @@ SCOPES = [
 ]
 
 
-def auth(token_file):
+def auth(token_file, credentials_file):
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -48,7 +49,7 @@ def auth(token_file):
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                credentials_file, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open(token_file, 'wb') as token:
@@ -120,13 +121,13 @@ def upload_videos(path, drive_service, folder_id):
             media = MediaFileUpload('files/photo.jpg', mimetype='image/jpeg')
 
 
-def main():
+def main(parser_args=None):
     """Calls the Apps Script API.
     """
 
-    args = parse_args()
+    args = parse_args(parser_args)
 
-    credentials = auth(args.token_file)
+    credentials = auth(args.token_file, args.credentials)
 
     drive_service = build('drive', 'v3', credentials=credentials)
     script_service = build('script', 'v1', credentials=credentials)
@@ -182,11 +183,7 @@ def main():
         print('created new project')
         print(response)
 
-    # TODO: define config
-    config = {
-        'video_folder_id': video_folder_id,
-        'form_name': 'form',
-    }
+    config = args.config
 
     # upload gs files to appscript project
     request = build_requests(load_gs_from_folder(args.app_script_dir), config)

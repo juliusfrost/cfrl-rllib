@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import pickle
 import shutil
@@ -8,6 +9,7 @@ from ray.tune.utils import merge_dicts
 
 from explanations.create_dataset import main as create_dataset_main
 from explanations.generate_counterfactuals import main as generate_counterfactuals_main
+from explanations.generate_forms import main as generate_forms_main
 
 DEFAULT_CONFIG = {
     # REQUIRED
@@ -44,10 +46,17 @@ DEFAULT_CONFIG = {
         'fps': 5,
     },
     'form_config': {
+        # REQUIRED
         # upload folder google drive id
         'upload_folder_id': None,
         # path to credentials json file for google api
-        'credentials': None,
+        'credentials': 'credentials.json',
+        # token file
+        'token_file': 'token.pickle',
+        # app script dir
+        'app_script_dir': 'explanations/forms',
+        # project name
+        'project_name': 'cfrl',
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
@@ -135,6 +144,18 @@ def generate_counterfactuals(config, dataset_file, video_dir):
     generate_counterfactuals_main(args)
 
 
+def generate_forms(config, video_dir):
+    args = []
+    args += ['--video-dir', video_dir]
+    args += ['--app-script-dir', config['form_config']['app_script_dir']]
+    args += ['--token-file', config['form_config']['token_file']]
+    args += ['--project-name', config['form_config']['project_name']]
+    args += ['--deployment-folder-id', config['form_config']['upload_folder_id']]
+    args += ['--credentials', config['form_config']['credentials']]
+    args += ['--config', json.dumps(config)]
+    generate_forms_main(args)
+
+
 def main():
     args = parse_args()
     config = load_config(args.experiment_config)
@@ -163,7 +184,7 @@ def main():
         if os.path.exists(video_dir):
             if len(os.listdir(video_dir)) > 0:
                 print(f'files exist at {video_dir}')
-                if not args.overwite:
+                if not args.overwrite:
                     generate_videos = False
                     print('skipping generating videos.')
                 else:
@@ -175,6 +196,10 @@ def main():
     else:
         raise NotImplementedError
 
+    if args.result == 'video':
+        return
+
+    generate_forms(config, video_dir)
 
 
 if __name__ == '__main__':
