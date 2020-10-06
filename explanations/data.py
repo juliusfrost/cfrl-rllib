@@ -5,6 +5,10 @@ import numpy as np
 import ray
 from ray.tune.registry import get_trainable_cls
 
+from envs import register
+
+register()
+
 
 class Data:
     """

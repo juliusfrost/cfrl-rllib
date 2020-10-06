@@ -1,13 +1,12 @@
 import pickle
 import uuid
 
+import ray
 from ray.rllib.rollout import create_parser
 
 from envs import register
 from explanations.data import Data, PolicyInfo
 from explanations.rollout import run
-
-register()
 
 
 # Example usage
@@ -77,11 +76,15 @@ def main(parser_args=None):
     parser = create_parser()
     args = parser.parse_args(parser_args)
 
+    # register environments
+    register()
+
     # Collect Rollouts
     policy, policy_config = run(args, parser)
 
     # Save them in a dataset
     create_dataset(args, policy_config)
+    ray.shutdown()
 
 
 if __name__ == "__main__":

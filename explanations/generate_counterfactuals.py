@@ -1,8 +1,9 @@
 import argparse
+import copy
+import json
 import os
 import pickle as pkl
 from collections import namedtuple
-import copy
 
 import cv2
 import numpy as np
@@ -15,14 +16,12 @@ from explanations.data import Data
 from explanations.rollout import RolloutSaver, rollout_env
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
-register()
-
 
 def get_env_creator(env_name):
     return _global_registry.get(ENV_CREATOR, env_name)
 
 
-def add_border(imgs, border_size=10, border_color=[255,255,255]):
+def add_border(imgs, border_size=10, border_color=[255, 255, 255]):
     final_images = []
     for img in imgs:
         img_with_border = cv2.copyMakeBorder(
@@ -37,25 +36,28 @@ def add_border(imgs, border_size=10, border_color=[255,255,255]):
         final_images.append(img_with_border)
     return final_images
 
+
 def add_text(images, traj_start, initial_reward, traj_rewards):
     final_images = []
-    font = cv2.FONT_HERSHEY_SIMPLEX 
-    org = (50, 50) 
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    org = (50, 50)
     rew_org = (50, 100)
     fontScale = 1
-    color = (255, 0, 0) 
+    color = (255, 0, 0)
     thickness = 2
     cum_reward = initial_reward
     for i, (image, reward) in enumerate(zip(images, traj_rewards)):
         cum_reward += reward
-        new_image = cv2.putText(image, f'Timestep: {i + traj_start}', org, font,  
-                        fontScale, color, thickness, cv2.LINE_AA)
-        new_image = cv2.putText(new_image, f'Cumulative Reward: {cum_reward}', rew_org, font,  
-                        fontScale, color, thickness, cv2.LINE_AA)
+        new_image = cv2.putText(image, f'Timestep: {i + traj_start}', org, font,
+                                fontScale, color, thickness, cv2.LINE_AA)
+        new_image = cv2.putText(new_image, f'Cumulative Reward: {cum_reward}', rew_org, font,
+                                fontScale, color, thickness, cv2.LINE_AA)
         final_images.append(new_image)
     return final_images
 
-def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=10, border_color=[255,255,255]):
+
+def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=10,
+                  border_color=[255, 255, 255]):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
@@ -105,8 +107,7 @@ def select_states(args):
     counterfactual_policy_config = {}
 
     env_creator = get_env_creator(args.env)
-    # TODO: add way to pass env config from arguments
-    env_config = {}
+    env_config = args.env_config
     env = env_creator(env_config)
     env.reset()
     cf_to_exp_index = {}
@@ -152,20 +153,20 @@ def select_states(args):
                                           start_timestep=0,
                                           trajectory_reward=original_rewards,
                                           initial_reward=0,
-                                          border_color=[255,255,255])
+                                          border_color=[255, 255, 255])
             exp_rewards = exp_trajectory.reward_range
             exp_rewards[0] = 10
             exp_imgs = format_images(exp_trajectory.image_observation_range,
-                                     start_timestep=split, 
-                                     trajectory_reward=exp_rewards, 
+                                     start_timestep=split,
+                                     trajectory_reward=exp_rewards,
                                      initial_reward=original_rewards[:split].sum(),
-                                     border_color=[255,0,255])
+                                     border_color=[255, 0, 255])
             cf_rewards = cf_trajectory.reward_range
             cf_imgs = format_images(cf_trajectory.image_observation_range,
-                                     start_timestep=split + len(exp_imgs), 
-                                     trajectory_reward=cf_rewards, 
-                                     initial_reward=original_rewards[:split].sum() + exp_rewards.sum(),
-                                     border_color=[0,255,0])
+                                    start_timestep=split + len(exp_imgs),
+                                    trajectory_reward=cf_rewards,
+                                    initial_reward=original_rewards[:split].sum() + exp_rewards.sum(),
+                                    border_color=[0, 255, 0])
             img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
             pre_trajectory_file = os.path.join(args.save_path, f'{cf_id}_pre_old.mp4')
@@ -178,8 +179,6 @@ def select_states(args):
                                                       f'{cf_id}_{args.window_len}_window_cf_explanation.mp4')
             baseline_window_explanation_file = os.path.join(args.save_path,
                                                             f'{cf_id}_{args.window_len}_window_baseline_explanation.mp4')
-
-            
 
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
             write_video(original_imgs[:split], pre_trajectory_file, img_shape, args.fps)
@@ -209,12 +208,14 @@ def main(parser_args=None):
                         choices=['critical', 'random', 'low_reward'], default='critical')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
+    parser.add_argument('--env-config', type=json.loads, default="{}", help='environment configuration')
     args = parser.parse_args(parser_args)
+
+    # register environments
+    register()
+
     select_states(args)
 
 
 if __name__ == "__main__":
     main()
-
-
-

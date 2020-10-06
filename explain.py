@@ -20,6 +20,18 @@ DEFAULT_CONFIG = {
         # name of algorithm used to train the behavior policy
         'run': None,
     },
+    # REQUIRED
+    # train environment name
+    'env': None,
+    # train environment configuration
+    'env_config': {},
+
+    # REQUIRED
+    # test environment name
+    'eval_env': None,
+    # test environment configuration
+    'eval_env_config': {},
+
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
@@ -30,9 +42,7 @@ DEFAULT_CONFIG = {
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # use counterfactual states
     'counterfactual': True,
-    # path to the environment configuration yaml file
-    # this config defines the environment train and test split
-    'env_config': None,
+
     'counterfactual_config': {
         # policy to continue after counterfactual state
         'rollout_policy': 'behavior',  # [behavior, random]
@@ -72,21 +82,6 @@ DEFAULT_CONFIG = {
     'create_dataset_arguments': ['--save-info'],
 }
 
-DEFAULT_ENV_CONFIG = {
-    'train': {
-        # environment name
-        'env': None,  # required to match the behavior policy train environment
-        # environment configuration
-        'env_config': {}
-    },
-    'eval': {
-        # environment name
-        'env': None,  # must have the same observation and action spaces as the train environment
-        # environment configuration
-        'env_config': {}
-    },
-}
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -105,11 +100,6 @@ def load_config(path):
     return merge_dicts(DEFAULT_CONFIG, config)
 
 
-def load_env_config(path):
-    config = yaml.safe_load(open(path))
-    return merge_dicts(DEFAULT_ENV_CONFIG, config)
-
-
 def load_policy_config_from_checkpoint(checkpoint_path):
     config_dir = os.path.dirname(checkpoint_path)
     config_path = os.path.join(config_dir, "../params.pkl")
@@ -119,28 +109,27 @@ def load_policy_config_from_checkpoint(checkpoint_path):
 
 
 def create_dataset(config, dataset_file):
-    behavior_policy_config = load_policy_config_from_checkpoint(config['behavior_policy_config']['checkpoint'])
     args = []
     args += [config['behavior_policy_config']['checkpoint']]
     args += ['--run', config['behavior_policy_config']['run']]
-    args += ['--env', behavior_policy_config['env']]
-    args += ['--episodes', str(config['sample_episodes'])]
+    args += ['--env', config['env']]
+    args += ['--episodes', str(config['episodes'])]
     args += ['--out', dataset_file]
     args += config['create_dataset_arguments']
     create_dataset_main(args)
 
 
 def generate_counterfactuals(config, dataset_file, video_dir):
-    behavior_policy_config = load_policy_config_from_checkpoint(config['behavior_policy_config']['checkpoint'])
     args = []
     args += ['--dataset-file', dataset_file]
-    args += ['--env', behavior_policy_config['env']]
+    args += ['--env', config['env']]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['window_size'])]
     args += ['--state-selection-method', config['state_selection']]
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
+    args += ['--env-config', json.dumps(config['env_config'])]
     generate_counterfactuals_main(args)
 
 
