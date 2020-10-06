@@ -3,10 +3,14 @@ import os
 import pickle as pkl
 from collections import namedtuple
 import copy
+import yaml
 
 import cv2
 import numpy as np
-from ray.tune.registry import _global_registry, ENV_CREATOR
+from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
+
+import sys
+sys.path.append('/Users/ericweiner/Documents/cfrl-rllib')
 
 from envs import register
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
@@ -71,7 +75,49 @@ def write_video(frames, filename, image_shape, fps=5):
 
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
 
+def load_policies_from_yaml(yaml_path, env):
+    with open(yaml_path) as f:
+        policy_dict = yaml.safe_load(f)
+    policies = []
+    for run_type in policy_dict['other_policies']:
+        for name in policy_dict['other_policies'][run_type]:
+            checkpoint = policy_dict['other_policies'][run_type][name]
+            config = {}
+            # Load configuration from checkpoint file.
+            config_dir = os.path.dirname(checkpoint)
+            config_path = os.path.join(config_dir, "params.pkl")
+            # Try parent directory.
+            if not os.path.exists(config_path):
+                config_path = os.path.join(config_dir, "../params.pkl")
 
+            # If no pkl file found, require command line `--config`.
+            if not os.path.exists(config_path):
+                if not args.config:
+                    raise ValueError(
+                        "Could not find params.pkl in either the checkpoint dir or "
+                        "its parent directory AND no config given on command line!")
+
+            # Load the config from pickled.
+            else:
+                with open(config_path, "rb") as f:
+                    config = pkl.load(f)
+
+            # Create the Trainer from config.
+            cls = get_trainable_cls(run_type)
+            # print(config)
+            # print(cls)
+            # print(type(cls))
+            agent = cls(env=config["env"], config=config)
+            # Load state from checkpoint.
+            agent.restore(checkpoint)
+            policies.append((agent, run_type, name))
+
+    return policies
+
+    
+
+# Pass environment config as well!
+# 
 def select_states(args):
     with open(args.dataset_file, "rb") as f:
         dataset: Data = pkl.load(f)
@@ -83,7 +129,7 @@ def select_states(args):
     }
     state_selection_fn = state_selection_dict[args.state_selection_method]
     state_indices = state_selection_fn(dataset, args.num_states, policy)
-
+    alternative_agents = load_policies_from_yaml(args.alternative_policy_config, args.env)
     exploration_rollout_saver = RolloutSaver(
         outfile=args.save_path + "/exploration.pkl",
         target_steps=None,
@@ -93,15 +139,17 @@ def select_states(args):
     exploration_args = DatasetArgs(out=args.save_path + "/exploration.pkl", env="DrivingPLE-v0", run="PPO",
                                    checkpoint=1)
     exploration_policy_config = {}
-
-    counterfactual_rollout_saver = RolloutSaver(
-        outfile=args.save_path + "/counterfactual.pkl",
-        target_steps=None,
-        target_episodes=args.num_states,
-        save_info=True)
-    # Neither of these seem to be used, just required to save dataset
-    counterfactual_args = DatasetArgs(out=args.save_path + "/counterfactual.pkl", env="DrivingPLE-v0", run="PPO",
-                                      checkpoint=1)
+    test_rollout_savers = []
+    for agent, run_type, name in alternative_agents:
+        counterfactual_rollout_saver = RolloutSaver(
+            outfile=args.save_path + f"/{name}_counterfactual.pkl",
+            target_steps=None,
+            target_episodes=args.num_states,
+            save_info=True)
+        # Neither of these seem to be used, just required to save dataset
+        counterfactual_args = DatasetArgs(out=args.save_path + f"/{name}_counterfactual.pkl", env="DrivingPLE-v0", run=run_type,
+                                        checkpoint=1)
+        test_rollout_savers.append((counterfactual_rollout_saver, counterfactual_args))
     counterfactual_policy_config = {}
 
     env_creator = get_env_creator(args.env)
@@ -126,14 +174,24 @@ def select_states(args):
                 exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
                                                          no_render=False)
 
+            post_explore_state = exp_env.get_simulator_state()
+            
+
             if not env_done:
                 cf_to_exp_index[cf_count] = exp_index
                 cf_count += 1
-                with counterfactual_rollout_saver as saver:
-                    rollout_env(policy, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
+                    exp_env.load_simulator_state(post_explore_state)
+                    agent, run_type, name = agent_stuff
+                    counterfactual_args, counterfactual_policy_config = saver_stuff
+                    with counterfactual_rollout_saver as saver:
+                        rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
 
         exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
-        counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
+        cf_datasets = []
+        for counterfactual_args, counterfactual_policy_config in test_rollout_savers:
+            counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
+            cf_datasets.append(counterfactual_dataset)
 
         for cf_i in range(len(counterfactual_dataset.all_trajectory_ids)):
             cf_id = counterfactual_dataset.all_trajectory_ids[cf_i]
@@ -207,7 +265,8 @@ def main():
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
-    parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
+    parser.add_argument('--alternative-policy-config', type=str, required=True, default=None, help='Path to yaml file containing paths to checkpoints')
+    # parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     args = parser.parse_args()
     select_states(args)
 
