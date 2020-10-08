@@ -54,7 +54,12 @@ def driving_creator(**kwargs):
         normalize_reward=kwargs.get('normalize_reward', True),
         # environment time step limit.
         # agent time steps = environment time steps / action repeat
-        time_limit=kwargs.get('time_limit', 500)
+        time_limit=kwargs.get('time_limit', 500),
+        # weights for the reward feature vector
+        # list of 6 floating-point numbers
+        # [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn]
+        # TODO: figure out what each feature exactly means
+        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01])
     )
     env = DrivingSimulatorStateWrapper(env)
     return env
