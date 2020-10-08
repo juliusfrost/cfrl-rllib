@@ -146,11 +146,16 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     write_video(cf_window_video, cf_window_explanation_file, img_shape)
 
 def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
+
+    # Create the directory
+    if not os.path.isdir(args.save_path):
+        os.mkdir(args.save_path)
+
     # Sanity check: all cf_datasets are the same length.  original and expl_datasets are the same length.  original >= cf
     first = len(cf_datasets[0].all_trajectory_ids)
     for cfd in cf_datasets:
         assert first == len(cfd.all_trajectory_ids)
-    assert len(original_dataset.all_trajectory_ids) >= len (exploration_dataset.all_trajectory_ids)
+    assert len(original_dataset.all_trajectory_ids) >= len(exploration_dataset.all_trajectory_ids)
     assert len(original_dataset.all_trajectory_ids) >= first
     assert len (exploration_dataset.all_trajectory_ids) >= first
 
