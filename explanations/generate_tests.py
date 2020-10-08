@@ -92,10 +92,9 @@ def load_policies_from_yaml(yaml_path, env):
 
             # If no pkl file found, require command line `--config`.
             if not os.path.exists(config_path):
-                if not args.config:
-                    raise ValueError(
-                        "Could not find params.pkl in either the checkpoint dir or "
-                        "its parent directory AND no config given on command line!")
+                raise ValueError(
+                    "Could not find params.pkl in either the checkpoint dir or "
+                    "its parent directory AND no config given on command line!")
 
             # Load the config from pickled.
             else:
@@ -114,10 +113,125 @@ def load_policies_from_yaml(yaml_path, env):
 
     return policies
 
-    
+def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video):
+    # Generate continuation video
+    cf_trajectory = cf_dataset.get_trajectory(cf_id)
+    cf_rewards = cf_trajectory.reward_range
+    cf_imgs = format_images(cf_trajectory.image_observation_range,
+                            start_timestep=start_timestep,
+                            trajectory_reward=cf_rewards,
+                            initial_reward=reward_so_far,
+                            border_color=[0, 255, 0])
+    img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
-# Pass environment config as well!
-# 
+    # We will generate 3 videos using this continuation:
+    #   (1) Continuation video alone
+    #   (2) beginning video + continuation
+    #   (3) Shorter version of (2) centered around the selected state.
+    cf_explanation_file = os.path.join(args.save_path, f'{cf_name}_{save_id}_cf.mp4')
+    new_trajectory_file = os.path.join(args.save_path, f'{cf_id}_full_new.mp4')
+    cf_window_explanation_file = os.path.join(args.save_path,
+                                                  f'{cf_id}_{args.window_len}_window_cf_explanation.mp4')
+
+    # Writing video 1 == continuation video alone
+    write_video(cf_imgs, cf_explanation_file, img_shape)
+
+    # Writing video 2 == beginning + continuation
+    franken_video = np.concatenate((prefix_video, cf_imgs))
+    write_video(franken_video, new_trajectory_file, img_shape)
+
+    # Writing video 3 == shorter version of 2
+    cf_window_video = franken_video[
+                      max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
+    write_video(cf_window_video, cf_window_explanation_file, img_shape)
+
+def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
+    # Sanity check: all cf_datasets are the same length.  original and expl_datasets are the same length.  original >= cf
+    first = len(cf_datasets[0].all_trajectory_ids)
+    for cfd in cf_datasets:
+        assert first == len(cfd.all_trajectory_ids)
+    assert len(original_dataset.all_trajectory_ids) >= len (exploration_dataset.all_trajectory_ids)
+    assert len(original_dataset.all_trajectory_ids) >= first
+    assert len (exploration_dataset.all_trajectory_ids) >= first
+
+    # Loop through the cf ids
+    for cf_i in range(len(cf_datasets[0].all_trajectory_ids)):
+        cf_id = cf_datasets[0].all_trajectory_ids[cf_i]
+        i = cf_to_exp_index[cf_id]
+
+        # We will generate 5 types of videos:
+        #  (1) Video of the beginning (up to the critical state)
+        #  (2) Exploration videos
+        #  (3) Beginning + exploration
+        #  (4) Baseline (window from the original trajectory, centered around the critical state)
+        #  (5) A bunch of videos involving different continuation trajectories (see the function above)
+
+        # (1) Create images for beginning of the trajectory
+        state_index = state_indices[i]
+        pre_timestep = original_dataset.get_timestep(state_index)
+
+        original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
+        split = state_index - original_trajectory.timestep_range_start
+        original_rewards = original_trajectory.reward_range
+        original_imgs = format_images(original_trajectory.image_observation_range,
+                                      start_timestep=0,
+                                      trajectory_reward=original_rewards,
+                                      initial_reward=0,
+                                      border_color=[255, 255, 255])
+
+        #  (2) Create images of exploration
+        exp_id = exploration_dataset.all_trajectory_ids[i]
+        exp_trajectory = exploration_dataset.get_trajectory(exp_id)
+        exp_rewards = exp_trajectory.reward_range
+        exp_rewards[0] = 10
+        exp_imgs = format_images(exp_trajectory.image_observation_range,
+                                 start_timestep=split,
+                                 trajectory_reward=exp_rewards,
+                                 initial_reward=original_rewards[:split].sum(),
+                                 border_color=[255, 0, 255])
+
+        #  (5) Create videos with the continuations
+        initial_rewards = original_rewards[:split].sum() + exp_rewards.sum()
+        start_timestep = split + len(exp_imgs)
+        if split > 0:
+            prefix_video = np.concatenate((original_imgs[:split], exp_imgs))
+        else:
+            prefix_video = exp_imgs
+
+        for cf_dataset, cf_name in zip(cf_datasets, cf_names):
+            generate_videos_cf(cf_dataset,
+                               cf_name,
+                               initial_rewards,
+                               start_timestep,
+                               args,
+                               cf_id,
+                               i,
+                               split,
+                               prefix_video)
+
+        # We've already generated the images; now we store them as a video
+        img_shape = (exp_imgs[0].shape[1], exp_imgs[0].shape[0])
+
+        #  (1) Beginning video
+        old_trajectory_file = os.path.join(args.save_path, f'{cf_id}_full_old.mp4')
+        write_video(original_imgs, old_trajectory_file, img_shape)
+
+        #  (2) Exploration video
+        exploration_file = os.path.join(args.save_path, f'{cf_id}_exp.mp4')
+        write_video(exp_imgs, exploration_file, img_shape)
+
+        #  (3) Beginning + Exploration
+        pre_trajectory_file = os.path.join(args.save_path, f'{cf_id}_pre_old.mp4')
+        write_video(original_imgs[:split], pre_trajectory_file, img_shape)
+
+        #  (4) Baseline (Critical-state-centered window)
+        baseline_window_explanation_file = os.path.join(args.save_path,
+                                                        f'{cf_id}_{args.window_len}_window_baseline_explanation.mp4')
+        baseline_window_video = original_imgs[
+                                max(0, split - args.window_len):min(len(original_imgs), split + args.window_len)]
+        write_video(baseline_window_video, baseline_window_explanation_file, img_shape)
+
+
 def select_states(args):
     with open(args.dataset_file, "rb") as f:
         dataset: Data = pkl.load(f)
@@ -183,77 +297,18 @@ def select_states(args):
                 for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
                     exp_env.load_simulator_state(post_explore_state)
                     agent, run_type, name = agent_stuff
-                    counterfactual_args, counterfactual_policy_config = saver_stuff
-                    with counterfactual_rollout_saver as saver:
+                    counterfactual_saver, counterfactual_args = saver_stuff
+                    with counterfactual_saver as saver:
                         rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
 
         exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
         cf_datasets = []
-        for counterfactual_args, counterfactual_policy_config in test_rollout_savers:
+        for counterfactual_saver, counterfactual_args in test_rollout_savers:
             counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
             cf_datasets.append(counterfactual_dataset)
 
-        for cf_i in range(len(counterfactual_dataset.all_trajectory_ids)):
-            cf_id = counterfactual_dataset.all_trajectory_ids[cf_i]
-            i = cf_to_exp_index[cf_id]
-
-            exp_id = exploration_dataset.all_trajectory_ids[i]
-            state_index = state_indices[i]
-            pre_timestep = dataset.get_timestep(state_index)
-
-            original_trajectory = dataset.get_trajectory(pre_timestep.trajectory_id)
-            split = state_index - original_trajectory.timestep_range_start
-            exp_trajectory = exploration_dataset.get_trajectory(exp_id)
-            cf_trajectory = counterfactual_dataset.get_trajectory(cf_id)
-            original_rewards = original_trajectory.reward_range
-            original_imgs = format_images(original_trajectory.image_observation_range,
-                                          start_timestep=0,
-                                          trajectory_reward=original_rewards,
-                                          initial_reward=0,
-                                          border_color=[255,255,255])
-            exp_rewards = exp_trajectory.reward_range
-            exp_rewards[0] = 10
-            exp_imgs = format_images(exp_trajectory.image_observation_range,
-                                     start_timestep=split, 
-                                     trajectory_reward=exp_rewards, 
-                                     initial_reward=original_rewards[:split].sum(),
-                                     border_color=[255,0,255])
-            cf_rewards = cf_trajectory.reward_range
-            cf_imgs = format_images(cf_trajectory.image_observation_range,
-                                     start_timestep=split + len(exp_imgs), 
-                                     trajectory_reward=cf_rewards, 
-                                     initial_reward=original_rewards[:split].sum() + exp_rewards.sum(),
-                                     border_color=[0,255,0])
-            img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
-
-            pre_trajectory_file = os.path.join(args.save_path, f'{cf_id}_pre_old.mp4')
-            old_trajectory_file = os.path.join(args.save_path, f'{cf_id}_full_old.mp4')
-            new_trajectory_file = os.path.join(args.save_path, f'{cf_id}_full_new.mp4')
-            exploration_file = os.path.join(args.save_path, f'{cf_id}_exp.mp4')
-            cf_explanation_file = os.path.join(args.save_path, f'{cf_id}_cf.mp4')
-
-            cf_window_explanation_file = os.path.join(args.save_path,
-                                                      f'{cf_id}_{args.window_len}_window_cf_explanation.mp4')
-            baseline_window_explanation_file = os.path.join(args.save_path,
-                                                            f'{cf_id}_{args.window_len}_window_baseline_explanation.mp4')
-
-            
-
-            write_video(original_imgs, old_trajectory_file, img_shape)
-            write_video(original_imgs[:split], pre_trajectory_file, img_shape)
-            write_video(exp_imgs, exploration_file, img_shape)
-            write_video(cf_imgs, cf_explanation_file, img_shape)
-            if split > 0:
-                franken_video = np.concatenate((original_imgs[:split], exp_imgs, cf_imgs))
-            else:
-                franken_video = np.concatenate((exp_imgs, cf_imgs))
-            write_video(franken_video, new_trajectory_file, img_shape)
-            cf_window_video = franken_video[
-                              max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
-            write_video(cf_window_video, cf_window_explanation_file, img_shape)
-            baseline_window_video = original_imgs[
-                                    max(0, split - args.window_len):min(len(original_imgs), split + args.window_len)]
-            write_video(baseline_window_video, baseline_window_explanation_file, img_shape)
+        cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+        generate_videos(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices)
 
 
 def main():
@@ -263,10 +318,10 @@ def main():
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--window-len', type=int, default=20, help='config')
+    parser.add_argument('--timesteps', type=int, default=0, help='config')  # TODO: Why was this commented out??
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
     parser.add_argument('--alternative-policy-config', type=str, required=True, default=None, help='Path to yaml file containing paths to checkpoints')
-    # parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     args = parser.parse_args()
     select_states(args)
 

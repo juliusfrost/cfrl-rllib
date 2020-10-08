@@ -1,5 +1,3 @@
 other_policies:
     PPO:
-      [
-        /Users/ericweiner/Documents/cfrl-rllib/results/driving-ppopoc_ppo/PPO_DrivingPLE-v0_0_2020-09-06_10-36-30x83nrwjz/checkpoint_1/checkpoint-1
-      ]
+        test_name: /home/olivia/ray_results/driving-ppo/PPO_DrivingPLE-v0_7c851_00000_0_2020-09-28_11-43-22/checkpoint_2/checkpoint-2

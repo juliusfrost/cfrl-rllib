@@ -26,6 +26,8 @@ class RandomAgent:
     def compute_action(self, obs, **kwargs):
         return self.action_space.sample()
 
+    def get_policy(self):
+        return self.policy
 
 def constant_generator(n_timesteps):
     for i in range(n_timesteps):
