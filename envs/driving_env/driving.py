@@ -366,7 +366,7 @@ class Driving(PyGameWrapper, gym.Env):
             if self.normalize_reward:
                 self.score_sum += 1
             else:
-                self.score_sum += abs(self.COLLISION_PENALTY)
+                self.score_sum += self.COLLISION_PENALTY
             self.n_crashes += 1
             # print("# crashes:", self.n_crashes)
             if not self.n_crashes >= self.MAX_SCORE:
