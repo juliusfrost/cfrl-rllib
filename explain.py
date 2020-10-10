@@ -32,6 +32,10 @@ DEFAULT_CONFIG = {
     # test environment configuration
     'eval_env_config': {},
 
+    # whether to overwrite existing files (uses existing files if not set)
+    'overwrite': False,
+    # whether to stop at generating the videos or continue to generate forms as well
+    'stop': 'video',  # [video, form]
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
@@ -89,7 +93,7 @@ def parse_args():
                         help='experiment config located in explanations/config/experiments')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--result', default='video', choices=['video', 'form'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form'],
                         help='whether to stop at generating videos or create the user study form')
     args = parser.parse_args()
     return args
@@ -149,6 +153,9 @@ def main():
     args = parse_args()
     config = load_config(args.experiment_config)
 
+    stop = args.stop if args.stop is not None else config['stop']
+    overwrite = config['overwrite'] or args.overwrite
+
     # file structure of the results directory
     result_dir = os.path.abspath(config['result_dir'])
     if not os.path.exists(result_dir):
@@ -161,7 +168,7 @@ def main():
         os.mkdir(experiment_dir)
     dataset_file = os.path.join(experiment_dir, 'data.pkl')
     # create dataset
-    if args.overwrite or not os.path.exists(dataset_file):
+    if overwrite or not os.path.exists(dataset_file):
         create_dataset(config, dataset_file)
     else:
         print('dataset file already exists.')
@@ -173,7 +180,7 @@ def main():
         if os.path.exists(video_dir):
             if len(os.listdir(video_dir)) > 0:
                 print(f'files exist at {video_dir}')
-                if not args.overwrite:
+                if not overwrite:
                     generate_videos = False
                     print('skipping generating videos.')
                 else:
@@ -185,7 +192,7 @@ def main():
     else:
         raise NotImplementedError
 
-    if args.result == 'video':
+    if stop == 'video':
         return
 
     generate_forms(config, video_dir)
