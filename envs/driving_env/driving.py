@@ -146,6 +146,8 @@ class Driving(PyGameWrapper, gym.Env):
         self.get_game_state_fn = state_ft_fn
         self.get_reward_ft_fn = reward_ft_fn
         self.add_car_fn = add_car_fn
+        if isinstance(theta, list):
+            theta = np.array(theta)
         self.theta = theta
         self.time_reward_proportion = time_reward_proportion
         self.time_limit = time_limit
