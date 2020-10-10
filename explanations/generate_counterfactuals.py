@@ -131,7 +131,7 @@ def select_states(args):
                 cf_to_exp_index[cf_count] = exp_index
                 cf_count += 1
                 with counterfactual_rollout_saver as saver:
-                    rollout_env(random_agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                    rollout_env(policy, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
 
         exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
         counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)

@@ -329,7 +329,7 @@ def rollout_env(agent,
         saver = RolloutSaver()
 
     try:
-        policy_map = {DEFAULT_POLICY_ID: agent.policy}
+        policy_map = {DEFAULT_POLICY_ID: agent.get_policy()}
     except AttributeError:
         raise AttributeError(
             "Agent ({}) does not have a `policy` property! This is needed "
