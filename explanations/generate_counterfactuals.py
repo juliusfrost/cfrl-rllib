@@ -128,12 +128,14 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     cf_window_explanation_file = os.path.join(args.save_path,
                                               f'vid_type_frankenwindow-explain_{cf_name}-trial_{save_id}.mp4')
 
-    # Writing video 1 == continuation video alone
-    write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
+    if args.save_all:
+        # Writing video 1 == continuation video alone
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
 
-    # Writing video 2 == beginning + continuation
     franken_video = np.concatenate((prefix_video, cf_imgs))
-    write_video(franken_video, new_trajectory_file, img_shape, args.fps)
+    if args.save_all:
+        # Writing video 2 == beginning + continuation
+        write_video(franken_video, new_trajectory_file, img_shape, args.fps)
 
     # Writing video 3 == shorter version of 2
     cf_window_video = franken_video[
@@ -196,30 +198,24 @@ def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_ex
             prefix_video = exp_imgs
 
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
-            generate_videos_cf(cf_dataset,
-                               cf_name,
-                               initial_rewards,
-                               start_timestep,
-                               args,
-                               cf_id,
-                               i,
-                               split,
+            generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args, cf_id, i, split,
                                prefix_video)
 
         # We've already generated the images; now we store them as a video
         img_shape = (exp_imgs[0].shape[1], exp_imgs[0].shape[0])
 
-        #  (1) Beginning video
-        old_trajectory_file = os.path.join(args.save_path, f'vid_type_original-trial_{cf_id}.mp4')
-        write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
+        if args.save_all:
+            #  (1) Beginning video
+            old_trajectory_file = os.path.join(args.save_path, f'vid_type_original-trial_{cf_id}.mp4')
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
-        #  (2) Exploration video
-        exploration_file = os.path.join(args.save_path, f'vid_type_exploration-trial_{cf_id}.mp4')
-        write_video(exp_imgs, exploration_file, img_shape, args.fps)
+            #  (2) Exploration video
+            exploration_file = os.path.join(args.save_path, f'vid_type_exploration-trial_{cf_id}.mp4')
+            write_video(exp_imgs, exploration_file, img_shape, args.fps)
 
-        #  (3) Beginning + Exploration
-        pre_trajectory_file = os.path.join(args.save_path, f'vid_type_prefix-trial_{cf_id}.mp4')
-        write_video(original_imgs[:split], pre_trajectory_file, img_shape, args.fps)
+            #  (3) Beginning + Exploration
+            pre_trajectory_file = os.path.join(args.save_path, f'vid_type_prefix-trial_{cf_id}.mp4')
+            write_video(original_imgs[:split], pre_trajectory_file, img_shape, args.fps)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
@@ -264,8 +260,7 @@ def select_states(args):
             save_info=True)
         # Neither of these seem to be used, just required to save dataset
         counterfactual_args = DatasetArgs(out=args.save_path + f"/{name}_counterfactual.pkl", env="DrivingPLE-v0",
-                                          run=run_type,
-                                          checkpoint=1)
+                                          run=run_type, checkpoint=1)
         test_rollout_savers.append((counterfactual_rollout_saver, counterfactual_args))
     counterfactual_policy_config = {}
 
@@ -329,6 +324,9 @@ def main(parser_args=None):
                         help='environment configuration')
     parser.add_argument('--policy_name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
+    parser.add_argument('--save-all', action='store_true',
+                        help='Save all possible combinations of videos. '
+                             'Note that this will take up a lot of space!')
     args = parser.parse_args(parser_args)
 
     # register environments
