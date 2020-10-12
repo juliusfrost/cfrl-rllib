@@ -1,18 +1,13 @@
 import argparse
+import copy
+import json
 import os
 import pickle as pkl
 from collections import namedtuple
-import copy
-import yaml
-import json
 
 import cv2
 import numpy as np
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
-
-import sys
-
-sys.path.append('/Users/ericweiner/Documents/cfrl-rllib')
 
 from envs import register
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
@@ -28,7 +23,7 @@ def get_env_creator(env_name):
     return _global_registry.get(ENV_CREATOR, env_name)
 
 
-def add_border(imgs, border_size=10, border_color=[255, 255, 255]):
+def add_border(imgs, border_size=10, border_color=(255, 255, 255)):
     final_images = []
     for img in imgs:
         img_with_border = cv2.copyMakeBorder(
@@ -49,22 +44,22 @@ def add_text(images, traj_start, initial_reward, traj_rewards):
     font = cv2.FONT_HERSHEY_SIMPLEX
     org = (50, 50)
     rew_org = (50, 100)
-    fontScale = 1
+    font_scale = 1
     color = (255, 0, 0)
     thickness = 2
     cum_reward = initial_reward
     for i, (image, reward) in enumerate(zip(images, traj_rewards)):
         cum_reward += reward
         new_image = cv2.putText(image, f'Timestep: {i + traj_start}', org, font,
-                                fontScale, color, thickness, cv2.LINE_AA)
+                                font_scale, color, thickness, cv2.LINE_AA)
         new_image = cv2.putText(new_image, f'Cumulative Reward: {cum_reward}', rew_org, font,
-                                fontScale, color, thickness, cv2.LINE_AA)
+                                font_scale, color, thickness, cv2.LINE_AA)
         final_images.append(new_image)
     return final_images
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=10,
-                  border_color=[255, 255, 255]):
+                  border_color=(255, 255, 255)):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
@@ -147,7 +142,8 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
 
 
 def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
-    # Sanity check: all cf_datasets are the same length.  original and expl_datasets are the same length.  original >= cf
+    # Sanity check: all cf_datasets are the same length.
+    # original and expl_datasets are the same length.  original >= cf
     first = len(cf_datasets[0].all_trajectory_ids)
     for cfd in cf_datasets:
         assert first == len(cfd.all_trajectory_ids)
@@ -330,8 +326,9 @@ def main(parser_args=None):
                         help='Path to yaml file containing paths to checkpoints')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
+    # TODO: make way env-config and alt-policy-config are handled identitcal.
     parser.add_argument('--env-config', type=json.loads, default="{}",
-                        help='environment configuration')  # TODO: make way env-config and alt-policy-config are handled identitcal.
+                        help='environment configuration')
     parser.add_argument('--policy_name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
     args = parser.parse_args(parser_args)
@@ -343,6 +340,3 @@ def main(parser_args=None):
 
 if __name__ == "__main__":
     main()
-
-
-
