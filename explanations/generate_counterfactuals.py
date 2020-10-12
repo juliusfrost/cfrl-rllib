@@ -270,9 +270,7 @@ def select_states(args):
     counterfactual_policy_config = {}
 
     env_creator = get_env_creator(args.env)
-    # TODO: add way to pass env config from arguments
-    env_config = {}
-    env = env_creator(env_config)
+    env = env_creator(args.env_config)
     env.reset()
     cf_to_exp_index = {}
     cf_count = 0
