@@ -276,47 +276,48 @@ def select_states(args):
     env.reset()
     cf_to_exp_index = {}
     cf_count = 0
-    if args.save_path is not None:
-        if not os.path.exists(args.save_path):
-            os.makedirs(args.save_path)
-        for exp_index, i in enumerate(state_indices):
-            timestep = dataset.get_timestep(i)
-            simulator_state = timestep.simulator_state
-            obs = timestep.observation
-            env.load_simulator_state(simulator_state)
-            random_agent = RandomAgent(env.action_space)
-            handoff_func = make_handoff_func(args.timesteps)
 
-            with exploration_rollout_saver as saver:
-                exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
-                                                         no_render=False)
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+    for exp_index, i in enumerate(state_indices):
+        timestep = dataset.get_timestep(i)
+        simulator_state = timestep.simulator_state
+        obs = timestep.observation
+        env.load_simulator_state(simulator_state)
+        random_agent = RandomAgent(env.action_space)
+        handoff_func = make_handoff_func(args.timesteps)
 
-            post_explore_state = exp_env.get_simulator_state()
+        with exploration_rollout_saver as saver:
+            exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
+                                                     no_render=False)
 
-            if not env_done:
-                cf_to_exp_index[cf_count] = exp_index
-                cf_count += 1
-                for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
-                    exp_env.load_simulator_state(post_explore_state)
-                    agent, run_type, name = agent_stuff
-                    counterfactual_saver, counterfactual_args = saver_stuff
-                    with counterfactual_saver as saver:
-                        rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+        post_explore_state = exp_env.get_simulator_state()
 
-        exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
-        cf_datasets = []
-        for counterfactual_saver, counterfactual_args in test_rollout_savers:
-            counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
-            cf_datasets.append(counterfactual_dataset)
+        if not env_done:
+            cf_to_exp_index[cf_count] = exp_index
+            cf_count += 1
+            for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
+                exp_env.load_simulator_state(post_explore_state)
+                agent, run_type, name = agent_stuff
+                counterfactual_saver, counterfactual_args = saver_stuff
+                with counterfactual_saver as saver:
+                    rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
 
-        cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
-        generate_videos(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices)
+    exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
+    cf_datasets = []
+    for counterfactual_saver, counterfactual_args in test_rollout_savers:
+        counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
+        cf_datasets.append(counterfactual_dataset)
+
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+    generate_videos(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices)
 
 
 def main(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
     parser.add_argument('--env', type=str, required=True, help='name of the environment')
+    parser.add_argument('--eval-env', type=str, help='name of the evaluation environment')
     parser.add_argument('--num-states', type=int, default=10, help='Number of states to select.')
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--window-len', type=int, default=20, help='config')
@@ -329,10 +330,14 @@ def main(parser_args=None):
     # TODO: make way env-config and alt-policy-config are handled identitcal.
     parser.add_argument('--env-config', type=json.loads, default="{}",
                         help='environment configuration')
+    parser.add_argument('--eval-env-config', type=json.loads, default="{}",
+                        help='environment configuration')
     parser.add_argument('--policy_name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
     args = parser.parse_args(parser_args)
 
+    if args.eval_env is None:
+        args.eval_env = args.env
     # register environments
     register()
     select_states(args)

@@ -3,7 +3,6 @@ import json
 import os
 import pickle
 import shutil
-import pathlib
 
 import yaml
 from ray.tune.utils import merge_dicts
