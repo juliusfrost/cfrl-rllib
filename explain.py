@@ -85,6 +85,8 @@ DEFAULT_CONFIG = {
         'state_selection': 'random',
         # window size of the evaluation videos
         'window_size': 20,
+        # number of time steps to use the counterfactual policy
+        'timesteps': 0,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
@@ -116,19 +118,24 @@ def load_policy_config_from_checkpoint(checkpoint_path):
     return config
 
 
-def create_dataset(config, dataset_file):
+def create_dataset(config, dataset_file, eval=False):
     args = []
     args += [config['behavior_policy_config']['checkpoint']]
     args += ['--run', config['behavior_policy_config']['run']]
-    args += ['--env', config['env']]
+    if not eval:
+        args += ['--env', config['env']]
+        args += ['--config', json.dumps({'env_config': config['env_config']})]
+    else:
+        args += ['--env', config['eval_env']]
+        args += ['--config', json.dumps({'env_config': config['eval_env_config']})]
+
     args += ['--episodes', str(config['episodes'])]
     args += ['--out', dataset_file]
     args += config['create_dataset_arguments']
     create_dataset_main(args)
 
 
-def generate_evaluation_videos(config, dataset_file, video_dir):
-    # This method should generate both the explanation videos and evaluation videos
+def generate_explanation_videos(config, dataset_file, video_dir):
     args = []
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
@@ -139,9 +146,26 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['env_config'])]
-    args += ['--eval_policies', json.dumps(config['eval_config']['eval_policies'])]
-    args += ['--policy_name', config['behavior_policy_config']['identifier']]
-    args += ['--run',  config['behavior_policy_config']['run']]
+    args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
+    args += ['--policy-name', config['behavior_policy_config']['identifier']]
+    args += ['--run', config['behavior_policy_config']['run']]
+    generate_counterfactuals_main(args)
+
+
+def generate_evaluation_videos(config, dataset_file, video_dir):
+    args = []
+    args += ['--dataset-file', dataset_file]
+    args += ['--env', config['eval_env']]
+    args += ['--num-states', str(config['eval_config']['num_trials'])]
+    args += ['--save-path', video_dir]
+    args += ['--window-len', str(config['eval_config']['window_size'])]
+    args += ['--state-selection-method', config['eval_config']['state_selection']]
+    args += ['--timesteps', str(config['eval_config']['timesteps'])]
+    args += ['--fps', str(config['video_config']['fps'])]
+    args += ['--env-config', json.dumps(config['eval_env_config'])]
+    args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
+    args += ['--policy-name', config['behavior_policy_config']['identifier']]
+    args += ['--run', config['behavior_policy_config']['run']]
     generate_counterfactuals_main(args)
 
 
@@ -174,13 +198,20 @@ def main():
     print(f'saving results to {experiment_dir}')
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
-    dataset_file = os.path.join(experiment_dir, 'data.pkl')
+    explanation_dataset = os.path.join(experiment_dir, 'explanation_dataset.pkl')
+    evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
     # create dataset
-    if overwrite or not os.path.exists(dataset_file):
-        create_dataset(config, dataset_file)
+    if overwrite or not os.path.exists(explanation_dataset):
+        create_dataset(config, explanation_dataset, eval=False)
     else:
         print('dataset file already exists.')
-        print(dataset_file)
+        print(explanation_dataset)
+
+    if overwrite or not os.path.exists(evaluation_dataset):
+        create_dataset(config, evaluation_dataset, eval=True)
+    else:
+        print('dataset file already exists.')
+        print(evaluation_dataset)
 
     video_dir = os.path.join(experiment_dir, config['video_config']['dir_name'])
     # TODO: fix file structure
@@ -188,6 +219,8 @@ def main():
     policy_id = config['behavior_policy_config']['identifier']
     video_dir = os.path.join(video_dir,
                              f"videos-environment_{env}-behavior_{policy_id}-{experiment_name}")
+    explain_dir = os.path.join(video_dir, 'explain')
+    eval_dir = os.path.join(video_dir, 'eval')
 
     if config['counterfactual']:
         generate_videos = True
@@ -202,7 +235,8 @@ def main():
                     shutil.rmtree(video_dir)
                     os.mkdir(video_dir)
         if generate_videos:
-            generate_evaluation_videos(config, dataset_file, video_dir)
+            generate_explanation_videos(config, explanation_dataset, explain_dir)
+            generate_evaluation_videos(config, evaluation_dataset, eval_dir)
     else:
         raise NotImplementedError
 

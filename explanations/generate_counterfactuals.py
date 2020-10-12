@@ -315,14 +315,15 @@ def main(parser_args=None):
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
-    parser.add_argument('--eval_policies', type=json.loads, required=True, default="{}",
-                        help='Path to yaml file containing paths to checkpoints')
+    parser.add_argument('--eval-policies', type=json.loads, required=True, default="{}",
+                        help='list of evaluation policies to continue rollouts. '
+                             'Policies are a tuple of (name, algorithm, checkpoint)')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
     # TODO: make way env-config and alt-policy-config are handled identitcal.
     parser.add_argument('--env-config', type=json.loads, default="{}",
                         help='environment configuration')
-    parser.add_argument('--policy_name', type=str, default="test_policy_name")
+    parser.add_argument('--policy-name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
