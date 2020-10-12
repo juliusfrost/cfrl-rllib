@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 import shutil
+import pathlib
 
 import yaml
 from ray.tune.utils import merge_dicts
@@ -16,19 +17,20 @@ DEFAULT_CONFIG = {
     # config for the behavior policy
     'behavior_policy_config': {
         # path to the rllib policy checkpoint file
-        'checkpoint': None,
+        'checkpoint': "/home/olivia/ray_results/driving-ppo/PPO_DrivingPLE-v0_7c851_00000_0_2020-09-28_11-43-22/checkpoint_2/checkpoint-2",  # TODO: back to None
         # name of algorithm used to train the behavior policy
-        'run': None,
+        'run': "PPO",
+        'identifier': "policyA",
     },
     # REQUIRED
     # train environment name
-    'env': None,
+    'env': "DrivingPLE-v0",
     # train environment configuration
     'env_config': {},
 
     # REQUIRED
     # test environment name
-    'eval_env': None,
+    'eval_env': "DrivingPLE-v0",
     # test environment configuration
     'eval_env_config': {},
 
@@ -72,7 +74,10 @@ DEFAULT_CONFIG = {
         # number of trial iterations of explanation and evaluation
         'num_trials': 10,
         # list of evaluation policies to continue rollouts
-        'eval_policies': [],
+        'eval_policies': [
+            # Policies are a tuple of (name, algorithm, checkpoint)
+            ("test_policy_name", "PPO", "/home/olivia/ray_results/driving-ppo/PPO_DrivingPLE-v0_7c851_00000_0_2020-09-28_11-43-22/checkpoint_2/checkpoint-2"),
+        ],
         # distribution of states to pick
         'state_selection': 'random',
         # window size of the evaluation videos
@@ -119,10 +124,15 @@ def create_dataset(config, dataset_file):
     create_dataset_main(args)
 
 
-def generate_counterfactuals(config, dataset_file, video_dir):
+def generate_counterfactuals(config, dataset_file, video_dir, exp_config_path):
+    exp_config_name = pathlib.Path(exp_config_path).stem
+    env = config['eval_env']
+    policy_id = config['behavior_policy_config']['identifier']
+    video_dir = os.path.join(video_dir,
+                             f"videos-environment_{env}-behavior_{policy_id}-{exp_config_name}")
     args = []
     args += ['--dataset-file', dataset_file]
-    args += ['--env', config['env']]
+    args += ['--env', env]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['window_size'])]
@@ -130,6 +140,9 @@ def generate_counterfactuals(config, dataset_file, video_dir):
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['env_config'])]
+    args += ['--eval_policies', json.dumps(config['eval_config']['eval_policies'])]
+    args += ['--policy_name', policy_id]
+    args += ['--run',  config['behavior_policy_config']['run']]
     generate_counterfactuals_main(args)
 
 
@@ -181,7 +194,7 @@ def main():
                     shutil.rmtree(video_dir)
                     os.mkdir(video_dir)
         if generate_videos:
-            generate_counterfactuals(config, dataset_file, video_dir)
+            generate_counterfactuals(config, dataset_file, video_dir, args.experiment_config)
     else:
         raise NotImplementedError
 

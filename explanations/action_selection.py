@@ -39,6 +39,8 @@ def make_handoff_func(n_timesteps):
     gen = constant_generator(n_timesteps)
 
     def handoff(state, action):
+        # handoff based on state and action.
+        # action will be null on the first timestep before we've stepped yet.
         return next(gen)
 
     return handoff

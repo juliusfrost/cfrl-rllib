@@ -1,0 +1,18 @@
+'behavior_policy_config': {
+        # path to the rllib policy checkpoint file
+        'checkpoint': "/home/olivia/ray_results/driving-ppo/PPO_DrivingPLE-v0_7c851_00000_0_2020-09-28_11-43-22/checkpoint_2/checkpoint-2",  # TODO: back to None
+        # name of algorithm used to train the behavior policy
+        'run': "PPO",  # TODO: add!
+        'identifier': "policyA",
+    },
+    # REQUIRED
+    # train environment name
+    'env': "DrivingPLE-v0",  # TODO back to None
+    # train environment configuration
+    'env_config': {},
+
+    # REQUIRED
+    # test environment name
+    'eval_env': "DrivingPLE-v0",  # TODO back to None
+    # test environment configuration
+    'eval_env_config': {},

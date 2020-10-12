@@ -354,7 +354,7 @@ def rollout_env(agent,
     prev_actions = DefaultMapping(
         lambda agent_id: action_init[mapping_cache[agent_id]])
     prev_rewards = collections.defaultdict(lambda: 0.)
-    done = False
+    done = handoff_func(obs, None)
     reward_total = 0.0
     while not done:
         action_dict = {}
