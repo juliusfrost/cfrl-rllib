@@ -7,6 +7,7 @@ from collections import namedtuple
 
 import cv2
 import numpy as np
+import ray
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
 
 from envs import register
@@ -16,11 +17,15 @@ from explanations.data import Data
 from explanations.rollout import RolloutSaver, rollout_env
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
-register()
-
 
 def get_env_creator(env_name):
     return _global_registry.get(ENV_CREATOR, env_name)
+
+
+def window_slice(arr, index: int, window_radius: int):
+    window_low = max(0, index - window_radius)
+    window_high = min(len(arr), index + window_radius)
+    return arr[window_low: window_high]
 
 
 def add_border(imgs, border_size=10, border_color=(255, 255, 255)):
@@ -138,8 +143,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         write_video(franken_video, new_trajectory_file, img_shape, args.fps)
 
     # Writing video 3 == shorter version of 2
-    cf_window_video = franken_video[
-                      max(0, split - args.window_len):min(len(franken_video), split + args.window_len)]
+    cf_window_video = window_slice(franken_video, split, args.window_len)
     write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps)
 
 
@@ -220,8 +224,7 @@ def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_ex
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'vid_type_baselinewindow-trial_{cf_id}.mp4')
-        baseline_window_video = original_imgs[
-                                max(0, split - args.window_len):min(len(original_imgs), split + args.window_len)]
+        baseline_window_video = window_slice(original_imgs, split, args.window_len)
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
 
 
@@ -333,6 +336,7 @@ def main(parser_args=None):
     # register environments
     register()
     select_states(args)
+    ray.shutdown()
 
 
 if __name__ == "__main__":

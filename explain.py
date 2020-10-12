@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
         # name of algorithm used to train the behavior policy
         'run': None,
         # TODO: Add documentation
-        'identifier': "policyA",
+        'name': "default",
     },
     # REQUIRED
     # train environment name
@@ -86,7 +86,7 @@ DEFAULT_CONFIG = {
         # window size of the evaluation videos
         'window_size': 20,
         # number of time steps to use the counterfactual policy
-        'timesteps': 0,
+        'timesteps': 3,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
@@ -147,7 +147,7 @@ def generate_explanation_videos(config, dataset_file, video_dir):
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['env_config'])]
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
-    args += ['--policy-name', config['behavior_policy_config']['identifier']]
+    args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     generate_counterfactuals_main(args)
 
@@ -164,7 +164,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
-    args += ['--policy-name', config['behavior_policy_config']['identifier']]
+    args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     generate_counterfactuals_main(args)
 
@@ -216,7 +216,7 @@ def main():
     video_dir = os.path.join(experiment_dir, config['video_config']['dir_name'])
     # TODO: fix file structure
     env = config['eval_env']
-    policy_id = config['behavior_policy_config']['identifier']
+    policy_id = config['behavior_policy_config']['name']
     video_dir = os.path.join(video_dir,
                              f"videos-environment_{env}-behavior_{policy_id}-{experiment_name}")
     explain_dir = os.path.join(video_dir, 'explain')
