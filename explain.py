@@ -3,7 +3,6 @@ import json
 import os
 import pickle
 import shutil
-import pathlib
 
 import yaml
 from ray.tune.utils import merge_dicts
@@ -224,6 +223,7 @@ def main():
 
     if config['counterfactual']:
         generate_videos = True
+        # TODO: fix logic here when overwrite = False
         if os.path.exists(video_dir):
             if len(os.listdir(video_dir)) > 0:
                 print(f'files exist at {video_dir}')
