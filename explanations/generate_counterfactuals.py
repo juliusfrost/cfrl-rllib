@@ -151,11 +151,11 @@ def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_ex
     # Sanity check: all cf_datasets are the same length.
     # original and expl_datasets are the same length.  original >= cf
     first = len(cf_datasets[0].all_trajectory_ids)
-    for cfd in cf_datasets:
-        assert first == len(cfd.all_trajectory_ids)
-    assert len(original_dataset.all_trajectory_ids) >= len(exploration_dataset.all_trajectory_ids)
-    assert len(original_dataset.all_trajectory_ids) >= first
-    assert len(exploration_dataset.all_trajectory_ids) >= first
+    # for cfd in cf_datasets:
+    #     assert first == len(cfd.all_trajectory_ids)
+    # assert len(original_dataset.all_trajectory_ids) >= len(exploration_dataset.all_trajectory_ids)
+    # assert len(original_dataset.all_trajectory_ids) >= first
+    # assert len(exploration_dataset.all_trajectory_ids) >= first
 
     # Loop through the cf ids
     for cf_i in range(len(cf_datasets[0].all_trajectory_ids)):
@@ -299,10 +299,11 @@ def select_states(args):
                     with counterfactual_saver as saver:
                         rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
 
-        exploration_dataset = create_dataset(exploration_args, exploration_policy_config)
+        exploration_dataset = create_dataset(exploration_args, exploration_policy_config, write_data=args.save_all)
         cf_datasets = []
         for counterfactual_saver, counterfactual_args in test_rollout_savers:
-            counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config)
+            counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
+                                                    write_data=args.save_all)
             cf_datasets.append(counterfactual_dataset)
 
         cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
