@@ -255,12 +255,12 @@ class Driving(PyGameWrapper, gym.Env):
 
     def getGameStateSave(self):
         obs_state = get_state_save_ft(self.agent_car, self.cpu_cars, **self.constants)
-        return obs_state, self.time_steps, self.switch_prob, copy.deepcopy(self.rng)
+        return obs_state, self.time_steps, copy.deepcopy(self.rng), self.score_sum
 
-    def setGameState(self, state, time_steps, switch_prob, rng):
+    def setGameState(self, state, time_steps, rng, score_sum):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
-        self.score_sum = 0.0  # reset cumulative reward
+        self.score_sum = score_sum  # reset cumulative reward
         self.n_crashes = 0
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
         self.time_steps = time_steps

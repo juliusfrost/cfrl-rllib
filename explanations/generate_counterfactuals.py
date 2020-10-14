@@ -148,14 +148,6 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
 
 
 def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
-    # Sanity check: all cf_datasets are the same length.
-    # original and expl_datasets are the same length.  original >= cf
-    first = len(cf_datasets[0].all_trajectory_ids)
-    # for cfd in cf_datasets:
-    #     assert first == len(cfd.all_trajectory_ids)
-    # assert len(original_dataset.all_trajectory_ids) >= len(exploration_dataset.all_trajectory_ids)
-    # assert len(original_dataset.all_trajectory_ids) >= first
-    # assert len(exploration_dataset.all_trajectory_ids) >= first
 
     # Loop through the cf ids
     for cf_i in range(len(cf_datasets[0].all_trajectory_ids)):
@@ -186,7 +178,6 @@ def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_ex
         exp_id = exploration_dataset.all_trajectory_ids[i]
         exp_trajectory = exploration_dataset.get_trajectory(exp_id)
         exp_rewards = exp_trajectory.reward_range
-        exp_rewards[0] = 10
         exp_imgs = format_images(exp_trajectory.image_observation_range,
                                  start_timestep=split,
                                  trajectory_reward=exp_rewards,
