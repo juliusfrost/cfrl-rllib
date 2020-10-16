@@ -53,6 +53,8 @@ class Car(pygame.sprite.Sprite):
         self.stationary = stationary  # y-coordinate never changes (scene moves around this car)
         self.ydiff = ydiff
 
+        self.steering_resistance = kwargs.get('steering_resistance', 100.)
+
         self.controls = controls
         self.control_idx = 0
 
@@ -79,7 +81,7 @@ class Car(pygame.sprite.Sprite):
 
     def dynamics_f(self, s, u, dt):
         # u = (u[0]/100., u[1])  # otherwise turning is too sharp
-        u = (u[0] / 100., u[1])  # otherwise turning is too sharp
+        u = (u[0] / self.steering_resistance, u[1])  # otherwise turning is too sharp
         x = s[0] + s[3] * np.cos(2 * math.pi - s[2]) * dt
         y = s[1] + s[3] * np.sin(2 * math.pi - s[2]) * dt
         h = s[2] + s[3] * u[0] * dt

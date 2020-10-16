@@ -65,7 +65,11 @@ def driving_creator(**kwargs):
         # list of 6 floating-point numbers
         # [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn]
         # TODO: figure out what each feature exactly means
-        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01])
+        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01]),
+        # probability of generating a car in a new time step
+        prob_car=kwargs.get('prob_car', 0.5),
+        # steering resistance is the scalar that divides the steering angle to reduce sharp angles
+        steering_resistance=kwargs.get('steering_resistance', 100.),
     )
     env = DrivingSimulatorStateWrapper(env)
     return env
