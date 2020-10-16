@@ -10,11 +10,17 @@ NUM_STEPS = 5
 
 class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
     def get_simulator_state(self) -> Any:
-        return self.env.game_state.game.getGameStateSave()
+        inner_state = self.env.game_state.game.getGameStateSave()
+        wrapper_state = (self.env.game_state.previous_score, self.env.game_state.last_action, self.env.game_state.action)
+        return (inner_state, wrapper_state)
 
     def load_simulator_state(self, state: Any) -> bool:
         try:
-            self.env.game_state.game.setGameState(*state)
+            inner_state, (previous_score, last_action, action) = state
+            self.env.game_state.game.setGameState(*inner_state)
+            self.env.game_state.previous_score = previous_score
+            self.env.game_state.last_action = last_action
+            self.env.game_state.action = action
             success = True
         except Exception as e:
             print(e)

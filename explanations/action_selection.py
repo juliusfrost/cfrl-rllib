@@ -26,6 +26,8 @@ class RandomAgent:
     def compute_action(self, obs, **kwargs):
         return self.action_space.sample()
 
+    def get_policy(self):
+        return self.policy
 
 def constant_generator(n_timesteps):
     for i in range(n_timesteps):
@@ -37,6 +39,8 @@ def make_handoff_func(n_timesteps):
     gen = constant_generator(n_timesteps)
 
     def handoff(state, action):
+        # handoff based on state and action.
+        # action will be null on the first timestep before we've stepped yet.
         return next(gen)
 
     return handoff

@@ -329,7 +329,7 @@ def rollout_env(agent,
         saver = RolloutSaver()
 
     try:
-        policy_map = {DEFAULT_POLICY_ID: agent.policy}
+        policy_map = {DEFAULT_POLICY_ID: agent.get_policy()}
     except AttributeError:
         raise AttributeError(
             "Agent ({}) does not have a `policy` property! This is needed "
@@ -354,7 +354,8 @@ def rollout_env(agent,
     prev_actions = DefaultMapping(
         lambda agent_id: action_init[mapping_cache[agent_id]])
     prev_rewards = collections.defaultdict(lambda: 0.)
-    done = False
+    done = handoff_func(obs, None)
+    env_done = False
     reward_total = 0.0
     while not done:
         action_dict = {}
