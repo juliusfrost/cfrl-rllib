@@ -1,5 +1,7 @@
 from typing import Any
 
+import gym
+import numpy as np
 from ray.tune.registry import register_env
 
 from envs.driving_env.ple_env import PLEEnv
@@ -11,7 +13,8 @@ NUM_STEPS = 5
 class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
     def get_simulator_state(self) -> Any:
         inner_state = self.env.game_state.game.getGameStateSave()
-        wrapper_state = (self.env.game_state.previous_score, self.env.game_state.last_action, self.env.game_state.action)
+        wrapper_state = (
+            self.env.game_state.previous_score, self.env.game_state.last_action, self.env.game_state.action)
         return (inner_state, wrapper_state)
 
     def load_simulator_state(self, state: Any) -> bool:
@@ -28,7 +31,24 @@ class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
         return success
 
 
-def driving_creator(**kwargs):
+class NoisyActionWrapper(gym.ActionWrapper):
+    def __init__(self, env, action_noise=0.):
+        super().__init__(env)
+        self._action_noise = action_noise
+
+    def action(self, action):
+        noise = np.random.randn(*action.shape)
+        return action + self._action_noise * noise
+
+    def reverse_action(self, action):
+        return action
+
+
+def driving_creator(
+        # if greater than 0, adds random normal distributed multiplied by this constant to actions
+        action_noise=0.,
+        # other kwargs for the PLE Driving environment
+        **kwargs):
     env = PLEEnv(
         # cannot change
         game_name='Driving',
@@ -72,6 +92,8 @@ def driving_creator(**kwargs):
         steering_resistance=kwargs.get('steering_resistance', 100.),
     )
     env = DrivingSimulatorStateWrapper(env)
+    if action_noise > 0.:
+        env = NoisyActionWrapper(env, action_noise)
     return env
 
 
