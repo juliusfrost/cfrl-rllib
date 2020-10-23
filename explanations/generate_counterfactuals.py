@@ -282,8 +282,8 @@ def select_states(args):
         "random": random_state,
         "low_reward": low_reward_state,
     }
-    state_selection_fn = state_selection_dict[args.state_selection_method]
-    state_indices = state_selection_fn(dataset, args.num_states, policy)
+    # state_selection_fn = state_selection_dict[args.state_selection_method]
+    # state_indices = state_selection_fn(dataset, args.num_states, policy)
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
     alternative_agents.append((agent, args.run, args.policy_name))
