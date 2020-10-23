@@ -148,14 +148,6 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
 
 
 def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
-    # Sanity check: all cf_datasets are the same length.
-    # original and expl_datasets are the same length.  original >= cf
-    first = len(cf_datasets[0].all_trajectory_ids)
-    # for cfd in cf_datasets:
-    #     assert first == len(cfd.all_trajectory_ids)
-    # assert len(original_dataset.all_trajectory_ids) >= len(exploration_dataset.all_trajectory_ids)
-    # assert len(original_dataset.all_trajectory_ids) >= first
-    # assert len(exploration_dataset.all_trajectory_ids) >= first
 
     # Loop through the cf ids
     for cf_i in range(len(cf_datasets[0].all_trajectory_ids)):
@@ -183,43 +175,46 @@ def generate_videos(original_dataset, exploration_dataset, cf_datasets, cf_to_ex
                                       border_color=[255, 255, 255])
 
         #  (2) Create images of exploration
-        exp_id = exploration_dataset.all_trajectory_ids[i]
-        exp_trajectory = exploration_dataset.get_trajectory(exp_id)
-        exp_rewards = exp_trajectory.reward_range
-        exp_rewards[0] = 10
-        exp_imgs = format_images(exp_trajectory.image_observation_range,
-                                 start_timestep=split,
-                                 trajectory_reward=exp_rewards,
-                                 initial_reward=original_rewards[:split].sum(),
-                                 border_color=[255, 0, 255])
+        has_explored = len(exploration_dataset.all_trajectory_ids) != 0
+        if has_explored:
+            exp_id = exploration_dataset.all_trajectory_ids[i]
+            exp_trajectory = exploration_dataset.get_trajectory(exp_id)
+            exp_rewards = exp_trajectory.reward_range
+            exp_imgs = format_images(exp_trajectory.image_observation_range,
+                                     start_timestep=split,
+                                     trajectory_reward=exp_rewards,
+                                     initial_reward=original_rewards[:split].sum(),
+                                     border_color=[255, 0, 255])
 
-        #  (5) Create videos with the continuations
-        initial_rewards = original_rewards[:split].sum() + exp_rewards.sum()
-        start_timestep = split + len(exp_imgs)
-        if split > 0:
+            #  (5) Create videos with the continuations
+            initial_rewards = original_rewards[:split].sum() + exp_rewards.sum()
+            start_timestep = split + len(exp_imgs)
             prefix_video = np.concatenate((original_imgs[:split], exp_imgs))
         else:
-            prefix_video = exp_imgs
+            initial_rewards = original_rewards[:split].sum()
+            start_timestep = split
+            prefix_video = original_imgs[:split]
 
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
             generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args, cf_id, i, split,
                                prefix_video)
 
         # We've already generated the images; now we store them as a video
-        img_shape = (exp_imgs[0].shape[1], exp_imgs[0].shape[0])
+        img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
 
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'vid_type_original-trial_{cf_id}.mp4')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
-            #  (2) Exploration video
-            exploration_file = os.path.join(args.save_path, f'vid_type_exploration-trial_{cf_id}.mp4')
-            write_video(exp_imgs, exploration_file, img_shape, args.fps)
+            if has_explored:
+                #  (2) Exploration video
+                exploration_file = os.path.join(args.save_path, f'vid_type_exploration-trial_{cf_id}.mp4')
+                write_video(exp_imgs, exploration_file, img_shape, args.fps)
 
             #  (3) Beginning + Exploration
             pre_trajectory_file = os.path.join(args.save_path, f'vid_type_prefix-trial_{cf_id}.mp4')
-            write_video(original_imgs[:split], pre_trajectory_file, img_shape, args.fps)
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,

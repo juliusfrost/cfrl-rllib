@@ -9,7 +9,6 @@ from ray.tune.utils import merge_dicts
 
 from explanations.create_dataset import main as create_dataset_main
 from explanations.generate_counterfactuals import main as generate_counterfactuals_main
-from explanations.generate_forms import main as generate_forms_main
 
 DEFAULT_CONFIG = {
     # REQUIRED
@@ -169,6 +168,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
 
 
 def generate_forms(config, video_dir):
+    from explanations.generate_forms import main as generate_forms_main
     args = []
     args += ['--video-dir', video_dir]
     args += ['--app-script-dir', config['form_config']['app_script_dir']]

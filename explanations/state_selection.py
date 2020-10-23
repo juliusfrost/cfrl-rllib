@@ -28,7 +28,7 @@ def critical_state(data: Data, num_states, policy, **kwargs):
     state_indices = []
     for obs_index, obs in enumerate(data.all_observations):
         with torch.no_grad():
-            logits, _ = policy.model.from_batch({"obs": torch.FloatTensor(obs).unsqueeze(0)})
+            logits, _ = policy.model.from_batch({"obs": torch.FloatTensor(obs).unsqueeze(0).to(policy.device)})
             action_dist = policy.dist_class(logits, policy.model)
             entropy = action_dist.entropy()[0].item()
         state_indices.append((entropy, obs_index))
