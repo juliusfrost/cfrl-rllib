@@ -45,6 +45,8 @@ DEFAULT_CONFIG = {
     'window_size': 20,
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
+    # What explanation method to use
+    'explanation_method': 'random',  # [counterfactual, critical, random]
     # use counterfactual states
     'counterfactual': True,
 
@@ -133,7 +135,7 @@ def create_dataset(config, dataset_file, eval=False):
     create_dataset_main(args)
 
 
-def generate_explanation_videos(config, dataset_file, video_dir):
+def generate_explanation_videos(config, dataset_file, video_dir, explanation_method=None):
     args = []
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
@@ -141,6 +143,10 @@ def generate_explanation_videos(config, dataset_file, video_dir):
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['window_size'])]
     args += ['--state-selection-method', config['state_selection']]
+    if explanation_method is None:
+        args += ['--explanation-method', config['explanation_method']]
+    else:
+        args += ['--explanation-method', explanation_method]
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['env_config'])]
@@ -158,6 +164,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['eval_config']['window_size'])]
     args += ['--state-selection-method', config['eval_config']['state_selection']]
+    # args += ['--explanation-method', config['explanation_method']]
     args += ['--timesteps', str(config['eval_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
@@ -216,8 +223,8 @@ def main():
     # TODO: fix file structure
     env = config['eval_env']
     policy_id = config['behavior_policy_config']['name']
-    video_dir = os.path.join(video_dir,
-                             f"videos-environment_{env}-behavior_{policy_id}-{experiment_name}")
+    # video_dir = os.path.join(video_dir,
+    #                          f"videos-environment_{env}-behavior_{policy_id}-{experiment_name}")
     explain_dir = os.path.join(video_dir, 'explain')
     eval_dir = os.path.join(video_dir, 'eval')
 
@@ -235,7 +242,12 @@ def main():
                     shutil.rmtree(video_dir)
                     os.mkdir(video_dir)
         if generate_videos:
-            generate_explanation_videos(config, explanation_dataset, explain_dir)
+            if isinstance(config['explanation_method'], list):
+                for expl_method in config['explanation_method']:
+                    explain_dir = os.path.join(video_dir, f'explain-{expl_method}')
+                    generate_explanation_videos(config, explanation_dataset, explain_dir, expl_method)
+            else:
+                generate_explanation_videos(config, explanation_dataset, explain_dir)
             generate_evaluation_videos(config, evaluation_dataset, eval_dir)
     else:
         raise NotImplementedError
