@@ -18,8 +18,8 @@ DEFAULT_CONFIG = {
         'checkpoint': None,
         # name of algorithm used to train the behavior policy
         'run': None,
-        # TODO: Add documentation
-        'name': "default",
+        # name of the behavior policy
+        'name': "behavior",
     },
     # REQUIRED
     # train environment name

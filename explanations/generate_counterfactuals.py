@@ -43,12 +43,14 @@ def add_border(imgs, border_size=10, border_color=(255, 255, 255)):
         final_images.append(img_with_border)
     return final_images
 
+
 def add_borders(imgs, border_size=10, border_color1=(255, 255, 255), border_color2=(0, 255, 0)):
     switch_index = len(imgs) // 2
     prefix_imgs = add_border(imgs[:switch_index], border_size=border_size, border_color=border_color1)
     post_imgs = add_border(imgs[switch_index:], border_size=border_size, border_color=border_color2)
     prefix_imgs.extend(post_imgs)
     return prefix_imgs
+
 
 def add_text(images, traj_start, initial_reward, traj_rewards):
     final_images = []
@@ -133,28 +135,29 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (1) Continuation video alone
     #   (2) beginning video + continuation
     #   (3) Shorter version of (2) centered around the selected state.
-    # f'continuation-explain_{cf_name}-t_{save_id}.gif'
-    vidpath = lambda vid_type, phase, cf_name, save_id: f'{vid_type}-{phase}_{cf_name}-t_{save_id}.mp4'
-    cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', 'explain', cf_name, save_id))
-    new_trajectory_file = os.path.join(args.save_path, vidpath('frankenvid', 'explain', cf_name, save_id))
-    cf_window_explanation_file = os.path.join(args.save_path, vidpath('frankenwindow', 'explain', cf_name, save_id))
+    # f'{video_type}-{cf_name}-t_{save_id}.gif'
+    vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.mp4'
+    cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
+    new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
+    cf_window_explanation_file = os.path.join(args.save_path,
+                                              vidpath('counterfactual_window', cf_name, save_id))
 
     if args.save_all:
         # Writing video 1 == continuation video alone
         write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
 
-    franken_video = np.concatenate((prefix_video, cf_imgs))
+    cf_video = np.concatenate((prefix_video, cf_imgs))
     if args.save_all:
         # Writing video 2 == beginning + continuation
-        write_video(franken_video, new_trajectory_file, img_shape, args.fps)
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps)
 
     # Writing video 3 == shorter version of 2
-    cf_window_video = window_slice(franken_video, split, args.window_len)
+    cf_window_video = window_slice(cf_video, split, args.window_len)
     write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps)
 
 
-def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices):
-
+def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
+                                          cf_names, state_indices):
     # Loop through the cf ids
     for cf_i in range(len(cf_datasets[0].all_trajectory_ids)):
         cf_id = cf_datasets[0].all_trajectory_ids[cf_i]
@@ -224,10 +227,11 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baselinewindow-trial_{cf_id}.mp4')
+                                                        f'baseline_window-trial_{cf_id}.mp4')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
+
 
 def generate_videos_state_method(original_dataset, args, state_indices):
     for i, state_index in enumerate(state_indices):
@@ -248,10 +252,6 @@ def generate_videos_state_method(original_dataset, args, state_indices):
                                       initial_reward=0,
                                       border_color=[255, 255, 255])
 
-        
-        initial_rewards = original_rewards[:split].sum()
-        start_timestep = split
-
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
 
@@ -262,7 +262,7 @@ def generate_videos_state_method(original_dataset, args, state_indices):
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baselinewindow-trial_{i}.mp4')
+                                                        f'baseline_window-trial_{i}.mp4')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video)
         # print(len(baseline_window_video))
@@ -301,7 +301,7 @@ def select_states(args):
             save_info=True)
         # Neither of these seem to be used, just required to save dataset
         exploration_args = DatasetArgs(out=args.save_path + "/exploration.pkl", env="DrivingPLE-v0", run="PPO",
-                                    checkpoint=1)
+                                       checkpoint=1)
         exploration_policy_config = {}
         test_rollout_savers = []
         for agent, run_type, name in alternative_agents:
@@ -312,7 +312,7 @@ def select_states(args):
                 save_info=True)
             # Neither of these seem to be used, just required to save dataset
             counterfactual_args = DatasetArgs(out=args.save_path + f"/{name}_counterfactual.pkl", env="DrivingPLE-v0",
-                                            run=run_type, checkpoint=1)
+                                              run=run_type, checkpoint=1)
             test_rollout_savers.append((counterfactual_rollout_saver, counterfactual_args))
         counterfactual_policy_config = {}
 
@@ -334,7 +334,7 @@ def select_states(args):
 
                 with exploration_rollout_saver as saver:
                     exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
-                                                            no_render=False)
+                                                             no_render=False)
 
                 post_explore_state = exp_env.get_simulator_state()
 
@@ -356,7 +356,8 @@ def select_states(args):
                 cf_datasets.append(counterfactual_dataset)
 
             cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
-            generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args, cf_names, state_indices)
+            generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
+                                                  cf_names, state_indices)
     else:
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
@@ -378,7 +379,7 @@ def main(parser_args=None):
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
                         choices=['critical', 'random', 'low_reward'], default='critical')
-    parser.add_argument('--explanation-method', type=str, help='Explanation Method', 
+    parser.add_argument('--explanation-method', type=str, help='Explanation Method',
                         choices=['counterfactual', 'critical', 'random'], default='counterfactual')
     parser.add_argument('--eval-policies', type=json.loads, required=True, default="{}",
                         help='list of evaluation policies to continue rollouts. '
