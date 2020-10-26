@@ -9,7 +9,6 @@ import pickle
 # from googleapiclient.discovery import build
 # from googleapiclient.http import MediaFileUpload
 
-
 def parse_args(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')

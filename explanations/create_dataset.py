@@ -14,7 +14,7 @@ from explanations.rollout import run
 # /home/olivia/Documents/XRL/cfrl-rllib/results/tempName/SAC_Pong-ram-v0_0_2020-08-01_12-27-152bzcg1rj/checkpoint_210/checkpoint-210
 # --run SAC --env Pong-ram-v0 --out saved_dataset/testing.pkl --episodes 2 --save-info
 
-def create_dataset(args, policy_config):
+def create_dataset(args, policy_config, write_data=True):
     with open(args.out, "rb") as f:
         time_steps = []
         observations = []
@@ -65,8 +65,9 @@ def create_dataset(args, policy_config):
         policy=policy_info,
         all_simulator_states=simulator_states
     )
-    with open(args.out, "wb") as f:
-        pickle.dump(dataset, f)
+    if write_data:
+        with open(args.out, "wb") as f:
+            pickle.dump(dataset, f)
 
     return dataset
 

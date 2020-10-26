@@ -1,5 +1,7 @@
 from typing import Any
 
+import gym
+import numpy as np
 from ray.tune.registry import register_env
 
 from envs.driving_env.ple_env import PLEEnv
@@ -10,11 +12,18 @@ NUM_STEPS = 5
 
 class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
     def get_simulator_state(self) -> Any:
-        return self.env.game_state.game.getGameStateSave()
+        inner_state = self.env.game_state.game.getGameStateSave()
+        wrapper_state = (
+            self.env.game_state.previous_score, self.env.game_state.last_action, self.env.game_state.action)
+        return (inner_state, wrapper_state)
 
     def load_simulator_state(self, state: Any) -> bool:
         try:
-            self.env.game_state.game.setGameState(*state)
+            inner_state, (previous_score, last_action, action) = state
+            self.env.game_state.game.setGameState(*inner_state)
+            self.env.game_state.previous_score = previous_score
+            self.env.game_state.last_action = last_action
+            self.env.game_state.action = action
             success = True
         except Exception as e:
             print(e)
@@ -22,7 +31,24 @@ class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
         return success
 
 
-def driving_creator(**kwargs):
+class NoisyActionWrapper(gym.ActionWrapper):
+    def __init__(self, env, action_noise=0.):
+        super().__init__(env)
+        self._action_noise = action_noise
+
+    def action(self, action):
+        noise = np.random.randn(*action.shape)
+        return action + self._action_noise * noise
+
+    def reverse_action(self, action):
+        return action
+
+
+def driving_creator(
+        # if greater than 0, adds random normal distributed multiplied by this constant to actions
+        action_noise=0.,
+        # other kwargs for the PLE Driving environment
+        **kwargs):
     env = PLEEnv(
         # cannot change
         game_name='Driving',
@@ -59,9 +85,15 @@ def driving_creator(**kwargs):
         # list of 6 floating-point numbers
         # [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn]
         # TODO: figure out what each feature exactly means
-        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01])
+        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01]),
+        # probability of generating a car in a new time step
+        prob_car=kwargs.get('prob_car', 0.5),
+        # steering resistance is the scalar that divides the steering angle to reduce sharp angles
+        steering_resistance=kwargs.get('steering_resistance', 100.),
     )
     env = DrivingSimulatorStateWrapper(env)
+    if action_noise > 0.:
+        env = NoisyActionWrapper(env, action_noise)
     return env
 
 

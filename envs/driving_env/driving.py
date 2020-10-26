@@ -18,7 +18,7 @@ import copy
 FILEDIR = osp.dirname(osp.realpath(__file__))
 
 
-def init_robot_car(img, state, speed_limit, speed_min, controls=[(0, 0)],
+def init_robot_car(img, state, speed_limit, speed_min, controls=[(0., 0.)],
                    ydiff=0, **kwargs):
     width = kwargs["car_width"]
     height = kwargs["car_height"]
@@ -26,7 +26,7 @@ def init_robot_car(img, state, speed_limit, speed_min, controls=[(0, 0)],
                controls=controls, stationary=True, ydiff=ydiff, **kwargs)
 
 
-def init_nonrobot_car(img, state, speed_limit, speed_min, controls=[(0, 0)], **kwargs):
+def init_nonrobot_car(img, state, speed_limit, speed_min, controls=[(0., 0.)], **kwargs):
     width = kwargs["car_width"]
     height = kwargs["car_height"]
     if "replace_img" in kwargs:
@@ -89,9 +89,12 @@ def add_car_top(dt, robot_car, cars, img, speed_limit, speed_min, ydiff, rng, **
         return None
 
     lane_idx = rng.randint(len(lane_centers))
+    # controls = [(0., 0.)] * 50 + [(0., -0.01)] * 500 + [(0., 0.01)] * 500
+    # random.shuffle(controls)
+    controls = [(0., 0.)]
     car = init_nonrobot_car(img,
                             [lane_centers[lane_idx], -(car_height / 2) + ydiff, heading, speed],
-                            speed_limit, speed_min, controls=[(0, 0)], **kwargs)
+                            speed_limit, speed_min, controls=controls, **kwargs)
     return car
 
 
@@ -197,6 +200,7 @@ class Driving(PyGameWrapper, gym.Env):
         # The "+ car_height" is because car can be partially off-screen
         self.constants["drivable_height"] = height + car_height
         self.constants["prob_car"] = prob_car
+        self.constants["steering_resistance"] = kwargs.get("steering_resistance", 100.)
 
         self.score_sum = 0.  # Total (non-discounted) reward
         self.n_crashes = 0  # Number of crashes
@@ -255,12 +259,12 @@ class Driving(PyGameWrapper, gym.Env):
 
     def getGameStateSave(self):
         obs_state = get_state_save_ft(self.agent_car, self.cpu_cars, **self.constants)
-        return obs_state, self.time_steps, self.switch_prob, copy.deepcopy(self.rng)
+        return obs_state, self.time_steps, copy.deepcopy(self.rng), self.score_sum
 
-    def setGameState(self, state, time_steps, switch_prob, rng):
+    def setGameState(self, state, time_steps, rng, score_sum):
         # NOTE: This hasn't been thoroughly tested
         assert self.images is not None and self.backdrop is not None
-        self.score_sum = 0.0  # reset cumulative reward
+        self.score_sum = score_sum  # reset cumulative reward
         self.n_crashes = 0
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
         self.time_steps = time_steps
