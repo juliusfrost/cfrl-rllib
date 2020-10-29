@@ -6,6 +6,7 @@ matplotlib
 pygame
 numpy
 pillow
+imageio
 opencv-python
 google-api-python-client
 google-auth-httplib2
