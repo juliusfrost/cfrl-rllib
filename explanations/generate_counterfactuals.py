@@ -10,6 +10,7 @@ import cv2
 import numpy as np
 import ray
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
+from typing import List
 
 from envs import register
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
@@ -86,9 +87,11 @@ def write_video(frames, filename, image_shape, fps=5):
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
 
 
-def load_other_policies(other_policies):  # TODO: include original policy here too!
+def load_other_policies(other_policies: List[dict]):  # TODO: include original policy here too!
     policies = []
-    for name, run_type, checkpoint in other_policies:
+    for policy in other_policies:
+        assert isinstance(policy, dict)
+        name, run_type, checkpoint = policy['name'], policy['run'], policy['checkpoint']
         # Load configuration from checkpoint file.
         config_dir = os.path.dirname(checkpoint)
         config_path = os.path.join(config_dir, "params.pkl")
