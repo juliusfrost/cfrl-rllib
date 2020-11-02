@@ -4,6 +4,7 @@ import json
 import os
 import pickle as pkl
 from collections import namedtuple
+import imageio
 
 import cv2
 import numpy as np
@@ -79,12 +80,10 @@ def format_images(frames, start_timestep=0, trajectory_reward=None, initial_rewa
 
 
 def write_video(frames, filename, image_shape, fps=5):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(filename, fourcc, fps, image_shape)
-    frames = copy.deepcopy(frames)
-    for img in frames:
-        writer.write(cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-
+    w, h = image_shape
+    blank_frames = np.zeros((fps * 2, h, w, 3))
+    frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
+    imageio.mimwrite(filename, frames, fps=fps)
 
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
 
@@ -136,7 +135,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (2) beginning video + continuation
     #   (3) Shorter version of (2) centered around the selected state.
     # f'{video_type}-{cf_name}-t_{save_id}.gif'
-    vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.mp4'
+    vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.gif'
     cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
     new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
     cf_window_explanation_file = os.path.join(args.save_path,
@@ -213,21 +212,21 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{cf_id}.mp4')
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
             if has_explored:
                 #  (2) Exploration video
-                exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.mp4')
+                exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
                 write_video(exp_imgs, exploration_file, img_shape, args.fps)
 
             #  (3) Beginning + Exploration
-            pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.mp4')
+            pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
             write_video(prefix_video, pre_trajectory_file, img_shape, args.fps)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baseline_window-trial_{cf_id}.mp4')
+                                                        f'baseline_window-trial_{i}.gif')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
@@ -257,12 +256,12 @@ def generate_videos_state_method(original_dataset, args, state_indices):
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.mp4')
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baseline_window-trial_{i}.mp4')
+                                                        f'baseline_window-trial_{i}.gif')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video)
         # print(len(baseline_window_video))

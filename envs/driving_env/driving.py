@@ -358,9 +358,9 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
-            should_switch = not car.switch_duration_remaining > 0 and random.random() < self.switch_prob
+            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob
             if should_switch:
-                car.start_switch_lane(**self.constants)
+                car.start_switch_lane(self.rng, **self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
             if out_of_bound(car, self.ydiff, **self.constants):
                 self.cpu_cars.remove(car)

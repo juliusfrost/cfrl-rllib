@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # What explanation method to use
-    'explanation_method': 'random',  # [counterfactual, critical, random]
+    'explanation_method': ['random', 'counterfactual'],  # [counterfactual, critical, random]
     # use counterfactual states
     'counterfactual': True,
 
@@ -74,6 +74,9 @@ DEFAULT_CONFIG = {
         'app_script_dir': 'explanations/forms',
         # project name
         'project_name': 'cfrl',
+    },
+    'doc_config': {
+        'form_name': 'test.docx'
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
@@ -187,6 +190,15 @@ def generate_forms(config, video_dir):
     generate_forms_main(args)
 
 
+def generate_doc(config, video_dir):
+    from explanations.generate_doc import main as generate_doc_main
+    args = []
+    args += ['--video-dir', video_dir]
+    args += ['--save-dir', video_dir]
+    args += ['--config', json.dumps(config)]
+    generate_doc_main(args)
+
+
 def main():
     args = parse_args()
     config = load_config(args.experiment_config)
@@ -252,10 +264,10 @@ def main():
     else:
         raise NotImplementedError
 
-    if stop == 'video':
-        return
-
-    generate_forms(config, video_dir)
+    if stop == 'form':
+        generate_forms(config, video_dir)
+    elif stop == 'doc':
+        generate_doc(config, video_dir)
 
 
 if __name__ == '__main__':
