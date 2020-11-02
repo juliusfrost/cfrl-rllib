@@ -28,7 +28,7 @@ def create_dataset(args, policy_config, write_data=True):
 
         data = pickle.load(f)
         # I'm not sure why, but everything's wrapped in a list
-        print(f"Saving {len(data)} trajectories")
+        # print(f"Saving {len(data)} trajectories")
         for trajectory_id, trajectory in enumerate(data):
             for time_step_id, timestep in enumerate(trajectory):
                 # Traj is a list with either 6 or 7 elements, depending on whether env info was saved or not.

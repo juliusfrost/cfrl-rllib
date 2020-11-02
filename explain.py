@@ -206,8 +206,9 @@ def remove_ext(path, ext='pkl'):
         f_path = os.path.join(path, f)
         if os.path.isdir(f_path):
             remove_ext(f_path)
-        elif os.path.isfile(f_path) and os.path.splitext(f)[1] == ext:
+        elif os.path.isfile(f_path) and os.path.splitext(f)[1] == f'.{ext}':
             os.remove(f_path)
+            print(f'removed {f_path}')
 
 
 def main():
