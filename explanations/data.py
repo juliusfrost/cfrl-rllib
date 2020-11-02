@@ -53,7 +53,7 @@ class Data:
         self.all_rewards = np.array(all_rewards)
         self.all_dones = np.array(all_dones)
         self.all_policy_states = np.array(all_policy_states)
-        self.all_simulator_states = np.array(all_simulator_states)
+        self.all_simulator_states = np.array(all_simulator_states, dtype=object)
         self.all_trajectory_ids = np.unique(self.all_trajectories)
         self.policy = policy
 
