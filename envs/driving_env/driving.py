@@ -163,6 +163,7 @@ class Driving(PyGameWrapper, gym.Env):
             self.agent_img = kwargs["agent_img"]
 
         self.switch_prob = kwargs.get('switch_prob', 0.0)
+        self.speed_multiplier = kwargs.get('speed_multiplier', 1.0)
 
         # Define environment visualization constants
         n_lanes = 3
@@ -379,7 +380,7 @@ class Driving(PyGameWrapper, gym.Env):
             # Score is 1 * (time_proportion) + (fancy reward) * (1 - time_proportion)
             time_reward = 1
             reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
-                                              self.action_to_take,
+                                              self.action_to_take, self.speed_multiplier,
                                               **self.constants)
             position_reward = np.dot(self.theta, reward_ft)
             reward = self.time_reward_proportion * time_reward + (1 - self.time_reward_proportion) * position_reward
