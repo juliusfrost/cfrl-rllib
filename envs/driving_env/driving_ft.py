@@ -247,7 +247,7 @@ def get_state_save_ft(robot_car, other_cars, return_dist=True, **kwargs):
     return ft_dict
 
 
-def get_reward_ft(robot_car, other_cars, action, **kwargs):
+def get_reward_ft(robot_car, other_cars, action, speed_multiplier, **kwargs):
     # Assumes action[0] is turning
     action_turn = action[0]
 
@@ -262,7 +262,7 @@ def get_reward_ft(robot_car, other_cars, action, **kwargs):
     s = robot_car.state
     s_other = [car.state for car in other_cars]
     ft_lanes = lane_mindist(s, lane_centers, max_dist=max_dist)
-    ft_speed = 1 - speed_limit_ft(s, robot_car.speed_limit)
+    ft_speed = 1 - speed_limit_ft(s, robot_car.speed_limit * speed_multiplier)
     ft_carnear = overlap_centered(s, s_other, lane_width + border_width,
                                   car_height * 3, return_dist=True, **kwargs)
     ft_turn = turn_ft(s, kwargs["default_heading"], kwargs["heading_max"])
