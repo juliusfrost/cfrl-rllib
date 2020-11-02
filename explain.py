@@ -20,8 +20,8 @@ DEFAULT_CONFIG = {
         'checkpoint': None,
         # name of algorithm used to train the behavior policy
         'run': None,
-        # TODO: Add documentation
-        'name': "default",
+        # name of the behavior policy
+        'name': "behavior",
     },
     # REQUIRED
     # train environment name
@@ -48,7 +48,7 @@ DEFAULT_CONFIG = {
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # What explanation method to use
-    'explanation_method': 'random',  # [counterfactual, critical, random]
+    'explanation_method': ['random', 'counterfactual'],  # [counterfactual, critical, random]
     # use counterfactual states
     'counterfactual': True,
 
@@ -77,6 +77,9 @@ DEFAULT_CONFIG = {
         # project name
         'project_name': 'cfrl',
     },
+    'doc_config': {
+        'form_name': 'test.docx'
+    },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
         'num_trials': 10,
@@ -92,6 +95,8 @@ DEFAULT_CONFIG = {
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
+    # remove files with this extension
+    'remove_ext': ['pkl'],
 }
 
 
@@ -190,6 +195,25 @@ def generate_forms(config, video_dir):
     generate_forms_main(args)
 
 
+def generate_doc(config, video_dir):
+    from explanations.generate_doc import main as generate_doc_main
+    args = []
+    args += ['--video-dir', video_dir]
+    args += ['--save-dir', video_dir]
+    args += ['--config', json.dumps(config)]
+    generate_doc_main(args)
+
+
+def remove_ext(path, ext='pkl'):
+    for f in os.listdir(path):
+        f_path = os.path.join(path, f)
+        if os.path.isdir(f_path):
+            remove_ext(f_path)
+        elif os.path.isfile(f_path) and os.path.splitext(f)[1] == f'.{ext}':
+            os.remove(f_path)
+            print(f'removed {f_path}')
+
+
 def main(argv=None):
     args = parse_args(argv)
     if args.experiment_config is not None and os.path.exists(args.experiment_config):
@@ -270,10 +294,13 @@ def main(argv=None):
     else:
         raise NotImplementedError
 
-    if stop == 'video':
-        return
+    if stop == 'form':
+        generate_forms(config, video_dir)
+    elif stop == 'doc':
+        generate_doc(config, video_dir)
 
-    generate_forms(config, video_dir)
+    for ext in config.get('remove_ext', []):
+        remove_ext(experiment_dir, ext)
 
 
 if __name__ == '__main__':
