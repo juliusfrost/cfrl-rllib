@@ -23,11 +23,13 @@ def parse_args(parser_args=None):
 def get_explain_name(explanation_method, config):
     if explanation_method == 'random' or explanation_method == 'critical':
         def get_name(explanation_dir, trial):
-            return os.path.join(explanation_dir, f'baselinewindow-trial_{trial}.gif')
+            return os.path.join(explanation_dir, f'baseline_window-trial_{trial}.gif')
     elif explanation_method == 'counterfactual':
         def get_name(explanation_dir, trial):
             return os.path.join(explanation_dir,
-                                f'frankenwindow-explain_{config["behavior_policy_config"]["name"]}-t_{trial}.gif')
+                                f'counterfactual_window-'
+                                f'explain_{config["behavior_policy_config"]["name"]}-'
+                                f't_{trial}.gif')
     else:
         return NotImplementedError
     return get_name
@@ -75,7 +77,7 @@ def read_eval_policies(video_dir):
     eval_dir = os.path.join(video_dir, 'eval')
     eval_images = {}
     for image_file in os.listdir(eval_dir):
-        if 'frankenwindow' in image_file and '.gif' in image_file:
+        if 'counterfactual_window' in image_file and '.gif' in image_file:
             base_name, ext = os.path.splitext(image_file)
             vid_type, policy, trial_name = base_name.split('-')
             trial = int(trial_name.split('_')[-1])
