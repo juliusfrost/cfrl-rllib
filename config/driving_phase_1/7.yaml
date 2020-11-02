@@ -45,3 +45,4 @@ driving-phase-1:
             # action distribution
             action_noise: 0.
             steering_resistance: 100.
+            speed_multiplier: 1.2
