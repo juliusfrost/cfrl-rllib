@@ -7,8 +7,6 @@ from ray.tune.registry import register_env
 from envs.driving_env.ple_env import PLEEnv
 from envs.save import SimulatorStateWrapper
 
-NUM_STEPS = 5
-
 
 class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
     def get_simulator_state(self) -> Any:
@@ -59,7 +57,7 @@ def driving_creator(
         # whether to use continuous actions
         continuous_actions=kwargs.get('continuous_actions', True),
         # number of action repeat (frame skip)
-        num_steps=kwargs.get('action_repeat', NUM_STEPS),
+        num_steps=kwargs.get('action_repeat', 5),
         # applicable only if using image observations
         obs_width=kwargs.get('obs_width', 84),
         # applicable only if using image observations
@@ -71,7 +69,7 @@ def driving_creator(
         # time for cars to switch lanes
         switch_duration=kwargs.get('switch_duration', 50),
         # dimension of actions
-        action_dim=kwargs.get('action_dim', 2),
+        action_dim=2,
         # reward penalty for collision
         collision_penalty=kwargs.get('collision_penalty', -100),
         # proportion to use per time step reward bonus
@@ -84,7 +82,12 @@ def driving_creator(
         # weights for the reward feature vector
         # list of 6 floating-point numbers
         # [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn]
-        # TODO: figure out what each feature exactly means
+        # ft_lanes: Dist from center of lane
+        # ft_speed: Not going over speed limit
+        # ft_carnear: Distance from other cars
+        # ft_turn: Something about turning
+        # ft_forward: Making progress forward
+        # ft_sharpturn: Does it make sharp turns?
         theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01]),
         # probability of generating a car in a new time step
         prob_car=kwargs.get('prob_car', 0.5),
