@@ -157,7 +157,7 @@ class Car(pygame.sprite.Sprite):
         else:
             self.rect.center = self.x, self.y - self.ydiff
 
-    def start_switch_lane(self, **kwargs):
+    def start_switch_lane(self, rng, **kwargs):
         self.switch_duration_remaining = self.switch_duration
         lane_centers = kwargs['lane_centers']
         lane_width = kwargs['lane_width']
