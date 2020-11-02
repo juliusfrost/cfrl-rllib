@@ -81,7 +81,7 @@ def write_video(frames, filename, image_shape, fps=5):
     w, h = image_shape
     blank_frames = np.zeros((fps * 2, h, w, 3))
     frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
-    imageio.mimsave(filename, frames, duration=1/fps)
+    imageio.mimwrite(filename, frames, fps=fps)
 
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
 
@@ -209,7 +209,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{cf_id}.gif')
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
             if has_explored:
@@ -223,7 +223,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baselinewindow-trial_{cf_id}.gif')
+                                                        f'baselinewindow-trial_{i}.gif')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
@@ -256,12 +256,12 @@ def generate_videos_state_method(original_dataset, args, state_indices):
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.mp4')
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baselinewindow-trial_{i}.mp4')
+                                                        f'baselinewindow-trial_{i}.gif')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video)
         # print(len(baseline_window_video))
