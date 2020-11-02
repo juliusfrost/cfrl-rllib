@@ -93,6 +93,8 @@ DEFAULT_CONFIG = {
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
+    # remove files with this extension
+    'remove_ext': ['pkl'],
 }
 
 
@@ -199,6 +201,15 @@ def generate_doc(config, video_dir):
     generate_doc_main(args)
 
 
+def remove_ext(path, ext='pkl'):
+    for f in os.listdir(path):
+        f_path = os.path.join(path, f)
+        if os.path.isdir(f_path):
+            remove_ext(f_path)
+        elif os.path.isfile(f_path) and os.path.splitext(f)[1] == ext:
+            os.remove(f_path)
+
+
 def main():
     args = parse_args()
     config = load_config(args.experiment_config)
@@ -268,6 +279,9 @@ def main():
         generate_forms(config, video_dir)
     elif stop == 'doc':
         generate_doc(config, video_dir)
+
+    for ext in config.get('remove_ext', []):
+        remove_ext(experiment_dir, ext)
 
 
 if __name__ == '__main__':
