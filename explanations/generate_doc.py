@@ -28,7 +28,7 @@ def get_explain_name(explanation_method, config):
         def get_name(explanation_dir, trial):
             return os.path.join(explanation_dir,
                                 f'counterfactual_window-'
-                                f'explain_{config["behavior_policy_config"]["name"]}-'
+                                f'{config["behavior_policy_config"]["name"]}-'
                                 f't_{trial}.gif')
     else:
         return NotImplementedError
@@ -101,6 +101,14 @@ def build_eval_order(num_trials: int, eval_images: dict):
         np.random.shuffle(order)
         eval_order.append(order.tolist())
     return eval_order
+
+
+def save_eval_order(eval_order, save_dir):
+    output = {'trial': {}}
+    for i, trial in eval_order:
+        output['trial'][i] = trial
+    with open(os.path.join(save_dir, 'eval.json'), mode='w') as f:
+        json.dump(output, f)
 
 
 def main(parser_args=None):
