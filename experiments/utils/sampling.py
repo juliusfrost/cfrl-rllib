@@ -25,6 +25,8 @@ SAMPLE_CONFIG = {
     # (optional) list key path to config value. ex. ["key1", "key2", "key3"]
     # whatever the value for the key path is not sampled from values. probabilities renormalized
     'exclude': None,
+    # if set true, when num_samples = 1, the value is pulled out from the list of samples.
+    'reduce_values': True,
 }
 
 
@@ -92,10 +94,25 @@ def sample(sample_config, exclude=None):
                     probs[i] *= 0  # exclude by setting probability to 0
             probs /= np.sum(probs)  # renormalize
 
-        batch = np.random.choice(sample_values, size=size, replace=sample_config['replace'], p=probs)
-        if sample_config['num_samples'] == 1:
+        sample_indices = np.arange(len(sample_values))
+        batch = np.random.choice(sample_indices, size=size, replace=sample_config['replace'], p=probs)
+        if sample_config['num_samples'] == 1 and sample_config['reduce_values']:
             batch = np.squeeze(batch, axis=1)
-        new_values = batch.tolist()
+            new_values = []
+            for trial in range(size[0]):
+                trial_index = batch[trial]
+                val = copy.deepcopy(sample_values[trial_index])
+                new_values.append(val)
+        else:
+            new_values = []
+            for trial in range(size[0]):
+                row = []
+                for i in range(size[1]):
+                    trial_index = batch[trial][i]
+                    val = copy.deepcopy(sample_values[trial_index])
+                    row.append(val)
+                new_values.append(row)
+
     return new_values
 
 
@@ -114,9 +131,10 @@ def traverse_config(multi_config: dict):
         if key_path[-1] == 'sample':
             assert isinstance(values, dict)
             parent_key_path = key_path[:-1]
-            parent_config = key_path_get_value(multi_config, parent_key_path)
+            # parent_config = key_path_get_value(multi_config, parent_key_path)
             # the value of the parent_key_path is replaced with the sample in config_list
-            assert len(parent_config) == 1
+            # this assertion can be false when the default explain config is merged into the multi config
+            # assert len(parent_config) == 1
             sample_config = merge_dicts(SAMPLE_CONFIG, values)
 
             if sample_config['exclude'] is not None:
