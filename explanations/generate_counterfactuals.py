@@ -140,19 +140,44 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
     cf_window_explanation_file = os.path.join(args.save_path,
                                               vidpath('counterfactual_window', cf_name, save_id))
+    cf_video = np.concatenate((prefix_video, cf_imgs))
+    cf_window_video = window_slice(cf_video, split, args.window_len)
 
     if args.save_all:
         # Writing video 1 == continuation video alone
         write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
-
-    cf_video = np.concatenate((prefix_video, cf_imgs))
-    if args.save_all:
         # Writing video 2 == beginning + continuation
         write_video(cf_video, new_trajectory_file, img_shape, args.fps)
+    if args.save_all or not args.side_by_side:
+        # Writing video 3 == shorter version of 2
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps)
 
-    # Writing video 3 == shorter version of 2
-    cf_window_video = window_slice(cf_video, split, args.window_len)
-    write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps)
+    return cf_imgs, cf_video, cf_window_video
+
+def save_joint_video(video_list, video_names, base_video_name, id, args):
+    order = np.random.permutation(len(video_list))
+    padded_videos = []
+    max_len = max([len(v) for v in video_list])
+    h, w, c = video_list[0][0].shape
+    for i in order.tolist():
+        curr_vid = video_list[i]
+        padded_video = np.concatenate([curr_vid, np.zeros((max_len - len(curr_vid), h, w, c))])
+        padded_videos.append(padded_video)
+    combined_video = np.concatenate(padded_videos, axis=2)
+    save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.gif")
+    answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
+    with open(answer_key_file, 'a') as f:
+        f.write(f"{id},")
+        for i in order.tolist():
+            f.write(f"{video_names[i]},")
+        f.write("\n")
+    try:
+        t, h, w, c = combined_video.shape
+        write_video(combined_video, save_file, (w, h), args.fps)
+    except Exception as e:
+        print("BAD NEWS")
+
+
 
 
 def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
@@ -203,9 +228,25 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             start_timestep = split
             prefix_video = original_imgs[:split]
 
+        continuation_list = []
+        cf_list = []
+        window_list = []
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
-            generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args, cf_id, i, split,
+            continuation, cf, window = generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args, cf_id, i, split,
                                prefix_video)
+            continuation_list.append(continuation)
+            cf_list.append(cf)
+            window_list.append(window)
+        if args.side_by_side:
+            if args.save_all:
+                continuation_file = 'continuation'
+                cf_file = 'counterfactual_vid'
+                save_joint_video(continuation_list, cf_names, continuation_file, i, args)
+                save_joint_video(cf_list, cf_names, cf_file, i, args)
+            cf_window_file = 'counterfactual_window'
+            save_joint_video(window_list, cf_names, cf_window_file, i, args)
+
+
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -291,7 +332,7 @@ def select_states(args):
         state_indices = state_selection_fn(dataset, args.num_states, policy)
         alternative_agents = load_other_policies(args.eval_policies)
         # Add the original policy in too
-        alternative_agents.append((agent, args.run, args.policy_name))
+        alternative_agents = [(agent, args.run, args.policy_name)] + alternative_agents
         # Add
         exploration_rollout_saver = RolloutSaver(
             outfile=args.save_path + "/exploration.pkl",
@@ -304,6 +345,7 @@ def select_states(args):
         exploration_policy_config = {}
         test_rollout_savers = []
         for agent, run_type, name in alternative_agents:
+            outfile = args.save_path + f"/{name}_counterfactual.pkl"
             counterfactual_rollout_saver = RolloutSaver(
                 outfile=args.save_path + f"/{name}_counterfactual.pkl",
                 target_steps=None,
@@ -390,6 +432,7 @@ def main(parser_args=None):
                         help='environment configuration')
     parser.add_argument('--policy-name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
+    parser.add_argument('--side-by-side', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
                              'Note that this will take up a lot of space!')

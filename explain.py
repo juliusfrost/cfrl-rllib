@@ -176,6 +176,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
+    args += ['--side-by-side']
     generate_counterfactuals_main(args)
 
 
