@@ -1,5 +1,9 @@
 overwrite: false
 stop: doc
+remove_ext:
+  - pkl
+  - gif
+result_dir: C:\Users\Julius\Documents\GitHub\cfrl-rllib\results\explanation_test
 behavior_policy_config:
   sample:
     num_samples: 1
@@ -22,7 +26,6 @@ behavior_policy_config:
       - name: "5"
         run: PPO
         checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_42925_00000_0_2020-10-22_14-20-27\checkpoint_2011\checkpoint-2011
-result_dir: C:\Users\Julius\Documents\GitHub\cfrl-rllib\results
 state_selection: random
 explanation_method: [ counterfactual, critical, random ]
 episodes: 10
@@ -60,17 +63,109 @@ form_config:
   token_file: explanations\token.pickle
 env: DrivingPLE-v0
 env_config:
-  switch_prob: 0.001
-  switch_duration: 50
-  collision_penalty: -10
+  # reward function
+  normalize_reward: False
   time_reward_proportion: 0
-  normalize_reward: false
+  reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+  collision_penalty: -10
+  # state distribution
+  prob_car: 0.5
   time_limit: 500
+  switch_prob: 0.01
+  switch_duration: 100
+  # action distribution
+  action_noise: 0.
+  steering_resistance: 100.
+  speed_multiplier: 1.2
 eval_env: DrivingPLE-v0
 eval_env_config:
-  switch_prob: 0.005
-  switch_duration: 50
-  collision_penalty: -10
-  time_reward_proportion: 0
-  normalize_reward: false
-  time_limit: 500
+  sample:
+    num_samples: 1
+    num_trials: 5
+    replace: false
+    reduce_values: true
+    values:
+      # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        # state distribution
+        prob_car: 0.8
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        speed_multiplier: 1.2
+        # experiment name
+        name: increase_car_spawning
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.05
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        speed_multiplier: 1.2
+        # experiment name
+        name: increase_lane_switching
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.1
+        steering_resistance: 100.
+        speed_multiplier: 1.2
+        # experiment name
+        name: increase_action_noise
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 400.
+        speed_multiplier: 1.2
+        # experiment name
+        name: increase_steering_resistance
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        speed_multiplier: 1.2
+        # experiment name
+        name: none

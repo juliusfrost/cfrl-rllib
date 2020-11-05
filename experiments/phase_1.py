@@ -25,7 +25,8 @@ def main(argv=None):
     for config in list_configs:
         # this will be the name of the folder to save results to
         # result_dir/name
-        config['name'] = 'explanations-' + config['behavior_policy_config']['name']
+        config['name'] = 'behavior_policy_' + config['behavior_policy_config']['name'] + '-distribution_shift_' + \
+                         config['eval_env_config']['name']
         args = []
         args += ['--config', json.dumps(config)]
         explain_main(args)
