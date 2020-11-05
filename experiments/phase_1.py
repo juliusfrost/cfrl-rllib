@@ -23,6 +23,9 @@ def main(argv=None):
     list_configs = traverse_config(multi_config)
 
     for config in list_configs:
+        # this will be the name of the folder to save results to
+        # result_dir/name
+        config['name'] = 'explanations-' + config['behavior_policy_config']['name']
         args = []
         args += ['--config', json.dumps(config)]
         explain_main(args)

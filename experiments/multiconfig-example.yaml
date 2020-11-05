@@ -1,0 +1,76 @@
+overwrite: false
+stop: doc
+behavior_policy_config:
+  sample:
+    num_samples: 1
+    num_trials: 5
+    replace: false
+    reduce_values: true
+    values:
+      - name: "1"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4760_00000_0_2020-10-22_15-22-15\checkpoint_700\checkpoint-700
+      - name: "2"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_8af12_00000_0_2020-10-23_03-29-53\checkpoint_679\checkpoint-679
+      - name: "3"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_6512c_00000_0_2020-10-23_07-53-41\checkpoint_771\checkpoint-771
+      - name: "4"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4771_00000_0_2020-10-22_15-22-15\checkpoint_605\checkpoint-605
+      - name: "5"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_42925_00000_0_2020-10-22_14-20-27\checkpoint_2011\checkpoint-2011
+result_dir: C:\Users\Julius\Documents\GitHub\cfrl-rllib\results
+state_selection: random
+explanation_method: [ counterfactual, critical, random ]
+episodes: 10
+window_size: 20
+eval_config:
+  num_trials: 10
+  timesteps: 0
+  eval_policies:
+    sample:
+      num_samples: 2
+      num_trials: 1
+      replace: false
+      reduce_values: false
+      exclude: [ behavior_policy_config, ]
+      values:
+        - name: "1"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4760_00000_0_2020-10-22_15-22-15\checkpoint_700\checkpoint-700
+        - name: "2"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_8af12_00000_0_2020-10-23_03-29-53\checkpoint_679\checkpoint-679
+        - name: "3"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_6512c_00000_0_2020-10-23_07-53-41\checkpoint_771\checkpoint-771
+        - name: "4"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4771_00000_0_2020-10-22_15-22-15\checkpoint_605\checkpoint-605
+        - name: "5"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_42925_00000_0_2020-10-22_14-20-27\checkpoint_2011\checkpoint-2011
+video_config:
+  fps: 5
+form_config:
+  credentials: explanations\credentials.json
+  token_file: explanations\token.pickle
+env: DrivingPLE-v0
+env_config:
+  switch_prob: 0.001
+  switch_duration: 50
+  collision_penalty: -10
+  time_reward_proportion: 0
+  normalize_reward: false
+  time_limit: 500
+eval_env: DrivingPLE-v0
+eval_env_config:
+  switch_prob: 0.005
+  switch_duration: 50
+  collision_penalty: -10
+  time_reward_proportion: 0
+  normalize_reward: false
+  time_limit: 500
