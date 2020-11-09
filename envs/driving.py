@@ -93,6 +93,8 @@ def driving_creator(
         prob_car=kwargs.get('prob_car', 0.5),
         # steering resistance is the scalar that divides the steering angle to reduce sharp angles
         steering_resistance=kwargs.get('steering_resistance', 100.),
+        # Speed multiplier of k sets the target speed for the agent to k * robot car speed
+        speed_multiplier=kwargs.get('speed_multiplier', 1.0)
     )
     env = DrivingSimulatorStateWrapper(env)
     if action_noise > 0.:
