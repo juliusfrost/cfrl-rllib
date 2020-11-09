@@ -61,6 +61,7 @@ DEFAULT_CONFIG = {
         'dir_name': 'videos',
         # frames per second
         'fps': 5,
+        'border_width': 30
     },
     'form_config': {
         # REQUIRED
@@ -154,6 +155,7 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         args += ['--explanation-method', explanation_method]
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
+    args += ['--border-width', str(config['video_config']['border_width'])]
     args += ['--env-config', json.dumps(config['env_config'])]
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
     args += ['--policy-name', config['behavior_policy_config']['name']]
@@ -172,6 +174,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     # args += ['--explanation-method', config['explanation_method']]
     args += ['--timesteps', str(config['eval_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
+    args += ['--border-width', str(config['video_config']['border_width'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
     args += ['--policy-name', config['behavior_policy_config']['name']]
