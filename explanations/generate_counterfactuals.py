@@ -145,7 +145,10 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         # Writing video 1 == continuation video alone
         write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
 
-    cf_video = np.concatenate((prefix_video, cf_imgs))
+    if len(prefix_video) > 0:
+        cf_video = np.concatenate((prefix_video, cf_imgs))
+    else:
+        cf_video = cf_imgs
     if args.save_all:
         # Writing video 2 == beginning + continuation
         write_video(cf_video, new_trajectory_file, img_shape, args.fps)
