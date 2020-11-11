@@ -382,7 +382,6 @@ def select_states(args):
         exploration_policy_config = {}
         test_rollout_savers = []
         for agent, run_type, name in alternative_agents:
-            outfile = args.save_path + f"/{name}_counterfactual.pkl"
             counterfactual_rollout_saver = RolloutSaver(
                 outfile=args.save_path + f"/{name}_counterfactual.pkl",
                 target_steps=None,
