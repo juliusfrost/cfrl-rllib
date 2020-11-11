@@ -26,10 +26,7 @@ def create_dataset(args, policy_config, write_data=True):
         simulator_states = []
         trajectories = []
 
-        try:
-            data = pickle.load(f)
-        except Exception as e:
-            print("couldn't load, for some reason")
+        data = pickle.load(f)
         # I'm not sure why, but everything's wrapped in a list
         # print(f"Saving {len(data)} trajectories")
         for trajectory_id, trajectory in enumerate(data):
