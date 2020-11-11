@@ -286,8 +286,8 @@ def main():
     elif stop == 'doc':
         generate_doc(config, video_dir)
 
-    # for ext in config.get('remove_ext', []):
-    #     remove_ext(experiment_dir, ext)
+    for ext in config.get('remove_ext', []):
+        remove_ext(experiment_dir, ext)
 
 
 if __name__ == '__main__':
