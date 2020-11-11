@@ -83,6 +83,8 @@ DEFAULT_CONFIG = {
     'eval_config': {
         # number of trial iterations of explanation and evaluation
         'num_trials': 10,
+        # number of extra branching states we compute in case the trajectory ends during exploration
+        'num_buffer_trials': 10,
         # list of evaluation policies to continue rollouts
         # Policies are a dict of {'name': name, 'run': run, 'checkpoint': checkpoint}
         'eval_policies': [],
@@ -148,6 +150,7 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
+    args += ['--num-buffer-states', str(config['eval_config']['num_buffer_trials'])]
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['window_size'])]
     args += ['--state-selection-method', config['state_selection']]
@@ -169,6 +172,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
+    args += ['--num-buffer-states', str(config['eval_config']['num_buffer_trials'])]
     args += ['--save-path', video_dir]
     args += ['--window-len', str(config['eval_config']['window_size'])]
     args += ['--state-selection-method', config['eval_config']['state_selection']]

@@ -148,7 +148,10 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         # Writing video 1 == continuation video alone
         write_video(cf_imgs, cf_explanation_file, img_shape, args.fps)
 
-    cf_video = np.concatenate((prefix_video, cf_imgs))
+    if len(prefix_video) > 0:
+        cf_video = np.concatenate((prefix_video, cf_imgs))
+    else:
+        cf_video = cf_imgs
     if args.save_all:
         # Writing video 2 == beginning + continuation
         write_video(cf_video, new_trajectory_file, img_shape, args.fps)
@@ -291,7 +294,7 @@ def select_states(args):
     alternative_agents.append((agent, args.run, args.policy_name))
     if args.explanation_method == "counterfactual":
         state_selection_fn = state_selection_dict[args.state_selection_method]
-        state_indices = state_selection_fn(dataset, args.num_states, policy)
+        state_indices = state_selection_fn(dataset, args.num_states + args.num_buffer_states, policy)
         alternative_agents = load_other_policies(args.eval_policies)
         # Add the original policy in too
         alternative_agents.append((agent, args.run, args.policy_name))
@@ -326,8 +329,11 @@ def select_states(args):
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
                 os.makedirs(args.save_path)
-            for exp_index, i in enumerate(state_indices):
-                timestep = dataset.get_timestep(i)
+            successful_trajs = 0
+            exp_index = 0
+            while successful_trajs < args.num_states and (exp_index < len(state_indices)):
+                branching_state = state_indices[exp_index]
+                timestep = dataset.get_timestep(branching_state)
                 simulator_state = timestep.simulator_state
                 obs = timestep.observation
                 env.load_simulator_state(simulator_state)
@@ -349,6 +355,11 @@ def select_states(args):
                         counterfactual_saver, counterfactual_args = saver_stuff
                         with counterfactual_saver as saver:
                             rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                    successful_trajs += 1
+                exp_index += 1
+            if not successful_trajs == args.num_states:
+                print("WARNING: We were not able to generate the requested number of trajectories. "
+                      "Consider raising num_buffer_states.")
 
             exploration_dataset = create_dataset(exploration_args, exploration_policy_config, write_data=args.save_all)
             cf_datasets = []
@@ -396,6 +407,7 @@ def main(parser_args=None):
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
                              'Note that this will take up a lot of space!')
+    parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     args = parser.parse_args(parser_args)
 
     # register environments
