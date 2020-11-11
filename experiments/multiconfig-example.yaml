@@ -68,6 +68,7 @@ env_config:
   time_reward_proportion: 0
   reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
   collision_penalty: -10
+  speed_multiplier: 1.2
   # state distribution
   prob_car: 0.5
   time_limit: 500
@@ -76,7 +77,6 @@ env_config:
   # action distribution
   action_noise: 0.
   steering_resistance: 100.
-  speed_multiplier: 1.2
 eval_env: DrivingPLE-v0
 eval_env_config:
   sample:
@@ -90,6 +90,7 @@ eval_env_config:
         time_reward_proportion: 0
         reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
         collision_penalty: -10
+        speed_multiplier: 1.2
         # state distribution
         prob_car: 0.8
         time_limit: 500
@@ -98,7 +99,6 @@ eval_env_config:
         # action distribution
         action_noise: 0.
         steering_resistance: 100.
-        speed_multiplier: 1.2
         # experiment name
         name: increase_car_spawning
 
@@ -107,6 +107,7 @@ eval_env_config:
         time_reward_proportion: 0
         reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
         collision_penalty: -10
+        speed_multiplier: 1.2
         # state distribution
         prob_car: 0.5
         time_limit: 500
@@ -115,7 +116,6 @@ eval_env_config:
         # action distribution
         action_noise: 0.
         steering_resistance: 100.
-        speed_multiplier: 1.2
         # experiment name
         name: increase_lane_switching
 
@@ -124,6 +124,7 @@ eval_env_config:
         time_reward_proportion: 0
         reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
         collision_penalty: -10
+        speed_multiplier: 1.2
         # state distribution
         prob_car: 0.5
         time_limit: 500
@@ -132,7 +133,6 @@ eval_env_config:
         # action distribution
         action_noise: 0.1
         steering_resistance: 100.
-        speed_multiplier: 1.2
         # experiment name
         name: increase_action_noise
 
@@ -141,6 +141,7 @@ eval_env_config:
         time_reward_proportion: 0
         reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
         collision_penalty: -10
+        speed_multiplier: 1.2
         # state distribution
         prob_car: 0.5
         time_limit: 500
@@ -149,7 +150,6 @@ eval_env_config:
         # action distribution
         action_noise: 0.
         steering_resistance: 400.
-        speed_multiplier: 1.2
         # experiment name
         name: increase_steering_resistance
 
@@ -158,6 +158,7 @@ eval_env_config:
         time_reward_proportion: 0
         reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
         collision_penalty: -10
+        speed_multiplier: 1.2
         # state distribution
         prob_car: 0.5
         time_limit: 500
@@ -166,6 +167,5 @@ eval_env_config:
         # action distribution
         action_noise: 0.
         steering_resistance: 100.
-        speed_multiplier: 1.2
         # experiment name
         name: none
