@@ -29,7 +29,7 @@ def window_slice(arr, index: int, window_radius: int):
     return arr[window_low: window_high]
 
 
-def add_border(imgs, border_size=10, border_color=(255, 255, 255)):
+def add_border(imgs, border_size=30, border_color=(255, 255, 255)):
     final_images = []
     for img in imgs:
         img_with_border = cv2.copyMakeBorder(
@@ -45,7 +45,7 @@ def add_border(imgs, border_size=10, border_color=(255, 255, 255)):
     return final_images
 
 
-def add_borders(imgs, border_size=10, border_color1=(255, 255, 255), border_color2=(0, 255, 0)):
+def add_borders(imgs, border_size=30, border_color1=(255, 255, 255), border_color2=(0, 255, 0)):
     switch_index = len(imgs) // 2
     prefix_imgs = add_border(imgs[:switch_index], border_size=border_size, border_color=border_color1)
     post_imgs = add_border(imgs[switch_index:], border_size=border_size, border_color=border_color2)
@@ -56,8 +56,8 @@ def add_borders(imgs, border_size=10, border_color1=(255, 255, 255), border_colo
 def add_text(images, traj_start, initial_reward, traj_rewards, show_timestep=True, show_reward=True):
     final_images = []
     font = cv2.FONT_HERSHEY_SIMPLEX
-    org = (50, 50)
-    rew_org = (50, 100)
+    org = (50, 75)
+    rew_org = (50, 150)
     font_scale = 1.8
     color = (255, 0, 0)
     thickness = 3
@@ -68,16 +68,16 @@ def add_text(images, traj_start, initial_reward, traj_rewards, show_timestep=Tru
             image = cv2.putText(image, f'Timestep: {i + traj_start}', org, font,
                                     font_scale, color, thickness, cv2.LINE_AA)
         if show_reward:
-            image = cv2.putText(image, f'Score: {cum_reward}', rew_org, font,
+            image = cv2.putText(image, f'Score: {cum_reward:.0f}', rew_org, font,
                                     font_scale, color, thickness, cv2.LINE_AA)
         final_images.append(image)
     return final_images
 
 
-def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=10,
+def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
                   border_color=(255, 255, 255), show_timestep=True, show_reward=True):
-    final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward,
-                            show_timestep, show_reward)
+    final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, show_timestep,
+                            show_reward)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
 
@@ -106,6 +106,7 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
                                   font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [blank_frame] * fps]).astype(np.uint8)
     imageio.mimwrite(filename, frames, fps=fps)
+
 
 DatasetArgs = namedtuple("DatasetArgs", ["out", "env", "run", "checkpoint"])
 
@@ -142,7 +143,7 @@ def load_other_policies(other_policies):  # TODO: include original policy here t
 
 
 def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video,
-                       show_timestep=True):
+                       show_timestep=True, show_reward=True):
     # Generate continuation video
     cf_trajectory = cf_dataset.get_trajectory(cf_id)
     cf_rewards = cf_trajectory.reward_range
@@ -151,7 +152,9 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             trajectory_reward=cf_rewards,
                             initial_reward=reward_so_far,
                             border_color=[0, 255, 0],
-                            show_timestep=show_timestep)
+                            border_size=args.border_width,
+                            show_timestep=show_timestep,
+                            show_reward=True)
     img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
     # We will generate 3 videos using this continuation:
@@ -182,6 +185,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True)
 
     return cf_imgs, cf_video, cf_window_video
+
 
 def save_joint_video(video_list, video_names, base_video_name, id, args):
     h, w, c = video_list[0][0].shape
@@ -216,8 +220,6 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
         f.write("\n")
 
 
-
-
 def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
                                           cf_names, state_indices):
     # Loop through the cf ids
@@ -243,7 +245,8 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       start_timestep=0,
                                       trajectory_reward=original_rewards,
                                       initial_reward=0,
-                                      border_color=[255, 255, 255])
+                                      border_color=[255, 255, 255],
+                                      border_size=args.border_width)
 
         #  (2) Create images of exploration
         has_explored = len(exploration_dataset.all_trajectory_ids) != 0
@@ -255,7 +258,8 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                      start_timestep=split,
                                      trajectory_reward=exp_rewards,
                                      initial_reward=original_rewards[:split].sum(),
-                                     border_color=[255, 0, 255])
+                                     border_color=[255, 0, 255],
+                                     border_size=args.border_width)
 
             #  (5) Create videos with the continuations
             initial_rewards = original_rewards[:split].sum() + exp_rewards.sum()
@@ -327,7 +331,8 @@ def generate_videos_state_method(original_dataset, args, state_indices):
                                       start_timestep=0,
                                       trajectory_reward=original_rewards,
                                       initial_reward=0,
-                                      border_color=[255, 255, 255])
+                                      border_color=[255, 255, 255],
+                                      border_size=0)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -341,7 +346,7 @@ def generate_videos_state_method(original_dataset, args, state_indices):
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'baseline_window-trial_{i}.gif')
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
-        baseline_window_video = add_borders(baseline_window_video)
+        baseline_window_video = add_borders(baseline_window_video, border_size=args.border_width)
         # print(len(baseline_window_video))
         # print(baseline_window_video[0].shape)
         # print(img_shape)
@@ -471,6 +476,7 @@ def main(parser_args=None):
                              'Policies are a tuple of (name, algorithm, checkpoint)')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
+    parser.add_argument('--border-width', type=int, default=30)
     # TODO: make way env-config and alt-policy-config are handled identitcal.
     parser.add_argument('--env-config', type=json.loads, default="{}",
                         help='environment configuration')
