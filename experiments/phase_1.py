@@ -29,7 +29,11 @@ def main(argv=None):
                          config['eval_env_config']['name']
         args = []
         args += ['--config', json.dumps(config)]
-        explain_main(args)
+        try:
+            explain_main(args)
+        except Exception as e:
+            print(e)
+            print(f'errored with config {json.dumps(config)}')
 
 
 if __name__ == '__main__':
