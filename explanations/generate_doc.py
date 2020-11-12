@@ -34,8 +34,9 @@ def get_explain_name(explanation_method, config):
         return NotImplementedError
     return get_name
 
+
 def get_eval_name(eval_dir, trial):
-    os.path.join(eval_dir, f'counterfactual_window-trial_{trial}.gif')
+    return os.path.join(eval_dir, f'counterfactual_window-t_{trial}.gif')
 
 
 def add_explanations(document, trial, image_path):
