@@ -424,7 +424,7 @@ def select_states(args):
                 post_explore_state = exp_env.get_simulator_state()
 
                 if not env_done:
-                    cf_to_exp_index[cf_count] = exp_index
+                    cf_to_exp_index[cf_count] = successful_trajs
                     cf_count += 1
                     for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
                         exp_env.load_simulator_state(post_explore_state)
