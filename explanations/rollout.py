@@ -3,6 +3,7 @@ from ray.tune.utils import merge_dicts
 from ray.tune.registry import get_trainable_cls
 from ray.rllib.env.base_env import _DUMMY_AGENT_ID
 
+import pickle
 import copy
 
 
