@@ -163,17 +163,16 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (3) Shorter version of (2) centered around the selected state.
     # f'{video_type}-{cf_name}-t_{save_id}.gif'
     vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.gif'
-    cf_video = np.concatenate((prefix_video, cf_imgs))
+    if len(prefix_video) > 0:
+        cf_video = np.concatenate((prefix_video, cf_imgs))
+    else:
+        cf_video = cf_imgs
     cf_window_video = window_slice(cf_video, split, args.window_len)
 
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
         write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True)
-    if len(prefix_video) > 0:
-        cf_video = np.concatenate((prefix_video, cf_imgs))
-    else:
-        cf_video = cf_imgs
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
