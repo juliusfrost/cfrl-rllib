@@ -85,7 +85,7 @@ def format_images(frames, start_timestep=0, trajectory_reward=None, initial_rewa
 def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop=True,
                   show_blank_frames=False):
     w, h = image_shape
-    font_scale = 5
+    font_scale = 4
     color = (255, 255, 255)
     thickness = 8
     if show_blank_frames:
@@ -96,9 +96,9 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
         start_frame = np.zeros((h, w, 3)) + 100
-        bottom_left = (int(w / 2) - 300, int(h / 2))
-        start_frame = cv2.putText(start_frame, 'Starting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
-        frames = np.concatenate([[start_frame] * fps, frames]).astype(np.uint8)
+        bottom_left = (int(w / 2) - 310, int(h / 2))
+        start_frame = cv2.putText(start_frame, 'Restarting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        frames = np.concatenate([frames, [start_frame] * fps]).astype(np.uint8)
     if show_stop:
         blank_frame = np.zeros((h, w, 3))
         bottom_left = (int(w / 2) - 200, int(h / 2))
