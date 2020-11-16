@@ -104,7 +104,7 @@ def add_evaluations(document, trial, eval_image, text=''):
 
 def build_document(save_dir, video_dir, explanation_method, num_trials, config):
     document = docx.Document()
-    document.add_heading('Explainable Reinforcement Learning User Study', 0)
+    document.add_heading('Explainable Reinforcement Learning User Evaluation', 0)
     document.add_paragraph(
         'The following videos show the behavior of drivers in different situations. '
         'Your task is to interpret the general behavior of the driver in the yellow car '
@@ -112,8 +112,8 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config):
         'We label the driver in the explanation videos driver A. '
     )
     document.add_paragraph(
-        'To measure how well you understood the driver behavior, you will be given an evaluation task. '
-        'In the evaluation task, you will be shown a multiple videos with different drivers. '
+        'To measure how well you understood the driver A\'s behavior, you will be given an evaluation task. '
+        'In the evaluation task, you will be shown multiple videos with different drivers. '
         'In the first half of the video, there is a single driver A corresponding to the driver being explained. '
         'In the second half of the video, there is either the same driver A '
         'or a different driver that can lead to different outcomes. '
