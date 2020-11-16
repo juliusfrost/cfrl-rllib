@@ -209,6 +209,7 @@ def generate_doc(config, video_dir):
     args += ['--video-dir', video_dir]
     args += ['--save-dir', video_dir]
     args += ['--config', json.dumps(config)]
+    args += ['--doc-config', config['doc_config']]
     generate_doc_main(args)
 
 

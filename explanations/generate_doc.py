@@ -14,6 +14,7 @@ def parse_args(parser_args=None):
     parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')
     parser.add_argument('--save-dir', help='directory to save output docs')
     parser.add_argument('--config', type=json.loads, default="{}", help='experiment configuration')
+    parser.add_argument('--doc-config', type=json.loads, default="{}", help='generated doc configuration')
     args = parser.parse_args(parser_args)
     # if not os.path.exists(args.video_dir):
     #     raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
@@ -58,7 +59,7 @@ def add_evaluations(document, trial, eval_image):
     p = document.add_paragraph('Which continuation do you think came from the explained behavior policy? ')
 
 
-def build_document(save_dir, video_dir, explanation_method, num_trials, config):
+def build_document(save_dir, video_dir, explanation_method, num_trials, config, doc_name):
     document = docx.Document()
     document.add_heading('Explainable Reinforcement Learning User Study', 0)
     p = document.add_paragraph()
@@ -73,7 +74,7 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config):
         add_explanations(document, trial, name_formula(explanation_dir, trial))
         add_evaluations(document, trial, get_eval_name(eval_dir, trial))
 
-    document.save(os.path.join(save_dir, f'{explanation_method}.docx'))
+    document.save(os.path.join(save_dir, f'{doc_name}.docx'))
 
 
 def read_eval_policies(video_dir):
@@ -98,7 +99,7 @@ def main(parser_args=None):
     assert isinstance(explanation_methods, list)
 
     for explanation_method in explanation_methods:
-        build_document(args.save_dir, args.video_dir, explanation_method, num_trials, args.config)
+        build_document(args.save_dir, args.video_dir, explanation_method, num_trials, args.config, args.doc_name)
 
 
 if __name__ == '__main__':
