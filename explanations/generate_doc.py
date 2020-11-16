@@ -31,16 +31,58 @@ def get_explain_name(explanation_method, config):
                                 f'{config["behavior_policy_config"]["name"]}-'
                                 f't_{trial}.gif')
     else:
-        return NotImplementedError
+        raise NotImplementedError
     return get_name
+
+
+def get_explain_study_text(explanation_method, config):
+    text = ''
+    text += 'The following video shows a segment of driver A\'s experience on the highway route 1. '
+    if explanation_method == 'random':
+        text += 'The segments shown here are selected randomly. '
+        text += 'In all parts of the video, the driver A steers the car. '
+    elif explanation_method == 'critical':
+        text += 'The segments shown here are selected where it is critical to take certain actions. '
+        text += 'In all parts of the video, the driver A steers the car. '
+    elif explanation_method == 'counterfactual':
+        text += 'The segments shown here are selected randomly. '
+        text += 'In the beginning part of the video, the driver A steers the car. '
+        text += 'At some point in time, driver B takes over steering ' \
+                'to move the car off course than originally planned. '
+        text += 'Lastly, the driver A takes over control of steering. '
+    else:
+        raise NotImplementedError
+    text += 'Your task: observe the behavior of driver A and try to detect any patterns. '
+    return text
+
+
+def get_eval_study_text(explanation_method, config):
+    num_eval_policies = config['eval_config']['eval_policies']
+    text = 'The following video shows segments of driver A\'s experience on the highway route 2. '
+    text += 'In the beginning half of each video, driver A steers the car and shows the same thing for all videos. '
+    text += 'In the ending half of each video, ' \
+            'a different driver steers the car and shows different possible outcomes. '
+    drivers = ['A'] + [chr(i) for i in range(ord('C'), ord('C') + num_eval_policies)]
+    text += 'The drivers that steer the car in the ending half could be '
+    for i, driver_name in enumerate(drivers):
+        if i == len(drivers) - 1:
+            text += f'or driver {driver_name}. '
+        else:
+            text += f'driver {driver_name}, '
+    text += 'The videos are shuffled to hide which outcome was from driver A. '
+    text += f'The outcomes are labeled outcome 1 through outcome {len(drivers)} from left to right. '
+    text += 'Your task: remember the behavior of driver A from previous tasks,' \
+            ' and guess which outcome was a result of driver A.'
+    return text
 
 
 def get_eval_name(eval_dir, trial):
     return os.path.join(eval_dir, f'counterfactual_window-t_{trial}.gif')
 
 
-def add_explanations(document, trial, image_path):
-    p = document.add_paragraph('Explanation')
+def add_explanations(document, trial, image_path, text=''):
+    document.add_heading('Explanation', level=2)
+    document.add_paragraph(text)
     p = document.add_paragraph('')
     r: Run = p.add_run()
     try:
@@ -49,8 +91,9 @@ def add_explanations(document, trial, image_path):
         print(f'Could not find image {image_path}')
 
 
-def add_evaluations(document, trial, eval_image):
-    p = document.add_paragraph('Evaluation')
+def add_evaluations(document, trial, eval_image, text=''):
+    document.add_heading('Evaluation', level=2)
+    document.add_paragraph(text)
     p = document.add_paragraph('')
     r = p.add_run()
     r.add_picture(eval_image, height=Inches(2))
@@ -72,18 +115,22 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config):
         'or a different one that can lead to different outcomes. '
         'Your goal is to select which driver you think is the same one as the one you saw being explained '
         'by selecting the video which did not switch drivers. '
+        'Note that the distribution of states you see in the evaluation task '
+        'may be different from that in the explanations. '
     )
     p = document.add_paragraph()
-    r: Run = p.add_run()
-    r.add_text('Here are the explanations:\n')
+    # r: Run = p.add_run()
+    # r.add_text('Here are the explanations:\n')
     name_formula = get_explain_name(explanation_method, config)
+    explanation_study_text = get_explain_study_text(explanation_method, config)
+    eval_study_text = get_explain_study_text(explanation_method, config)
     for trial in range(num_trials):
         explanation_dir = os.path.join(video_dir, f'explain-{explanation_method}')
         eval_dir = os.path.join(video_dir, 'eval')
 
-        document.add_heading(f'Trial {trial}', level=1)
-        add_explanations(document, trial, name_formula(explanation_dir, trial))
-        add_evaluations(document, trial, get_eval_name(eval_dir, trial))
+        document.add_heading(f'Trial {trial + 1}', level=1)
+        add_explanations(document, trial, name_formula(explanation_dir, trial), explanation_study_text)
+        add_evaluations(document, trial, get_eval_name(eval_dir, trial), eval_study_text)
 
     document.save(os.path.join(save_dir, f'{explanation_method}.docx'))
 
