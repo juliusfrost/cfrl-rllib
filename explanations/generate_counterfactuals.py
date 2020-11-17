@@ -88,9 +88,6 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
     font_scale = 4
     color = (255, 255, 255)
     thickness = 8
-    w = w // downscale
-    h = h // downscale
-    frames = [cv2.resize(img, dsize=(w,h), interpolation=cv2.INTER_CUBIC) for img in frames]
     if show_blank_frames:
         blank_frames = np.zeros((fps, h, w, 3))
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
@@ -108,6 +105,9 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
                                   font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [blank_frame] * fps]).astype(np.uint8)
+    w = w // downscale
+    h = h // downscale
+    frames = [cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_CUBIC) for img in frames]
     imageio.mimwrite(filename, frames, fps=fps)
 
 
@@ -196,7 +196,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
     # Approximately center at the middle of the image
     # The -200 offset is so the text is about centered horizontally
     bottom_left = (int(w / 2) - 200, int(h / 2))
-    font_scale = 5
+    font_scale = 4
     color = (255, 255, 255)
     thickness = 8
 
