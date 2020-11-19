@@ -265,12 +265,6 @@ def main(argv=None):
         print('dataset file already exists.')
         print(explanation_dataset)
 
-    if overwrite or not os.path.exists(evaluation_dataset):
-        create_dataset(config, evaluation_dataset, eval=True)
-    else:
-        print('dataset file already exists.')
-        print(evaluation_dataset)
-
     video_dir = os.path.join(experiment_dir, config['video_config']['dir_name'])
     # TODO: fix file structure
     env = config['eval_env']
