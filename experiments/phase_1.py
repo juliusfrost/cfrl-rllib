@@ -1,7 +1,9 @@
 import argparse
 import json
 import os
+import traceback
 
+import ray
 import yaml
 
 from experiments.utils.sampling import traverse_config
@@ -34,6 +36,7 @@ def main(argv=None):
         except Exception as e:
             print(e)
             print(f'errored with config {json.dumps(config)}')
+            print(traceback.format_exc())
 
 
 if __name__ == '__main__':

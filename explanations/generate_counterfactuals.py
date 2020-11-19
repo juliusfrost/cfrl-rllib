@@ -84,9 +84,9 @@ def format_images(frames, start_timestep=0, trajectory_reward=None, initial_rewa
 
 
 def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop=True,
-                  show_blank_frames=False):
+                  show_blank_frames=False, downscale=2):
     w, h = image_shape
-    font_scale = 5
+    font_scale = 4
     color = (255, 255, 255)
     thickness = 8
     if show_blank_frames:
@@ -97,15 +97,18 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
         start_frame = np.zeros((h, w, 3)) + 100
-        bottom_left = (int(w / 2) - 300, int(h / 2))
-        start_frame = cv2.putText(start_frame, 'Starting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
-        frames = np.concatenate([[start_frame] * fps, frames]).astype(np.uint8)
+        bottom_left = (int(w / 2) - 310, int(h / 2))
+        start_frame = cv2.putText(start_frame, 'Restarting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        frames = np.concatenate([frames, [start_frame] * fps]).astype(np.uint8)
     if show_stop:
         blank_frame = np.zeros((h, w, 3))
         bottom_left = (int(w / 2) - 200, int(h / 2))
         blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
                                   font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [blank_frame] * fps]).astype(np.uint8)
+    w = w // downscale
+    h = h // downscale
+    frames = [cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_CUBIC) for img in frames]
     imageio.mimwrite(filename, frames, fps=fps)
 
 
@@ -158,6 +161,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             border_size=args.border_width,
                             show_timestep=show_timestep,
                             show_reward=True)
+    
     img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
     # We will generate 3 videos using this continuation:
@@ -175,16 +179,16 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
-        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True)
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
-        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True)
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
     if args.save_all or not args.side_by_side:
         # Writing video 3 == shorter version of 2
         cf_window_explanation_file = os.path.join(args.save_path,
                                                   vidpath('counterfactual_window', cf_name, save_id))
-        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True)
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
 
     return cf_imgs, cf_video, cf_window_video
 
@@ -195,7 +199,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
     # Approximately center at the middle of the image
     # The -200 offset is so the text is about centered horizontally
     bottom_left = (int(w / 2) - 200, int(h / 2))
-    font_scale = 5
+    font_scale = 4
     color = (255, 255, 255)
     thickness = 8
 
@@ -214,7 +218,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
     t, h, w, c = combined_video.shape
     save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.gif")
     answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
-    write_video(combined_video, save_file, (w, h), args.fps, show_start=True, show_stop=False)
+    write_video(combined_video, save_file, (w, h), args.fps, show_start=True, show_stop=False, downscale=args.downscale)
     with open(answer_key_file, 'a') as f:
         f.write(f"{id},")
         for i in order.tolist():
@@ -296,16 +300,16 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
 
             if has_explored:
                 #  (2) Exploration video
                 exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
-                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True)
+                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
 
             #  (3) Beginning + Exploration
             pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
-            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True)
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
@@ -313,7 +317,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         baseline_window_video = window_slice(original_imgs, split, args.window_len)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps,
-                    show_start=True, show_stop=True)
+                    show_start=True, show_stop=True, downscale=args.downscale)
 
 
 def generate_videos_state_method(original_dataset, args, state_indices):
@@ -342,7 +346,7 @@ def generate_videos_state_method(original_dataset, args, state_indices):
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, downscale=args.downscale)
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
@@ -353,7 +357,7 @@ def generate_videos_state_method(original_dataset, args, state_indices):
         # print(baseline_window_video[0].shape)
         # print(img_shape)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
-        write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps)
+        write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps, downscale=args.downscale)
 
 
 def select_states(args):
@@ -479,6 +483,7 @@ def main(parser_args=None):
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
     parser.add_argument('--border-width', type=int, default=30)
+    parser.add_argument('--downscale', type=int, default=2)
     # TODO: make way env-config and alt-policy-config are handled identitcal.
     parser.add_argument('--env-config', type=json.loads, default="{}",
                         help='environment configuration')
