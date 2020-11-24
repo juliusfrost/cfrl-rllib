@@ -110,9 +110,11 @@ def parse_args(argv=None):
                         help='experiment file config. see the default parameters in this file')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--stop', default=None, choices=['video', 'form'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc'],
                         help='whether to stop at generating videos or create the user study form')
     parser.add_argument('--config', type=json.loads, default='{}', help='use json config instead of file config')
+    parser.add_argument('--doc-id', default=None, type=str,
+                        help='id to be used as the document title')
     args = parser.parse_args(argv)
     return args
 
@@ -205,13 +207,17 @@ def generate_forms(config, video_dir):
     generate_forms_main(args)
 
 
-def generate_doc(config, video_dir):
+def generate_doc(config, video_dir, doc_id):
     from explanations.generate_doc import main as generate_doc_main
     args = []
     args += ['--video-dir', video_dir]
     args += ['--save-dir', video_dir]
     args += ['--config', json.dumps(config)]
-    args += ['--doc-config', config['doc_config']]
+    args += ['--doc-config', json.dumps(config['doc_config'])]
+    if doc_id is None:
+        import random
+        doc_id = f'{random.randint(0, 1000):03d}'
+    args += ['--doc-id', doc_id]
     generate_doc_main(args)
 
 
@@ -308,10 +314,10 @@ def main(argv=None):
     if stop == 'form':
         generate_forms(config, video_dir)
     elif stop == 'doc':
-        generate_doc(config, video_dir)
+        generate_doc(config, video_dir, args.doc_id)
 
-    for ext in config.get('remove_ext', []):
-        remove_ext(experiment_dir, ext)
+    # for ext in config.get('remove_ext', []):
+    #     remove_ext(experiment_dir, ext)
 
 
 if __name__ == '__main__':
