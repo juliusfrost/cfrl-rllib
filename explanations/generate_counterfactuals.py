@@ -96,12 +96,12 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         font = cv2.FONT_HERSHEY_SIMPLEX
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
-        start_frame = np.zeros((h, w, 3)) + 100
+        start_frame = np.zeros((h, w, 3)).astype(np.uint8) + 100
         bottom_left = (int(w / 2) - 310, int(h / 2))
         start_frame = cv2.putText(start_frame, 'Restarting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [start_frame] * fps]).astype(np.uint8)
     if show_stop:
-        blank_frame = np.zeros((h, w, 3))
+        blank_frame = np.zeros((h, w, 3)).astype(np.uint8)
         bottom_left = (int(w / 2) - 200, int(h / 2))
         blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
                                   font_scale, color, thickness, cv2.LINE_AA)
@@ -208,11 +208,11 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
     max_len = max([len(v) for v in video_list]) + args.fps
     for i in order.tolist():
         curr_vid = video_list[i]
-        blank_frame = np.zeros((h, w, c))
+        blank_frame = np.zeros((h, w, c)).astype(np.uint8)
         blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
                                 font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [blank_frame] * (max_len - len(curr_vid))])
-        padded_videos.append(padded_video)
+        padded_videos.append(padded_video.astype(np.uint8))
     combined_video = np.concatenate(padded_videos, axis=2)
 
     t, h, w, c = combined_video.shape
