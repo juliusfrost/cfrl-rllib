@@ -57,7 +57,7 @@ def get_explain_study_text(explanation_method, config):
 
 
 def get_eval_study_text(explanation_method, config):
-    num_eval_policies = config['eval_config']['eval_policies']
+    num_eval_policies = len(config['eval_config']['eval_policies'])
     text = 'The following video shows segments of driver A\'s experience on the highway route 2. '
     text += 'In the beginning half of each video, driver A steers the car and shows the same thing for all videos. '
     text += 'In the ending half of each video, ' \
@@ -97,33 +97,41 @@ def add_evaluations(document, trial, eval_image, text=''):
     p = document.add_paragraph('')
     r = p.add_run()
     r.add_picture(eval_image, height=Inches(2))
-    p = document.add_paragraph('')
-    p = document.add_paragraph('Which continuation do you think came from the explained behavior policy? ')
+    document.add_paragraph('')
+    document.add_paragraph('Which outcome was a result of driver A? '
+                           'Write your answer in the accompanying answer sheet. ')
 
 
 def build_document(save_dir, video_dir, explanation_method, num_trials, config):
     document = docx.Document()
-    document.add_heading('Explainable Reinforcement Learning User Study', 0)
-    p = document.add_paragraph(
+    document.add_heading('Explainable Reinforcement Learning User Evaluation', 0)
+    document.add_paragraph(
         'The following videos show the behavior of drivers in different situations. '
         'Your task is to interpret the general behavior of the driver in the yellow car '
         'by watching the explanation videos. '
-        'To measure how well you understood the driver behavior, you will be given an evaluation task. '
-        'In the evaluation task, you will be shown a multiple videos with different drivers. '
-        'In the first half of the video, there is a single driver corresponding to the driver being explained. '
-        'In the second half of the video, there is either the same driver '
-        'or a different one that can lead to different outcomes. '
+        'We label the driver in the explanation videos driver A. '
+    )
+    document.add_paragraph(
+        'To measure how well you understood the driver A\'s behavior, you will be given an evaluation task. '
+        'In the evaluation task, you will be shown multiple videos with different drivers. '
+        'In the first half of the video, there is a single driver A corresponding to the driver being explained. '
+        'In the second half of the video, there is either the same driver A '
+        'or a different driver that can lead to different outcomes. '
         'Your goal is to select which driver you think is the same one as the one you saw being explained '
         'by selecting the video which did not switch drivers. '
+        'In other words, select the outcome obtained by driver A. '
+    )
+    document.add_paragraph(
         'Note that the distribution of states you see in the evaluation task '
         'may be different from that in the explanations. '
+        'We label this distribution shift as driving on a different highway (1 or 2).'
     )
-    p = document.add_paragraph()
+    document.add_paragraph()
     # r: Run = p.add_run()
     # r.add_text('Here are the explanations:\n')
     name_formula = get_explain_name(explanation_method, config)
     explanation_study_text = get_explain_study_text(explanation_method, config)
-    eval_study_text = get_explain_study_text(explanation_method, config)
+    eval_study_text = get_eval_study_text(explanation_method, config)
     for trial in range(num_trials):
         explanation_dir = os.path.join(video_dir, f'explain-{explanation_method}')
         eval_dir = os.path.join(video_dir, 'eval')
