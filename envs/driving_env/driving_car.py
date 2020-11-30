@@ -36,6 +36,7 @@ class Car(pygame.sprite.Sprite):
         self.heading = standardize_heading(initial_state[2])
         self.heading_max = kwargs["heading_max"]
         self.heading_min = kwargs["heading_min"]
+        lane_width = kwargs['lane_width']
         # Rotate (CCW) car by heading
         self.orig_img = pygame.transform.scale(img, [self.height, self.width])
         self.TRANSPARENCY = 1.
@@ -60,12 +61,18 @@ class Car(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y - ydiff)
-
-        self.switching = False
-        self.switching_direction = 0
-        self.switch_step = 0
-        self.switch_duration_remaining = 0
+        self.switching = len(initial_state) > 4
         self.switch_duration = kwargs.get('switch_duration', 50)
+        
+        if self.switching:
+            self.switching_direction = initial_state[-2]
+            self.switch_duration_remaining = initial_state[-1]
+        else:
+            self.switching_direction = 0
+            self.switch_duration_remaining = 0
+
+        self.switch_step = (lane_width + 4) * self.switching_direction / self.switch_duration
+            
 
         self.dummy = False
 
