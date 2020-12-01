@@ -3,10 +3,15 @@ import json
 import os
 import os.path
 
-import numpy as np
 import docx
 from docx.shared import Inches
 from docx.text.run import Run
+
+EXPLANATION_IDS = {
+    'random': 0,
+    'critical': 1,
+    'counterfactual': 2,
+}
 
 
 def parse_args(parser_args=None):
@@ -14,6 +19,7 @@ def parse_args(parser_args=None):
     parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')
     parser.add_argument('--save-dir', help='directory to save output docs')
     parser.add_argument('--config', type=json.loads, default="{}", help='experiment configuration')
+    parser.add_argument('--doc-id', type=str, default='000', help='id to be used as the document title')
     args = parser.parse_args(parser_args)
     # if not os.path.exists(args.video_dir):
     #     raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
@@ -102,7 +108,7 @@ def add_evaluations(document, trial, eval_image, text=''):
                            'Write your answer in the accompanying answer sheet. ')
 
 
-def build_document(save_dir, video_dir, explanation_method, num_trials, config):
+def build_document(save_dir, video_dir, explanation_method, num_trials, config, doc_name):
     document = docx.Document()
     document.add_heading('Explainable Reinforcement Learning User Evaluation', 0)
     document.add_paragraph(
@@ -140,7 +146,7 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config):
         add_explanations(document, trial, name_formula(explanation_dir, trial), explanation_study_text)
         add_evaluations(document, trial, get_eval_name(eval_dir, trial), eval_study_text)
 
-    document.save(os.path.join(save_dir, f'{explanation_method}.docx'))
+    document.save(os.path.join(save_dir, f'{doc_name}.docx'))
 
 
 def read_eval_policies(video_dir):
@@ -164,8 +170,13 @@ def main(parser_args=None):
     explanation_methods = args.config['explanation_method']
     assert isinstance(explanation_methods, list)
 
-    for explanation_method in explanation_methods:
-        build_document(args.save_dir, args.video_dir, explanation_method, num_trials, args.config)
+    doc_id = args.config['doc_config']['id']
+    with open(os.path.join(args.save_dir, 'doc_ids.txt'), 'w') as f:
+        for explanation_method in explanation_methods:
+            method_doc_id = EXPLANATION_IDS[explanation_method]
+            full_doc_id = f'{doc_id}-{method_doc_id:03d}'
+            f.write(f'{explanation_method}, {full_doc_id},\n')
+            build_document(args.save_dir, args.video_dir, explanation_method, num_trials, args.config, full_doc_id)
 
 
 if __name__ == '__main__':

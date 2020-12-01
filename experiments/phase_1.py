@@ -3,7 +3,6 @@ import json
 import os
 import traceback
 
-import ray
 import yaml
 
 from experiments.utils.sampling import traverse_config
@@ -24,11 +23,14 @@ def main(argv=None):
 
     list_configs = traverse_config(multi_config)
 
-    for config in list_configs:
+    for doc_id, config in enumerate(list_configs):
         # this will be the name of the folder to save results to
         # result_dir/name
         config['name'] = 'behavior_policy_' + config['behavior_policy_config']['name'] + '-distribution_shift_' + \
                          config['eval_env_config']['name']
+        if 'doc_config' not in config:
+            config['doc_config'] = {}
+        config['doc_config']['id'] = f'{doc_id:03d}'
         args = []
         args += ['--config', json.dumps(config)]
         try:

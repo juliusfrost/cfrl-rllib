@@ -80,7 +80,8 @@ DEFAULT_CONFIG = {
         'project_name': 'cfrl',
     },
     'doc_config': {
-        'form_name': 'test.docx'
+        # id of the document user study
+        'id': None,
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
@@ -110,7 +111,7 @@ def parse_args(argv=None):
                         help='experiment file config. see the default parameters in this file')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--stop', default=None, choices=['video', 'form'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc'],
                         help='whether to stop at generating videos or create the user study form')
     parser.add_argument('--config', type=json.loads, default='{}', help='use json config instead of file config')
     args = parser.parse_args(argv)
@@ -210,6 +211,9 @@ def generate_doc(config, video_dir):
     args = []
     args += ['--video-dir', video_dir]
     args += ['--save-dir', video_dir]
+    if config['doc_config']['id'] is None:
+        import random
+        config['doc_config']['id'] = f'{random.randint(0, 1000):03d}'
     args += ['--config', json.dumps(config)]
     generate_doc_main(args)
 

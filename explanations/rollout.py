@@ -43,7 +43,7 @@ def run(args, parser):
             parser.error("the following arguments are required: --env")
         args.env = config.get("env")
 
-    ray.init()
+    ray.init(ignore_reinit_error=True)
 
     # Create the Trainer from config.
     cls = get_trainable_cls(args.run)
