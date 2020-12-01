@@ -3,11 +3,15 @@ import json
 import os
 import os.path
 
-import numpy as np
-from numpy.random import default_rng
 import docx
 from docx.shared import Inches
 from docx.text.run import Run
+
+EXPLANATION_IDS = {
+    'random': 0,
+    'critical': 1,
+    'counterfactual': 2,
+}
 
 
 def parse_args(parser_args=None):
@@ -15,7 +19,6 @@ def parse_args(parser_args=None):
     parser.add_argument('--video-dir', default='videos', help='directory to load the videos from')
     parser.add_argument('--save-dir', help='directory to save output docs')
     parser.add_argument('--config', type=json.loads, default="{}", help='experiment configuration')
-    parser.add_argument('--doc-config', type=json.loads, default="{}", help='generated doc configuration')
     parser.add_argument('--doc-id', type=str, default='000', help='id to be used as the document title')
     args = parser.parse_args(parser_args)
     # if not os.path.exists(args.video_dir):
@@ -167,11 +170,11 @@ def main(parser_args=None):
     explanation_methods = args.config['explanation_method']
     assert isinstance(explanation_methods, list)
 
-    rng = default_rng()
-    numbers = rng.choice(1000, size=len(explanation_methods), replace=False)
+    doc_id = args.config['doc_config']['id']
     with open(os.path.join(args.save_dir, 'doc_ids.txt'), 'w') as f:
-        for method_doc_id, explanation_method in zip(numbers, explanation_methods):
-            full_doc_id = f'{args.doc_id}-{method_doc_id:03d}'
+        for explanation_method in explanation_methods:
+            method_doc_id = EXPLANATION_IDS[explanation_method]
+            full_doc_id = f'{doc_id}-{method_doc_id:03d}'
             f.write(f'{explanation_method}, {full_doc_id},\n')
             build_document(args.save_dir, args.video_dir, explanation_method, num_trials, args.config, full_doc_id)
 
