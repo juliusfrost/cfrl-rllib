@@ -43,7 +43,7 @@ def get_car_states_from_ft(ft_dict, **kwargs):
         prefix = "cpu" + str(i + 1) + "_"
         if ft_dict[prefix + "dummy"]:
             continue
-        cpu_state = [ft_dict[prefix + k] for k in ["x", "y", "h", "v"]]
+        cpu_state = [ft_dict[prefix + k] for k in ["x", "y", "h", "v", "switching_direction", "switch_duration_remaining"]]
         # next two lines are because saved x,y are offsets from robot's x,y
         # and normalized to be between 0 and 1
         cpu_state[0] = (cpu_state[0] - 0.5) * (2 * drivable_width) + robot_state[0]
@@ -189,7 +189,8 @@ def get_game_state_to_save_ft(robot_car, other_cars, **kwargs):
         ft_dict["cpu" + str(i + 1) + "_y"] = (car.y - robot_car.y) / (2 * drivable_height) + 0.5
         ft_dict["cpu" + str(i + 1) + "_h"] = car.heading / heading_max
         ft_dict["cpu" + str(i + 1) + "_v"] = car.speed / speed_max
-        ft_dict["cpu" + str(i + 1) + "_switch_duration"] = car.switch_duration
+        ft_dict["cpu" + str(i + 1) + "_switching_direction"] = car.switching_direction
+        ft_dict["cpu" + str(i + 1) + "_switch_duration_remaining"] = car.switch_duration_remaining
         if hasattr(car, "dummy") and car.dummy:
             # ft_dict["cpu"+str(i+1)+"_x"] = 0
             # ft_dict["cpu"+str(i+1)+"_y"] = 0

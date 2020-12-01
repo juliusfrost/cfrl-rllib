@@ -281,9 +281,9 @@ class Driving(PyGameWrapper, gym.Env):
                 continue
             # Snap car to center of lane
             lane_centers = self.constants["lane_centers"]
-            lane_idx = np.argmin(np.abs(lane_centers - car.state[0]))
-            car.x = lane_centers[lane_idx]
-
+            # lane_idx = np.argmin(np.abs(lane_centers - car.state[0]))
+            # car.x = lane_centers[lane_idx]
+            # print(car.x)
             self.cpu_cars.append(car)
             self.cars_group.add(car)
         print("Load: ", len(self.cpu_cars))

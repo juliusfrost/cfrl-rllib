@@ -54,11 +54,12 @@ def add_borders(imgs, border_size=30, border_color1=(255, 255, 255), border_colo
     return prefix_imgs
 
 
-def add_text(images, traj_start, initial_reward, traj_rewards, show_timestep=True, show_reward=True):
+def add_text(images, traj_start, initial_reward, traj_rewards, driver = None, show_timestep=True, show_driver=True, show_reward=True):
     final_images = []
     font = cv2.FONT_HERSHEY_SIMPLEX
     org = (50, 75)
-    rew_org = (50, 150)
+    driver_org = (50, 150)
+    rew_org = (50, 225)
     font_scale = 1.8
     color = (255, 0, 0)
     thickness = 3
@@ -71,14 +72,18 @@ def add_text(images, traj_start, initial_reward, traj_rewards, show_timestep=Tru
         if show_reward:
             image = cv2.putText(image, f'Score: {cum_reward:.0f}', rew_org, font,
                                     font_scale, color, thickness, cv2.LINE_AA)
+        if show_driver:
+            driver = driver if driver is not None else '?'
+            image = cv2.putText(image, f'Driver: {driver}', driver_org, font,
+                                    font_scale, color, thickness, cv2.LINE_AA)
         final_images.append(image)
     return final_images
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
-                  border_color=(255, 255, 255), show_timestep=True, show_reward=True):
-    final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, show_timestep,
-                            show_reward)
+                  border_color=(255, 255, 255), driver=None, show_timestep=True, show_driver=True, show_reward=True):
+    final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, driver, show_timestep,
+                            show_driver, show_reward)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
 
@@ -148,7 +153,7 @@ def load_other_policies(other_policies: List[dict]):  # TODO: include original p
     return policies
 
 
-def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video,
+def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video, driver,
                        show_timestep=True, show_reward=True):
     # Generate continuation video
     cf_trajectory = cf_dataset.get_trajectory(cf_id)
@@ -159,8 +164,10 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             initial_reward=reward_so_far,
                             border_color=[0, 255, 0],
                             border_size=args.border_width,
+                            driver=driver,
                             show_timestep=show_timestep,
-                            show_reward=True)
+                            show_reward=False,
+                            show_driver=True)
     
     img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
@@ -179,16 +186,16 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
-        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
-        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
     if args.save_all or not args.side_by_side:
         # Writing video 3 == shorter version of 2
         cf_window_explanation_file = os.path.join(args.save_path,
                                                   vidpath('counterfactual_window', cf_name, save_id))
-        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
     return cf_imgs, cf_video, cf_window_video
 
@@ -252,7 +259,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       trajectory_reward=original_rewards,
                                       initial_reward=0,
                                       border_color=[255, 255, 255],
-                                      border_size=args.border_width)
+                                      border_size=args.border_width,
+                                      driver='A',
+                                      show_driver=True,
+                                      show_reward=False)
 
         #  (2) Create images of exploration
         has_explored = len(exploration_dataset.all_trajectory_ids) != 0
@@ -265,7 +275,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                      trajectory_reward=exp_rewards,
                                      initial_reward=original_rewards[:split].sum(),
                                      border_color=[255, 0, 255],
-                                     border_size=args.border_width)
+                                     border_size=args.border_width,
+                                     driver='Z',
+                                     show_reward=False,
+                                     show_driver=True)
 
             #  (5) Create videos with the continuations
             initial_rewards = original_rewards[:split].sum() + exp_rewards.sum()
@@ -279,9 +292,13 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         continuation_list = []
         cf_list = []
         window_list = []
+        if args.side_by_side:
+            cf_driver = '?'
+        else:
+            cf_driver = 'A'
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
             continuation, cf, window = generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args,
-                                                          cf_id, i, split, prefix_video)
+                                                          cf_id, i, split, prefix_video, cf_driver)
             continuation_list.append(continuation)
             cf_list.append(cf)
             window_list.append(window)
@@ -300,16 +317,16 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
             if has_explored:
                 #  (2) Exploration video
                 exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
-                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
             #  (3) Beginning + Exploration
             pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
-            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
@@ -338,7 +355,10 @@ def generate_videos_state_method(original_dataset, args, state_indices):
                                       trajectory_reward=original_rewards,
                                       initial_reward=0,
                                       border_color=[255, 255, 255],
-                                      border_size=0)
+                                      border_size=0,
+                                      driver='A',
+                                      show_reward=False,
+                                      show_driver=True)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -430,7 +450,7 @@ def select_states(args):
                 post_explore_state = exp_env.get_simulator_state()
 
                 if not env_done:
-                    cf_to_exp_index[cf_count] = successful_trajs
+                    cf_to_exp_index[cf_count] = exp_index
                     cf_count += 1
                     for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
                         exp_env.load_simulator_state(post_explore_state)
