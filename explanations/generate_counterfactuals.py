@@ -183,16 +183,16 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
-        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
-        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
     if args.save_all or not args.side_by_side:
         # Writing video 3 == shorter version of 2
         cf_window_explanation_file = os.path.join(args.save_path,
                                                   vidpath('counterfactual_window', cf_name, save_id))
-        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
     return cf_imgs, cf_video, cf_window_video
 
@@ -314,16 +314,16 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
             if has_explored:
                 #  (2) Exploration video
                 exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
-                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
             #  (3) Beginning + Exploration
             pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
-            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True, downscale=args.downscale)
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
@@ -447,7 +447,7 @@ def select_states(args):
                 post_explore_state = exp_env.get_simulator_state()
 
                 if not env_done:
-                    cf_to_exp_index[cf_count] = successful_trajs
+                    cf_to_exp_index[cf_count] = exp_index
                     cf_count += 1
                     for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
                         exp_env.load_simulator_state(post_explore_state)
