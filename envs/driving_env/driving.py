@@ -1,19 +1,18 @@
+import copy
 import math
-import numpy as np
-import os, os.path as osp
+import os.path as osp
+import sys
 
-import pygame
 import gym
+import numpy as np
+import pygame
 from pygame.constants import K_w, K_s, K_a, K_d
 
-from envs.driving_env.utils import percent_round_int
-from envs.driving_env.pygamewrapper import PyGameWrapper
+from envs.driving_env.driving_car import Car, Backdrop
 from envs.driving_env.driving_ft import get_state_ft, get_state_save_ft, get_reward_ft, out_of_bound, collision_exists, \
     get_car_states_from_ft, get_n_cpu_cars_from_ft
-from envs.driving_env.driving_car import Car, Backdrop
-
-import random
-import copy
+from envs.driving_env.pygamewrapper import PyGameWrapper
+from envs.driving_env.utils import percent_round_int
 
 FILEDIR = osp.dirname(osp.realpath(__file__))
 

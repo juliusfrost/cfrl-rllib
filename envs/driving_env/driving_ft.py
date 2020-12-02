@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import math, numpy as np
+import math
+import numpy as np
 
 
 class DummyCar:
@@ -43,7 +44,8 @@ def get_car_states_from_ft(ft_dict, **kwargs):
         prefix = "cpu" + str(i + 1) + "_"
         if ft_dict[prefix + "dummy"]:
             continue
-        cpu_state = [ft_dict[prefix + k] for k in ["x", "y", "h", "v", "switching_direction", "switch_duration_remaining"]]
+        cpu_state = [ft_dict[prefix + k] for k in
+                     ["x", "y", "h", "v", "switching_direction", "switch_duration_remaining"]]
         # next two lines are because saved x,y are offsets from robot's x,y
         # and normalized to be between 0 and 1
         cpu_state[0] = (cpu_state[0] - 0.5) * (2 * drivable_width) + robot_state[0]
@@ -157,6 +159,7 @@ def get_game_state_ft(robot_car, other_cars, **kwargs):
 
     return ft_dict
 
+
 def get_game_state_to_save_ft(robot_car, other_cars, **kwargs):
     # Required for setting game state, in game.setGameStateSave
     # Is different in that it saves all cpu cars, not dummy cars...
@@ -224,6 +227,7 @@ def get_state_ft(robot_car, other_cars, return_dist=True, **kwargs):
     assert len(ft_dict) == n_ft
 
     return ft_dict
+
 
 def get_state_save_ft(robot_car, other_cars, return_dist=True, **kwargs):
     lane_centers = kwargs["lane_centers"]

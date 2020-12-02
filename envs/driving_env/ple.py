@@ -1,8 +1,9 @@
-import numpy as np
-from PIL import Image  # pillow
 import sys
 
+import numpy as np
 import pygame
+from PIL import Image  # pillow
+
 from envs.driving_env.pygamewrapper import PyGameWrapper
 
 

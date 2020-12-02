@@ -1,8 +1,7 @@
 import math
-import numpy as np
-
 import random
 
+import numpy as np
 import pygame
 
 
@@ -63,7 +62,7 @@ class Car(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y - ydiff)
         self.switching = len(initial_state) > 4
         self.switch_duration = kwargs.get('switch_duration', 50)
-        
+
         if self.switching:
             self.switching_direction = initial_state[-2]
             self.switch_duration_remaining = initial_state[-1]
@@ -72,7 +71,6 @@ class Car(pygame.sprite.Sprite):
             self.switch_duration_remaining = 0
 
         self.switch_step = (lane_width + 4) * self.switching_direction / self.switch_duration
-            
 
         self.dummy = False
 
