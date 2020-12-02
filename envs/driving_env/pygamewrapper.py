@@ -1,5 +1,5 @@
-import pygame
 import numpy as np
+import pygame
 from pygame.constants import KEYDOWN, KEYUP, K_F15
 
 
