@@ -203,6 +203,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.constants["drivable_height"] = height + car_height
         self.constants["prob_car"] = prob_car
         self.constants["steering_resistance"] = kwargs.get("steering_resistance", 100.)
+        self.constants["alpha"] = kwargs.get('friction_coefficient', 0.)
 
         self.score_sum = 0.  # Total (non-discounted) reward
         self.n_crashes = 0  # Number of crashes

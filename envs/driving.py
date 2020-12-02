@@ -100,6 +100,9 @@ def driving_creator(
         players_speed_ratio_min=kwargs.get('players_speed_ratio_min', 0.1),
         cpu_speed_ratio_max=kwargs.get('cpu_speed_ratio_max', 0.1),
         cpu_speed_ratio_min=kwargs.get('cpu_speed_ratio_min', 0.05),
+        # Friction coefficient
+        # if > 0, the car slows down to the minimum speed if no acceleration is applied.
+        friction_coefficient=kwargs.get('friction_coefficient', 0.),
     )
     env = DrivingSimulatorStateWrapper(env)
     if action_noise > 0.:
