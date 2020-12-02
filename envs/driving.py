@@ -96,7 +96,8 @@ def driving_creator(
         # Speed multiplier of k sets the target speed for the agent to k * robot car speed
         speed_multiplier=kwargs.get('speed_multiplier', 1.0),
         # speed ratio controls the car's speed
-        players_speed_ratio=kwargs.get('players_speed_ratio', 0.2),
+        players_speed_ratio_max=kwargs.get('players_speed_ratio_max', 0.2),
+        players_speed_ratio_min=kwargs.get('players_speed_ratio_min', 0.1),
         cpu_speed_ratio_max=kwargs.get('cpu_speed_ratio_max', 0.1),
         cpu_speed_ratio_min=kwargs.get('cpu_speed_ratio_min', 0.05),
     )

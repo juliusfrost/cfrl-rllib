@@ -39,7 +39,7 @@ def init_nonrobot_car(img, state, speed_limit, speed_min, controls=[(0., 0.)], *
 def robot_car_from_state(game, car_state, **kwargs):
     kwargs.update(game.constants)
     return init_robot_car(game.images["agent"], car_state,
-                          game.players_speed_ratio * game.height,
+                          game.players_speed_ratio_max * game.height,
                           game.cpu_speed_ratio_max * game.height,
                           **kwargs)
 
@@ -117,13 +117,13 @@ class Driving(PyGameWrapper, gym.Env):
     cpu_speed_ratio_min: float
         Minimum speed of other cars
 
-    players_speed_ratio: float
+    players_speed_ratio_max: float
         Speed of player (useful for curriculum learning)
 
     """
 
     def __init__(self, width=640, height=960, cpu_speed_ratio_max=0.1,
-                 cpu_speed_ratio_min=0.05, players_speed_ratio=0.2,
+                 cpu_speed_ratio_min=0.05, players_speed_ratio_max=0.2, players_speed_ratio_min=0.1,
                  continuous_actions=True,
                  theta=np.array([-1., 0., -10., -1., 1., -0.01]),
                  # theta=np.array([-1.,0.,-10.,-1.,1.,-0.1]),\
@@ -145,7 +145,8 @@ class Driving(PyGameWrapper, gym.Env):
 
         self.cpu_speed_ratio_max = cpu_speed_ratio_max
         self.cpu_speed_ratio_min = cpu_speed_ratio_min
-        self.players_speed_ratio = players_speed_ratio
+        self.players_speed_ratio_max = players_speed_ratio_max
+        self.players_speed_ratio_min = players_speed_ratio_min
         self.get_game_state_fn = state_ft_fn
         self.get_reward_ft_fn = reward_ft_fn
         self.add_car_fn = add_car_fn
@@ -190,7 +191,7 @@ class Driving(PyGameWrapper, gym.Env):
         self.constants["screen_width"] = width
         self.constants["screen_height"] = height
         self.constants["default_heading"] = math.pi / 2
-        self.constants["default_speed_ratio_agent"] = self.players_speed_ratio
+        self.constants["default_speed_ratio_agent"] = self.players_speed_ratio_max
         self.constants["default_speed_ratio_cpu"] = self.cpu_speed_ratio_max
         self.constants["speed_max"] = 0.4 * height  # for normalizing features
         self.constants["heading_max"] = 2 / 3. * math.pi  # for normalizing features
@@ -326,8 +327,8 @@ class Driving(PyGameWrapper, gym.Env):
                             self.constants["default_heading"],
                             self.constants["default_speed_ratio_agent"] * self.height]
         self.agent_car = init_robot_car(self.images["agent"], robot_init_state,
-                                        self.players_speed_ratio * self.height,
-                                        self.cpu_speed_ratio_max * self.height,
+                                        self.players_speed_ratio_max * self.height,
+                                        self.players_speed_ratio_min * self.height,
                                         **self.constants)
         self.cpu_cars = []
         self.cars_group = pygame.sprite.Group()
