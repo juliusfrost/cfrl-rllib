@@ -96,9 +96,13 @@ def driving_creator(
         # Speed multiplier of k sets the target speed for the agent to k * robot car speed
         speed_multiplier=kwargs.get('speed_multiplier', 1.0),
         # speed ratio controls the car's speed
-        players_speed_ratio=kwargs.get('players_speed_ratio', 0.2),
+        players_speed_ratio_max=kwargs.get('players_speed_ratio_max', 0.2),
+        players_speed_ratio_min=kwargs.get('players_speed_ratio_min', 0.1),
         cpu_speed_ratio_max=kwargs.get('cpu_speed_ratio_max', 0.1),
         cpu_speed_ratio_min=kwargs.get('cpu_speed_ratio_min', 0.05),
+        # Friction coefficient
+        # if > 0, the car slows down to the minimum speed if no acceleration is applied.
+        friction_coefficient=kwargs.get('friction_coefficient', 0.),
     )
     env = DrivingSimulatorStateWrapper(env)
     if action_noise > 0.:

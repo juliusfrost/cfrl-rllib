@@ -1,11 +1,14 @@
 import os
+
 import gym
-from gym import spaces
 import numpy as np
 from PIL import Image
-# from scipy.misc import imresize
+from gym import spaces
 
 from envs.driving_env.ple import PLE
+
+
+# from scipy.misc import imresize
 
 
 def state_preproc(state):
