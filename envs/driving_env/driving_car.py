@@ -87,11 +87,27 @@ class Car(pygame.sprite.Sprite):
         return np.array([self.x, self.y, self.heading, self.speed])
 
     def dynamics_f(self, s, u, dt):
+        """
+        The dynamics function
+        :param s: state vector of size 4 at time t-1
+            x_tm1: x coordinate at time t-1
+            y_tm1: y coordinate at time t-1
+            h_tm1: heading (steering angle) at time t-1
+            v_tm1: speed at time t-1
+        :param u: action vector of size 2
+            dh_t: heading (steering angle) delta
+            a_t: acceleration
+        :param dt: delta time
+        :return: state at time t
+        """
+        x_tm1, y_tm1, h_tm1, v_tm1 = s
+        dh_t, a_t = u
         # u = (u[0]/100., u[1])  # otherwise turning is too sharp
-        u = (u[0] / self.steering_resistance, u[1])  # otherwise turning is too sharp
-        x = s[0] + s[3] * np.cos(2 * math.pi - s[2]) * dt
-        y = s[1] + s[3] * np.sin(2 * math.pi - s[2]) * dt
-        h = s[2] + s[3] * u[0] * dt
+        steering_delta = dh_t / self.steering_resistance
+        # u = (u_0 / self.steering_resistance, u_1)  # otherwise turning is too sharp
+        x = x_tm1 + v_tm1 * np.cos(2 * math.pi - h_tm1) * dt
+        y = y_tm1 + v_tm1 * np.sin(2 * math.pi - h_tm1) * dt
+        h = h_tm1 + v_tm1 * steering_delta * dt
         # if self.stationary:
         #    print("control:", u)
         #    print("heading changed by:", s[3]*u[0]*dt)
@@ -99,7 +115,7 @@ class Car(pygame.sprite.Sprite):
         h = standardize_heading(h)
         # TODO: possibly remove clipping of heading
         h = max(self.heading_min, min(self.heading_max, h))  # car must face forward
-        v = s[3] + u[1] - self.alpha * s[3] * dt
+        v = v_tm1 + a_t - self.alpha * v_tm1 * dt  # velocity plus acceleration minus friction
         # velocity cannot be below self.speed_min
         if v < self.speed_min:
             v = self.speed_min
