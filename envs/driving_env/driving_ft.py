@@ -150,6 +150,12 @@ def check_robot_near_cpu(robot_car, cpu_cars, **kwargs):
     return False
 
 
+def get_lane(robot_car, **kwargs):
+    lane_centers = kwargs["lane_centers"]
+    robot_lane_idx = np.argmin(np.abs(lane_centers - robot_car.x))
+    return robot_lane_idx
+
+
 def get_game_state_ft(robot_car, other_cars, **kwargs):
     # Required for setting game state, in game.setGameState
     # Consists of the following:
@@ -309,7 +315,9 @@ def get_reward_ft(robot_car, other_cars, action, speed_multiplier, **kwargs):
     # ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward]
     ft_adjacent = int(check_robot_near_cpu(robot_car, other_cars, **kwargs))
     ft_tailgating = int(check_robot_tailgating_cpu(robot_car, other_cars, **kwargs))
-    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent, ft_tailgating]
+    lane = get_lane(robot_car, **kwargs)
+    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent, ft_tailgating,
+          lane == 0, lane == 1, lane == 2]
 
     assert np.all(np.array(ft) <= 1.0) and np.all(np.array(ft) >= 0.0)
     return np.array(ft)
