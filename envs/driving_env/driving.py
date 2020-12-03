@@ -383,6 +383,8 @@ class Driving(PyGameWrapper, gym.Env):
             reward_ft = self.get_reward_ft_fn(self.agent_car, self.cpu_cars,
                                               self.action_to_take, self.speed_multiplier,
                                               **self.constants)
+            if len(self.theta) < len(reward_ft):
+                self.theta = np.concatenate([self.theta, np.zeros(len(reward_ft) - len(self.theta))])
             position_reward = np.dot(self.theta, reward_ft)
             reward = self.time_reward_proportion * time_reward + (1 - self.time_reward_proportion) * position_reward
             if self.normalize_reward:
