@@ -113,17 +113,18 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config, 
     document.add_heading('Explainable Reinforcement Learning User Evaluation', 0)
     document.add_paragraph(
         'The following videos show the behavior of drivers in different situations. '
-        'Your task is to interpret the general behavior of the driver in the yellow car '
-        'by watching the explanation videos. '
-        'We label the driver in the explanation videos driver A. '
+        'Your task is to watch explanation videos of the driver in the yellow car '
+        'and try to predict how the driver would react in different situations. '
+        'We label the yellow car driver in the explanation videos as driver A. '
     )
     document.add_paragraph(
         'To measure how well you understood driver A\'s behavior, you will be given an evaluation task. '
         'In the evaluation task, you will be shown multiple videos with different drivers. '
-        'In the first half of the video, there is a single driver A corresponding to the driver being explained. '
+        'In the first half of the video, there is a single driver A '
+        'corresponding to the driver in the explanation videos. '
         'In the second half of the video, there is either the same driver A '
         'or a different driver that can lead to different outcomes. '
-        'Your goal is to select which driver you think is the same one as the one you saw being explained '
+        'Your goal is to select which driver you think is the same one as the one you saw in the explanation videos '
         'by selecting the video which did not switch drivers. '
         'In other words, select the outcome obtained by driver A. '
     )
