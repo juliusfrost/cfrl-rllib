@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import math
 import numpy as np
-
+from envs.driving_env.driving_car import Car
 
 class DummyCar:
     def __init__(self, position_x, position_y, heading=None, speed=None, **kwargs):
@@ -115,6 +115,24 @@ def get_cars_near_robot(robot_car, other_cars, **kwargs):
                                       further_away_y + ydiff, **kwargs))
 
     return cars_in_front + cars_behind + cars_in_left + cars_in_right
+
+
+
+
+def check_adjacency(car_1 : Car, car_2 : Car, **kwargs):
+    lane_width = kwargs["lane_width"]
+    car_height = kwargs["car_height"]
+    x_close = np.abs(car_1.x - car_2.x) < lane_width
+    y_close = np.abs(car_1.y - car_2.y) < car_height * .75
+    return x_close and y_close
+
+
+def check_robot_near_cpu(robot_car, cpu_cars, **kwargs):
+    for cpu_car in cpu_cars:
+        adjacent = check_adjacency(robot_car, cpu_car, **kwargs)
+        if adjacent:
+            return True
+    return False
 
 
 def get_game_state_ft(robot_car, other_cars, **kwargs):
@@ -274,7 +292,8 @@ def get_reward_ft(robot_car, other_cars, action, speed_multiplier, **kwargs):
     ft_forward = forward_progress(s, robot_car.speed_limit)
     ft_sharpturn = np.square(action_turn)
     # ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward]
-    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn]
+    ft_adjacent = int(check_robot_near_cpu(robot_car, other_cars, **kwargs))
+    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent]
 
     assert np.all(np.array(ft) <= 1.0) and np.all(np.array(ft) >= 0.0)
     return np.array(ft)
