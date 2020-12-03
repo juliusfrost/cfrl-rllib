@@ -38,7 +38,7 @@ DEFAULT_CONFIG = {
     # whether to overwrite existing files (uses existing files if not set)
     'overwrite': False,
     # whether to stop at generating the videos or continue to generate forms as well
-    'stop': 'video',  # [video, form]
+    'stop': 'doc',  # [video, form, doc]
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
@@ -48,7 +48,7 @@ DEFAULT_CONFIG = {
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # What explanation method to use
-    'explanation_method': ['random', 'counterfactual'],  # [counterfactual, critical, random]
+    'explanation_method': ['random', 'critical', 'counterfactual'],  # [counterfactual, critical, random]
     # use counterfactual states
     'counterfactual': True,
 
@@ -56,14 +56,16 @@ DEFAULT_CONFIG = {
         # policy to continue after counterfactual state
         'rollout_policy': 'behavior',  # [behavior, random]
         # number of time steps to use the counterfactual policy
-        'timesteps': 3,
+        'timesteps': 10,
     },
     'video_config': {
         # directory name to store videos in result directory
         'dir_name': 'videos',
         # frames per second
-        'fps': 5,
+        'fps': 3,
+        # width of the colored boarder around the videos
         'border_width': 30,
+        # downscaling of videos, primarily used to save space
         'downscale': 2
     },
     'form_config': {
@@ -96,7 +98,7 @@ DEFAULT_CONFIG = {
         # window size of the evaluation videos
         'window_size': 20,
         # number of time steps to use the counterfactual policy
-        'timesteps': 3,
+        'timesteps': 0,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
