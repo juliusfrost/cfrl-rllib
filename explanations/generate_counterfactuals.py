@@ -276,7 +276,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                      initial_reward=original_rewards[:split].sum(),
                                      border_color=[255, 0, 255],
                                      border_size=args.border_width,
-                                     driver='Z',
+                                     driver='B',
                                      show_reward=False,
                                      show_driver=True)
 
