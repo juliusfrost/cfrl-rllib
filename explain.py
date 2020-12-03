@@ -63,7 +63,9 @@ DEFAULT_CONFIG = {
         'dir_name': 'videos',
         # frames per second
         'fps': 3,
+        # width of the colored boarder around the videos
         'border_width': 30,
+        # downscaling of videos, primarily used to save space
         'downscale': 2
     },
     'form_config': {
