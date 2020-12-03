@@ -128,9 +128,9 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config, 
         'In other words, select the outcome obtained by driver A. '
     )
     document.add_paragraph(
-        'Note that the distribution of states you see in the evaluation task '
-        'may be different from that in the explanations. '
-        'We label this distribution shift as driving on a different highway (1 or 2).'
+        'Note that the source of the videos you see in the evaluation task '
+        'may be different from that in the explanations (eg. different road conditions, different grey car behavior). '
+        'We label this difference as driving on a different highway (1 or 2).'
     )
     document.add_paragraph()
     # r: Run = p.add_run()
