@@ -56,7 +56,7 @@ DEFAULT_CONFIG = {
         # policy to continue after counterfactual state
         'rollout_policy': 'behavior',  # [behavior, random]
         # number of time steps to use the counterfactual policy
-        'timesteps': 3,
+        'timesteps': 10,
     },
     'video_config': {
         # directory name to store videos in result directory
