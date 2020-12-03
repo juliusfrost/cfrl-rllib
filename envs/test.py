@@ -7,7 +7,7 @@ import envs
 envs.register()
 import numpy as np  
 #env = env_creator()
-env = envs.driving.driving_creator(switch_prob=0.8)
+env = envs.driving.driving_creator(switch_prob=0.0)
 env.reset()
 env.render()
 done = False

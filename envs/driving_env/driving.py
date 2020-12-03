@@ -124,7 +124,7 @@ class Driving(PyGameWrapper, gym.Env):
     def __init__(self, width=640, height=960, cpu_speed_ratio_max=0.1,
                  cpu_speed_ratio_min=0.05, players_speed_ratio_max=0.2, players_speed_ratio_min=0.1,
                  continuous_actions=True,
-                 theta=np.array([-1., 0., -10., -1., 1., -0.01, 0., 0.0, 0., 0., 0.]),
+                 theta=np.array([-1., 0., -10., -1., 1., -0.01, 0., 0.0, 0., 0., 0., 0.]),
                  # theta=np.array([-1.,0.,-10.,-1.,1.,-0.1]),\
                  # theta=np.array([-1.,1.,-10.,-1.,1.]),\
                  MAX_SCORE=1,

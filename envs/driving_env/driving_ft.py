@@ -155,6 +155,13 @@ def get_lane(robot_car, **kwargs):
     robot_lane_idx = np.argmin(np.abs(lane_centers - robot_car.x))
     return robot_lane_idx
 
+def dist_to_car_in_front(robot_car, cpu_cars, **kwargs):
+    min_dist_in_front = 1000
+    for cpu_car in cpu_cars:
+        if get_lane(robot_car, **kwargs) == get_lane(cpu_car, **kwargs) and robot_car.y > cpu_car.y:
+            min_dist_in_front = min(min_dist_in_front, robot_car.y - cpu_car.y)
+    return min_dist_in_front / 1000
+
 
 def get_game_state_ft(robot_car, other_cars, **kwargs):
     # Required for setting game state, in game.setGameState
@@ -316,8 +323,9 @@ def get_reward_ft(robot_car, other_cars, action, speed_multiplier, **kwargs):
     ft_adjacent = int(check_robot_near_cpu(robot_car, other_cars, **kwargs))
     ft_tailgating = int(check_robot_tailgating_cpu(robot_car, other_cars, **kwargs))
     lane = get_lane(robot_car, **kwargs)
+    dist_in_front = dist_to_car_in_front(robot_car, other_cars, **kwargs)
     ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent, ft_tailgating,
-          lane == 0, lane == 1, lane == 2]
+          lane == 0, lane == 1, lane == 2, dist_in_front]
 
     assert np.all(np.array(ft) <= 1.0) and np.all(np.array(ft) >= 0.0)
     return np.array(ft)
