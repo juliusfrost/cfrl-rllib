@@ -48,7 +48,7 @@ DEFAULT_CONFIG = {
     # state selection method for the branching state
     'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
     # What explanation method to use
-    'explanation_method': ['random', 'counterfactual'],  # [counterfactual, critical, random]
+    'explanation_method': ['random', 'critical', 'counterfactual'],  # [counterfactual, critical, random]
     # use counterfactual states
     'counterfactual': True,
 
