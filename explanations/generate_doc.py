@@ -43,19 +43,19 @@ def get_explain_name(explanation_method, config):
 
 def get_explain_study_text(explanation_method, config):
     text = ''
-    text += 'The following video shows a segment of driver A\'s experience on the highway route 1. '
+    text += 'The following video shows a segment of driver A\'s experience on highway route 1. '
     if explanation_method == 'random':
         text += 'The segments shown here are selected randomly. '
-        text += 'In all parts of the video, the driver A steers the car. '
+        text += 'In all parts of the video, driver A steers the car. '
     elif explanation_method == 'critical':
         text += 'The segments shown here are selected where it is critical to take certain actions. '
-        text += 'In all parts of the video, the driver A steers the car. '
+        text += 'In all parts of the video, driver A steers the car. '
     elif explanation_method == 'counterfactual':
         text += 'The segments shown here are selected randomly. '
-        text += 'In the beginning part of the video, the driver A steers the car. '
+        text += 'In the beginning part of the video, driver A steers the car. '
         text += 'At some point in time, driver B takes over steering ' \
                 'to move the car off course than originally planned. '
-        text += 'Lastly, the driver A takes over control of steering. '
+        text += 'Lastly, driver A takes over control of steering. '
     else:
         raise NotImplementedError
     text += 'Your task: observe the behavior of driver A and try to detect any patterns. '
@@ -64,7 +64,7 @@ def get_explain_study_text(explanation_method, config):
 
 def get_eval_study_text(explanation_method, config):
     num_eval_policies = len(config['eval_config']['eval_policies'])
-    text = 'The following video shows segments of driver A\'s experience on the highway route 2. '
+    text = 'The following video shows segments of driver A\'s experience on highway route 2. '
     text += 'In the beginning half of each video, driver A steers the car and shows the same thing for all videos. '
     text += 'In the ending half of each video, ' \
             'a different driver steers the car and shows different possible outcomes. '
@@ -118,7 +118,7 @@ def build_document(save_dir, video_dir, explanation_method, num_trials, config, 
         'We label the driver in the explanation videos driver A. '
     )
     document.add_paragraph(
-        'To measure how well you understood the driver A\'s behavior, you will be given an evaluation task. '
+        'To measure how well you understood driver A\'s behavior, you will be given an evaluation task. '
         'In the evaluation task, you will be shown multiple videos with different drivers. '
         'In the first half of the video, there is a single driver A corresponding to the driver being explained. '
         'In the second half of the video, there is either the same driver A '
