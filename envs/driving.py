@@ -88,7 +88,7 @@ def driving_creator(
         # ft_turn: Something about turning
         # ft_forward: Making progress forward
         # ft_sharpturn: Does it make sharp turns?
-        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01, 0.]),
+        theta=kwargs.get('reward_feature_weights', [-1., 0., -10., -1., 1., -0.01, 0., 0.]),
         # probability of generating a car in a new time step
         prob_car=kwargs.get('prob_car', 0.5),
         # steering resistance is the scalar that divides the steering angle to reduce sharp angles
