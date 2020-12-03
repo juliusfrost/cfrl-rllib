@@ -38,7 +38,7 @@ DEFAULT_CONFIG = {
     # whether to overwrite existing files (uses existing files if not set)
     'overwrite': False,
     # whether to stop at generating the videos or continue to generate forms as well
-    'stop': 'video',  # [video, form]
+    'stop': 'doc',  # [video, form, doc]
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
