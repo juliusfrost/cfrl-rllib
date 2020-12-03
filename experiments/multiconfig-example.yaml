@@ -1,0 +1,171 @@
+overwrite: false
+stop: doc
+remove_ext:
+  - pkl
+  - gif
+result_dir: C:\Users\Julius\Documents\GitHub\cfrl-rllib\results\explanation_test
+behavior_policy_config:
+  sample:
+    num_samples: 1
+    num_trials: 5
+    replace: false
+    reduce_values: true
+    values:
+      - name: "1"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4760_00000_0_2020-10-22_15-22-15\checkpoint_700\checkpoint-700
+      - name: "2"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_8af12_00000_0_2020-10-23_03-29-53\checkpoint_679\checkpoint-679
+      - name: "3"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_6512c_00000_0_2020-10-23_07-53-41\checkpoint_771\checkpoint-771
+      - name: "4"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4771_00000_0_2020-10-22_15-22-15\checkpoint_605\checkpoint-605
+      - name: "5"
+        run: PPO
+        checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_42925_00000_0_2020-10-22_14-20-27\checkpoint_2011\checkpoint-2011
+state_selection: random
+explanation_method: [ counterfactual, critical, random ]
+episodes: 10
+window_size: 20
+eval_config:
+  num_trials: 10
+  timesteps: 0
+  eval_policies:
+    sample:
+      num_samples: 2
+      num_trials: 1
+      replace: false
+      reduce_values: false
+      exclude: [ behavior_policy_config, ]
+      values:
+        - name: "1"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4760_00000_0_2020-10-22_15-22-15\checkpoint_700\checkpoint-700
+        - name: "2"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_8af12_00000_0_2020-10-23_03-29-53\checkpoint_679\checkpoint-679
+        - name: "3"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_6512c_00000_0_2020-10-23_07-53-41\checkpoint_771\checkpoint-771
+        - name: "4"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_e4771_00000_0_2020-10-22_15-22-15\checkpoint_605\checkpoint-605
+        - name: "5"
+          run: PPO
+          checkpoint: C:\Users\Julius\Downloads\driving-phase-1\PPO_DrivingPLE-v0_42925_00000_0_2020-10-22_14-20-27\checkpoint_2011\checkpoint-2011
+video_config:
+  fps: 5
+form_config:
+  credentials: explanations\credentials.json
+  token_file: explanations\token.pickle
+env: DrivingPLE-v0
+env_config:
+  # reward function
+  normalize_reward: False
+  time_reward_proportion: 0
+  reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+  collision_penalty: -10
+  speed_multiplier: 1.2
+  # state distribution
+  prob_car: 0.5
+  time_limit: 500
+  switch_prob: 0.01
+  switch_duration: 100
+  # action distribution
+  action_noise: 0.
+  steering_resistance: 100.
+eval_env: DrivingPLE-v0
+eval_env_config:
+  sample:
+    num_samples: 1
+    num_trials: 5
+    replace: false
+    reduce_values: true
+    values:
+      # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        speed_multiplier: 1.2
+        # state distribution
+        prob_car: 0.8
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        # experiment name
+        name: increase_car_spawning
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        speed_multiplier: 1.2
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.05
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        # experiment name
+        name: increase_lane_switching
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        speed_multiplier: 1.2
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.1
+        steering_resistance: 100.
+        # experiment name
+        name: increase_action_noise
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        speed_multiplier: 1.2
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 400.
+        # experiment name
+        name: increase_steering_resistance
+
+        # reward function
+      - normalize_reward: False
+        time_reward_proportion: 0
+        reward_feature_weights: [ -1., 0., -10., -1., 1., -0.01 ]
+        collision_penalty: -10
+        speed_multiplier: 1.2
+        # state distribution
+        prob_car: 0.5
+        time_limit: 500
+        switch_prob: 0.01
+        switch_duration: 100
+        # action distribution
+        action_noise: 0.
+        steering_resistance: 100.
+        # experiment name
+        name: none

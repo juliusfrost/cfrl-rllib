@@ -250,7 +250,7 @@ class PolicyInfo:
         return agent.get_policy()
 
     def get_agent(self):
-        ray.init()
+        ray.init(ignore_reinit_error=True)
         run = self.policy_info['run']
         env = self.policy_info['env']
         config = self.policy_info['config']

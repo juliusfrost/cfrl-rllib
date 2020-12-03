@@ -11,6 +11,8 @@ from explanations.create_dataset import main as create_dataset_main
 from explanations.generate_counterfactuals import main as generate_counterfactuals_main
 
 DEFAULT_CONFIG = {
+    # experiment name
+    'name': 'explanation-experiment',
     # REQUIRED
     # config for the behavior policy
     'behavior_policy_config': {
@@ -78,7 +80,8 @@ DEFAULT_CONFIG = {
         'project_name': 'cfrl',
     },
     'doc_config': {
-        'form_name': 'test.docx'
+        # id of the document user study
+        'id': None,
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
@@ -86,7 +89,7 @@ DEFAULT_CONFIG = {
         # number of extra branching states we compute in case the trajectory ends during exploration
         'num_buffer_trials': 10,
         # list of evaluation policies to continue rollouts
-        # Policies are a tuple of (name, algorithm, checkpoint)
+        # Policies are a dict of {'name': name, 'run': run, 'checkpoint': checkpoint}
         'eval_policies': [],
         # distribution of states to pick
         'state_selection': 'random',
@@ -102,15 +105,16 @@ DEFAULT_CONFIG = {
 }
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--experiment-config', type=str, required=True,
-                        help='experiment config located in explanations/config/experiments')
+    parser.add_argument('-c', '--experiment-config', type=str,
+                        help='experiment file config. see the default parameters in this file')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--stop', default=None, choices=['video', 'form'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc'],
                         help='whether to stop at generating videos or create the user study form')
-    args = parser.parse_args()
+    parser.add_argument('--config', type=json.loads, default='{}', help='use json config instead of file config')
+    args = parser.parse_args(argv)
     return args
 
 
@@ -207,6 +211,9 @@ def generate_doc(config, video_dir):
     args = []
     args += ['--video-dir', video_dir]
     args += ['--save-dir', video_dir]
+    if config['doc_config']['id'] is None:
+        import random
+        config['doc_config']['id'] = f'{random.randint(0, 1000):03d}'
     args += ['--config', json.dumps(config)]
     generate_doc_main(args)
 
@@ -221,9 +228,23 @@ def remove_ext(path, ext='pkl'):
             print(f'removed {f_path}')
 
 
-def main():
-    args = parse_args()
-    config = load_config(args.experiment_config)
+def main(argv=None):
+    args = parse_args(argv)
+    if args.experiment_config is not None and os.path.exists(args.experiment_config):
+        config = load_config(args.experiment_config)
+    else:
+        config = merge_dicts(DEFAULT_CONFIG, args.config)
+
+    # required checks
+    assert 'behavior_policy_config' in config
+    assert 'checkpoint' in config['behavior_policy_config']
+    assert 'run' in config['behavior_policy_config']
+    assert 'env' in config
+    assert 'eval_env' in config
+    assert config['behavior_policy_config']['checkpoint'] is not None
+    assert config['behavior_policy_config']['run'] is not None
+    assert config['env'] is not None
+    assert config['eval_env'] is not None
 
     stop = args.stop if args.stop is not None else config['stop']
     overwrite = config['overwrite'] or args.overwrite
@@ -233,7 +254,8 @@ def main():
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     # the experiment name is the name of the yaml file
-    experiment_name, _ = os.path.splitext(os.path.basename(args.experiment_config))
+    experiment_name = config['name']
+    # experiment_name, _ = os.path.splitext(os.path.basename(args.experiment_config))
     experiment_dir = os.path.join(result_dir, experiment_name)
     print(f'saving results to {experiment_dir}')
     if not os.path.exists(experiment_dir):
