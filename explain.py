@@ -62,7 +62,7 @@ DEFAULT_CONFIG = {
         # directory name to store videos in result directory
         'dir_name': 'videos',
         # frames per second
-        'fps': 5,
+        'fps': 3,
         'border_width': 30,
         'downscale': 2
     },
