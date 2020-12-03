@@ -117,6 +117,21 @@ def get_cars_near_robot(robot_car, other_cars, **kwargs):
     return cars_in_front + cars_behind + cars_in_left + cars_in_right
 
 
+def check_tailgating(lead_car : Car, follow_car : Car, **kwargs):
+    lane_width = kwargs["lane_width"]
+    car_height = kwargs["car_height"]
+    same_lane = np.abs(lead_car.x - follow_car.x) < lane_width / 2
+    y_diff = follow_car.y - lead_car.y
+    y_close_behind = 0 < y_diff < car_height * 1.75
+    return same_lane and y_close_behind
+
+
+def check_robot_tailgating_cpu(robot_car, cpu_cars, **kwargs):
+    for cpu_car in cpu_cars:
+        adjacent = check_tailgating(cpu_car, robot_car, **kwargs)
+        if adjacent:
+            return True
+    return False
 
 
 def check_adjacency(car_1 : Car, car_2 : Car, **kwargs):
@@ -133,6 +148,19 @@ def check_robot_near_cpu(robot_car, cpu_cars, **kwargs):
         if adjacent:
             return True
     return False
+
+
+def get_lane(robot_car, **kwargs):
+    lane_centers = kwargs["lane_centers"]
+    robot_lane_idx = np.argmin(np.abs(lane_centers - robot_car.x))
+    return robot_lane_idx
+
+def dist_to_car_in_front(robot_car, cpu_cars, **kwargs):
+    min_dist_in_front = 1000
+    for cpu_car in cpu_cars:
+        if get_lane(robot_car, **kwargs) == get_lane(cpu_car, **kwargs) and robot_car.y > cpu_car.y:
+            min_dist_in_front = min(min_dist_in_front, robot_car.y - cpu_car.y)
+    return min_dist_in_front / 1000
 
 
 def get_game_state_ft(robot_car, other_cars, **kwargs):
@@ -293,7 +321,11 @@ def get_reward_ft(robot_car, other_cars, action, speed_multiplier, **kwargs):
     ft_sharpturn = np.square(action_turn)
     # ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward]
     ft_adjacent = int(check_robot_near_cpu(robot_car, other_cars, **kwargs))
-    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent]
+    ft_tailgating = int(check_robot_tailgating_cpu(robot_car, other_cars, **kwargs))
+    lane = get_lane(robot_car, **kwargs)
+    dist_in_front = dist_to_car_in_front(robot_car, other_cars, **kwargs)
+    ft = [ft_lanes, ft_speed, ft_carnear, ft_turn, ft_forward, ft_sharpturn, ft_adjacent, ft_tailgating,
+          lane == 0, lane == 1, lane == 2, dist_in_front]
 
     assert np.all(np.array(ft) <= 1.0) and np.all(np.array(ft) >= 0.0)
     return np.array(ft)
