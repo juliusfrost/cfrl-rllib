@@ -96,7 +96,7 @@ DEFAULT_CONFIG = {
         # window size of the evaluation videos
         'window_size': 20,
         # number of time steps to use the counterfactual policy
-        'timesteps': 3,
+        'timesteps': 0,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
