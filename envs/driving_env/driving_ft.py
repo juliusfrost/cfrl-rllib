@@ -122,7 +122,7 @@ def check_tailgating(lead_car : Car, follow_car : Car, **kwargs):
     car_height = kwargs["car_height"]
     same_lane = np.abs(lead_car.x - follow_car.x) < lane_width / 2
     y_diff = follow_car.y - lead_car.y
-    y_close_behind = 0 < y_diff < car_height * 1.75
+    y_close_behind = 0 < y_diff < car_height * 3
     return same_lane and y_close_behind
 
 
