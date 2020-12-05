@@ -398,9 +398,6 @@ def select_states(args):
     if args.explanation_method == "counterfactual":
         state_selection_fn = state_selection_dict[args.state_selection_method]
         state_indices = state_selection_fn(dataset, args.num_states + args.num_buffer_states, policy)
-        alternative_agents = load_other_policies(args.eval_policies)
-        # Add the original policy in too
-        alternative_agents = [(agent, args.run, args.policy_name)] + alternative_agents
         # Add
         exploration_rollout_saver = RolloutSaver(
             outfile=args.save_path + "/exploration.pkl",
@@ -480,9 +477,6 @@ def select_states(args):
                 os.makedirs(args.save_path)
         state_selection_fn = state_selection_dict[args.explanation_method]
         state_indices = state_selection_fn(dataset, args.num_states, policy)
-        alternative_agents = load_other_policies(args.eval_policies)
-        # Add the original policy in too
-        alternative_agents.append((agent, args.run, args.policy_name))
         generate_videos_state_method(dataset, args, state_indices)
 
 
