@@ -16,7 +16,7 @@ envs.register()
 parser = argparse.ArgumentParser()
 parser.add_argument('--policy', default=None, help='policy to run')
 parser.add_argument('--load_path', default=None, help='Load env from this path')
-parser.add_argument('--load_index', default=0, help='Which env to loead within load_path')
+parser.add_argument('--load_name', default='', help='Which env to load within load_path')
 parser.add_argument('--save_path', default='.', help='if we save the trajectory, store it here.')
 parser.add_argument('--algo', default='PPO', help='algorithm to run')
 args = parser.parse_args()
@@ -42,13 +42,13 @@ else:
 img_list = []
 save_index = 0
 done = False
-env = envs.driving.driving_creator(switch_prob=0.0)
+env = envs.driving.driving_creator(switch_prob=0.0, time_limit=float('inf'))
 if args.load_path is not None:
-    load_index = args.load_index
-    with open(pathlib.Path(args.load_path).joinpath(f'env_state_{load_index}.pkl'), 'rb') as f:
+    load_name = args.load_name
+    with open(pathlib.Path(args.load_path).joinpath(f'env_state_{load_name}.pkl'), 'rb') as f:
         env_state = pkl.load(f)
         env.game_state.game.setGameState(*env_state)
-    with open(pathlib.Path(args.load_path).joinpath(f'obs_{load_index}.pkl'), 'rb') as f:
+    with open(pathlib.Path(args.load_path).joinpath(f'obs_{load_name}.pkl'), 'rb') as f:
         obs = pkl.load(f)
     driving_env = env.env.game_state.game
     driving_env.backdrop.update(driving_env.ydiff)
@@ -59,6 +59,9 @@ else:
 env.render()
 while not done:
     img_list.append(env.render(mode='rgb_array'))
+    window_len = 20
+    if len(img_list) > window_len:
+        img_list = img_list[-window_len:]
     # action = env.action_space.sample()
     action = [0,0]
     a = input()
@@ -84,19 +87,20 @@ while not done:
             action_dist = policy.dist_class(logits, policy.model)
             action = action_dist.sample().detach().cpu().numpy()[0]
     if 'o' in a:
+        save_name = input()
         # Save the frames up to this state, the current state, and the env
         save_path = pathlib.Path(args.save_path)
         if not save_path.exists():
             save_path.mkdir()
-        with open(save_path.joinpath(f'env_state_{save_index}.pkl'), 'wb') as f:
+        with open(save_path.joinpath(f'env_state_{save_name}.pkl'), 'wb') as f:
             env_state = env.game_state.game.getGameStateSave()
             pkl.dump(env_state, f)
-        with open(save_path.joinpath(f'obs_{save_index}.pkl'), 'wb') as f:
+        with open(save_path.joinpath(f'obs_{save_name}.pkl'), 'wb') as f:
             pkl.dump(obs, f)
-        with open(save_path.joinpath(f'traj_{save_index}.pkl'), 'wb') as f:
+        with open(save_path.joinpath(f'traj_{save_name}.pkl'), 'wb') as f:
             pkl.dump(np.stack(img_list), f)
         save_index += 1
-        save_name = save_path.joinpath(f'obs_{save_index}.pkl')
+        save_name = save_path.joinpath(f'obs_{save_name}.pkl')
         print(f"Saved current state to {save_name}")
     print(action)
     if action is not None:
