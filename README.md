@@ -16,3 +16,9 @@ example:
 ```bash
 python rollout.py --run PPO --env DrivingPLE-v0 --video-dir $video_dir --episodes 10 $checkpoint_file
 ```
+
+## List checkpoints within a folder
+example:
+```bash
+python experiments/list_checkpoints.py -b $result_dir
+```
