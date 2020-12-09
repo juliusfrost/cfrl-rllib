@@ -360,7 +360,13 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
-            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob
+            adj_to_car = False
+            for car2 in [*self.cpu_cars, self.agent_car]:
+                if not (car == car2):
+                    if np.abs(car2.x - car.x) <= self.constants['lane_width'] * 1.9 and np.abs(car2.y - car.y) <= self.constants['car_height']:
+                        adj_to_car = True
+            
+            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob and not adj_to_car
             if should_switch:
                 car.start_switch_lane(self.rng, **self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
