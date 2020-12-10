@@ -291,6 +291,9 @@ class Driving(PyGameWrapper, gym.Env):
     def getScore(self):
         return self.score_sum
 
+    def set_time_steps_remaining(self, time_steps_remaining):
+        self.time_limit = self.time_steps + time_steps_remaining * 5  # TODO: don't hardcode action repeat
+
     @property
     def ydiff(self):
         return self.agent_car.ydiff

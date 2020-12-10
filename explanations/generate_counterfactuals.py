@@ -520,6 +520,7 @@ def generate_with_selected_states(args):
         env_obs = dataset.all_observations[state_id]
         for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
             env.load_simulator_state(selected_state)
+            env.env.game_state.game.set_time_steps_remaining(args.window_len)
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
