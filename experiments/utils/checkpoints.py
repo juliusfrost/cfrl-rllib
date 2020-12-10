@@ -1,10 +1,11 @@
 import os
 
 
-def get_best_checkpoint(result_folder):
+def get_best_checkpoint(result_folder, include_checkpoint_file=True):
     """
     gets the checkpoint path from the result folder
     :param result_folder: should be a directory with the format 'Algorithm_EnvironmentName_id_trial_date_time'
+    :param include_checkpoint_file: whether to include the checkpoint file within the checkpoint folder
     :return: checkpoint_path
     """
     indicator = 'checkpoint_'
@@ -21,9 +22,12 @@ def get_best_checkpoint(result_folder):
         # the last checkpoint is the latest iteration checkpoint
         checkpoint = checkpoint_list[-1]
     else:
-        raise FileNotFoundError(f'no checkpoints exist at {result_folder}')
+        # raise FileNotFoundError(f'no checkpoints exist at {result_folder}')
+        return None
 
     checkpoint_path = os.path.join(result_folder, indicator + str(checkpoint))
+    if include_checkpoint_file:
+        checkpoint_path = os.path.join(checkpoint_path, f'checkpoint-{checkpoint}')
     return checkpoint_path
 
 
