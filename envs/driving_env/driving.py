@@ -271,7 +271,7 @@ class Driving(PyGameWrapper, gym.Env):
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
         self.time_steps = time_steps
         self.rng = copy.deepcopy(rng)
-        self.agent_car = robot_car_from_state(self, robot_state)
+        self.agent_car = robot_car_from_state(self, robot_state, fresh_init=False)
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
         self.cpu_cars = []
@@ -287,7 +287,6 @@ class Driving(PyGameWrapper, gym.Env):
             # print(car.x)
             self.cpu_cars.append(car)
             self.cars_group.add(car)
-        print("Load: ", len(self.cpu_cars))
 
     def getScore(self):
         return self.score_sum
@@ -327,9 +326,9 @@ class Driving(PyGameWrapper, gym.Env):
                             self.constants["default_heading"],
                             self.constants["default_speed_ratio_agent"] * self.height]
         self.agent_car = init_robot_car(self.images["agent"], robot_init_state,
-                                        self.players_speed_ratio_max * self.height,
-                                        self.players_speed_ratio_min * self.height,
-                                        **self.constants)
+                                    self.players_speed_ratio_max * self.height,
+                                    self.players_speed_ratio_min * self.height,
+                                    **self.constants)
         self.cpu_cars = []
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)

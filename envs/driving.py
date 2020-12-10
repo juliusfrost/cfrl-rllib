@@ -22,6 +22,9 @@ class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
             self.env.game_state.previous_score = previous_score
             self.env.game_state.last_action = last_action
             self.env.game_state.action = action
+            driving_env = self.env.game_state.game
+            driving_env.backdrop.draw_background(driving_env.screen)
+            driving_env.cars_group.draw(driving_env.screen)
             success = True
         except Exception as e:
             print(e)

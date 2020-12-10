@@ -20,7 +20,7 @@ def set_alphas(color_tuple, transparency):
 
 class Car(pygame.sprite.Sprite):
     def __init__(self, img, initial_state, width, height, speed_limit, speed_min,
-                 controls=None, alpha=0, stationary=False, ydiff=0, **kwargs):
+                 controls=None, alpha=0, stationary=False, ydiff=0, fresh_init=True, **kwargs):
         # alpha - friction coefficient
         # TODO: Try non-zero alpha
 
@@ -45,8 +45,13 @@ class Car(pygame.sprite.Sprite):
                 for col in range(self.orig_img.get_width()):
                     self.orig_img.set_at((col, row),
                                          set_alphas(self.orig_img.get_at((col, row)), self.TRANSPARENCY))
-
-        self.image = pygame.transform.rotate(self.orig_img, math.degrees(self.heading))
+        if fresh_init:
+            self.image = pygame.transform.rotate(self.orig_img, math.degrees(self.heading))
+            self.rect = self.image.get_rect()
+        else:
+            self.image = pygame.transform.rotate(self.orig_img, math.degrees(kwargs.get('default_heading', math.pi/2)))
+            self.rect = self.image.get_rect()
+            self.image = pygame.transform.rotate(self.orig_img, math.degrees(self.heading))
         self.x = initial_state[0]  # x-coordinate of *center* of car
         self.y = initial_state[1]  # y-coordinate of *center* of car
         self.speed = initial_state[3]  # Pixels per frame
@@ -58,7 +63,6 @@ class Car(pygame.sprite.Sprite):
         self.controls = controls
         self.control_idx = 0
 
-        self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y - ydiff)
         self.switching = len(initial_state) > 4
         self.switch_duration = kwargs.get('switch_duration', 50)
