@@ -252,7 +252,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         pre_timestep = original_dataset.get_timestep(state_index)
 
         original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
-        split = state_index - original_trajectory.timestep_range_start
+        split = state_index - original_trajectory.timestep_range_start + 1
         original_rewards = original_trajectory.reward_range
         original_imgs = format_images(original_trajectory.image_observation_range,
                                       start_timestep=0,
