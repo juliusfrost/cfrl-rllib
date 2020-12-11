@@ -214,7 +214,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
 def save_joint_video(video_list, video_names, base_video_name, id, args):
     h, w, c = video_list[0][0][0].shape
     font = cv2.FONT_HERSHEY_SIMPLEX
-    font_scale = 3
+    font_scale = 4
     color = (255, 255, 255)
     thickness = 8
 
@@ -229,8 +229,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
         else:
             text = 'DONE'
         bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
-        final_frame = cv2.putText(final_frame, text, bottom_left, font,
-                                font_scale, color, thickness, cv2.LINE_AA)
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         padded_videos.append(padded_video.astype(np.uint8))
     combined_video = np.concatenate(padded_videos, axis=2)
