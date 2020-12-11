@@ -62,8 +62,9 @@ def create_dataset(args, policy_config, write_data=True):
         all_actions=actions,
         all_rewards=rewards,
         all_dones=dones,
+        all_env_infos=env_infos,
         policy=policy_info,
-        all_simulator_states=simulator_states
+        all_simulator_states=simulator_states,
     )
     if write_data:
         with open(args.out, "wb") as f:

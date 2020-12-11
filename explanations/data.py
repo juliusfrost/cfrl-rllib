@@ -39,6 +39,7 @@ class Data:
                  all_actions=(),
                  all_rewards=(),
                  all_dones=(),
+                 all_env_infos=(),
                  all_policy_states=(),
                  all_simulator_states=(),
                  policy=None,
@@ -52,6 +53,7 @@ class Data:
         self.all_actions = np.array(all_actions)
         self.all_rewards = np.array(all_rewards)
         self.all_dones = np.array(all_dones)
+        self.all_env_infos = np.array(all_env_infos)
         self.all_policy_states = np.array(all_policy_states)
         self.all_simulator_states = np.array(all_simulator_states, dtype=object)
         self.all_trajectory_ids = np.unique(self.all_trajectories)
@@ -142,6 +144,10 @@ class Trajectory:
         return self.data.all_dones[self.timestep_range_start:self.timestep_range_end]
 
     @property
+    def env_info_range(self) -> np.ndarray:
+        return self.data.all_env_infos[self.timestep_range_start:self.timestep_range_end]
+
+    @property
     def info_range(self) -> list:
         return self.data.all_policy_infos[self.timestep_range_start:self.timestep_range_end]
 
@@ -219,6 +225,10 @@ class TimeStep:
     @property
     def done(self):
         return self.data.all_dones[self.time_step_id]
+
+    @property
+    def env_info(self):
+        return self.data.all_env_infos[self.time_step_id]
 
     @property
     def info(self):
