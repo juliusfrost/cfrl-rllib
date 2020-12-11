@@ -68,6 +68,8 @@ def driving_creator(
         switch_prob=kwargs.get('switch_prob', 0.),
         # time for cars to switch lanes
         switch_duration=kwargs.get('switch_duration', 50),
+        # whether cpu cars avoid other cars when switching lanes
+        avoid_cars=kwargs.get('avoid_cars', False),
         # dimension of actions
         action_dim=2,
         # reward penalty for collision
