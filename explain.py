@@ -89,7 +89,7 @@ DEFAULT_CONFIG = {
         # number of trial iterations of explanation and evaluation
         'num_trials': 10,
         # number of extra branching states we compute in case the trajectory ends during exploration
-        'num_buffer_trials': 10,
+        'num_buffer_trials': 30,
         # list of evaluation policies to continue rollouts
         # Policies are a dict of {'name': name, 'run': run, 'checkpoint': checkpoint}
         'eval_policies': [],

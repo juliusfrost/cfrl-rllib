@@ -101,14 +101,13 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
     if show_stop:
         final_frame = frames[-1]
-        bottom_left = (int(w / 2) - 200, int(h / 2))
         if crashed:
             text = 'CRASHED'
         else:
             text = 'DONE'
-        final_frame = cv2.putText(final_frame, text, bottom_left, font,
-                                  font_scale, color, thickness, cv2.LINE_AA)
-        frames = np.concatenate([frames, [final_frame] * fps]).astype(np.uint8)
+        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        frames = np.concatenate([frames, [final_frame] * fps * 2]).astype(np.uint8)
     if show_start:
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
@@ -215,16 +214,13 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
 def save_joint_video(video_list, video_names, base_video_name, id, args):
     h, w, c = video_list[0][0][0].shape
     font = cv2.FONT_HERSHEY_SIMPLEX
-    # Approximately center at the middle of the image
-    # The -200 offset is so the text is about centered horizontally
-    bottom_left = (int(w / 2) - 200, int(h / 2))
     font_scale = 3
     color = (255, 255, 255)
     thickness = 8
 
     order = np.random.permutation(len(video_list))
     padded_videos = []
-    max_len = max([len(v[0]) for v in video_list]) + args.fps
+    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
     for i in order.tolist():
         curr_vid, crashed = video_list[i]
         final_frame = curr_vid[-1]
@@ -232,6 +228,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
             text = 'CRASHED'
         else:
             text = 'DONE'
+        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font,
                                 font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
