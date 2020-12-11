@@ -22,6 +22,9 @@ class DrivingSimulatorStateWrapper(SimulatorStateWrapper):
             self.env.game_state.previous_score = previous_score
             self.env.game_state.last_action = last_action
             self.env.game_state.action = action
+            driving_env = self.env.game_state.game
+            driving_env.backdrop.draw_background(driving_env.screen)
+            driving_env.cars_group.draw(driving_env.screen)
             success = True
         except Exception as e:
             print(e)
@@ -68,6 +71,8 @@ def driving_creator(
         switch_prob=kwargs.get('switch_prob', 0.),
         # time for cars to switch lanes
         switch_duration=kwargs.get('switch_duration', 50),
+        # whether cpu cars avoid other cars when switching lanes
+        avoid_cars=kwargs.get('avoid_cars', False),
         # dimension of actions
         action_dim=2,
         # reward penalty for collision
