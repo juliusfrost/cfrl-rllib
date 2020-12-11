@@ -269,7 +269,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         pre_timestep = original_dataset.get_timestep(state_index)
 
         original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
-        split = state_index - original_trajectory.timestep_range_start
+        split = state_index - original_trajectory.timestep_range_start + 1
         original_rewards = original_trajectory.reward_range
         original_imgs = format_images(original_trajectory.image_observation_range,
                                       start_timestep=0,
@@ -282,7 +282,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       show_reward=False)
 
         #  (2) Create images of exploration
-        has_explored = len(exploration_dataset.all_trajectory_ids) != 0
+        if exploration_dataset is None:
+            has_explored = False
+        else:
+            has_explored = len(exploration_dataset.all_trajectory_ids) != 0
         if has_explored:
             exp_id = exploration_dataset.all_trajectory_ids[i]
             exp_trajectory = exploration_dataset.get_trajectory(exp_id)
@@ -417,8 +420,6 @@ def select_states(args):
         "random": random_state,
         "low_reward": low_reward_state,
     }
-    # state_selection_fn = state_selection_dict[args.state_selection_method]
-    # state_indices = state_selection_fn(dataset, args.num_states, policy)
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
     alternative_agents.append((agent, args.run, args.policy_name))
@@ -507,6 +508,62 @@ def select_states(args):
         generate_videos_state_method(dataset, args, state_indices)
 
 
+def generate_with_selected_states(args):
+    with open(args.dataset_file, "rb") as f:
+        dataset: Data = pkl.load(f)
+    eval_policies = args.eval_policies
+    if args.behavioral_policy is not None:
+        eval_policies.append({'name': args.policy_name, 'run': args.run, 'checkpoint': args.behavioral_policy})
+    alternative_agents = load_other_policies(args.eval_policies)
+    # Add the original policy in too
+    test_rollout_savers = []
+    for agent, run_type, name in alternative_agents:
+        counterfactual_rollout_saver = RolloutSaver(
+            outfile=args.save_path + f"/{name}_counterfactual.pkl",
+            target_steps=None,
+            target_episodes=args.num_states,
+            save_info=True)
+        # Neither of these seem to be used, just required to save dataset
+        counterfactual_args = DatasetArgs(out=args.save_path + f"/{name}_counterfactual.pkl", env="DrivingPLE-v0",
+                                          run=run_type, checkpoint=1)
+        test_rollout_savers.append((counterfactual_rollout_saver, counterfactual_args))
+    counterfactual_policy_config = {}
+    state_indices = [i for i in range(len(dataset.all_simulator_states)) if dataset.all_simulator_states[i] is not None]
+    if not len(state_indices) >= args.num_states:
+        print(f"Couldn't generate the requested {args.num_states} state since we only have {len(state_indices)} "
+              "pre-selected states.")
+    env_creator = get_env_creator(args.env)
+    env = env_creator(args.env_config)
+    env.reset()
+    num_states = min(len(state_indices), args.num_states)
+    cf_to_exp_index = {i: i for i in range(num_states)}
+    assert args.save_path is not None
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+    successful_trajs = 0
+    for i in range(num_states):
+        state_id = state_indices[i]
+        selected_state = dataset.all_simulator_states[state_id]
+        env_obs = dataset.all_observations[state_id]
+        for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
+            env.load_simulator_state(selected_state)
+            env.env.game_state.game.set_time_steps_remaining(args.window_len)
+            agent, run_type, name = agent_stuff
+            counterfactual_saver, counterfactual_args = saver_stuff
+            with counterfactual_saver as saver:
+                rollout_env(agent, env, until_end_handoff, env_obs, saver=saver, no_render=False)
+            successful_trajs += 1
+    cf_datasets = []
+    for counterfactual_saver, counterfactual_args in test_rollout_savers:
+        counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
+                                                write_data=args.save_all)
+        cf_datasets.append(counterfactual_dataset)
+
+    exploration_dataset = None
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+    generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
+                                          cf_names, state_indices)
+
 def main(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
@@ -515,10 +572,10 @@ def main(parser_args=None):
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
-                        choices=['critical', 'random', 'low_reward'], default='critical')
+                        choices=['critical', 'random', 'low_reward', 'manual'], default='critical')
     parser.add_argument('--explanation-method', type=str, help='Explanation Method',
                         choices=['counterfactual', 'critical', 'random'], default='counterfactual')
-    parser.add_argument('--eval-policies', type=json.loads, required=True, default="{}",
+    parser.add_argument('--eval-policies', type=json.loads, default=None,
                         help='list of evaluation policies to continue rollouts. '
                              'Policies are a tuple of (name, algorithm, checkpoint)')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
@@ -530,6 +587,7 @@ def main(parser_args=None):
                         help='environment configuration')
     parser.add_argument('--policy-name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
+    parser.add_argument('--behavioral-policy', type=str, default=None)
     parser.add_argument('--side-by-side', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
@@ -537,9 +595,13 @@ def main(parser_args=None):
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     args = parser.parse_args(parser_args)
 
+    ray.init()
     # register environments
     register()
-    select_states(args)
+    if args.state_selection_method == 'manual':
+        generate_with_selected_states(args)
+    else:
+        select_states(args)
     ray.shutdown()
 
 

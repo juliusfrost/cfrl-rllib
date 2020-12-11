@@ -191,6 +191,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
+    args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
     args += ['--side-by-side']
     generate_counterfactuals_main(args)
 
@@ -263,18 +264,22 @@ def main(argv=None):
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
     explanation_dataset = os.path.join(experiment_dir, 'explanation_dataset.pkl')
-    evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
+    manual_selection = config['eval_config']['state_selection'] == 'manual'
+    if manual_selection:
+        evaluation_dataset = config['eval_config']['evaluation_dataset']
+    else:
+        evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
     # create dataset
     if overwrite or not os.path.exists(explanation_dataset):
         create_dataset(config, explanation_dataset, eval=False)
     else:
-        print('dataset file already exists.')
+        print('Explanation dataset file already exists.')
         print(explanation_dataset)
 
-    if overwrite or not os.path.exists(evaluation_dataset):
+    if (not manual_selection) and (overwrite or not os.path.exists(evaluation_dataset)):
         create_dataset(config, evaluation_dataset, eval=True)
     else:
-        print('dataset file already exists.')
+        print('Evaluation dataset file already exists.')
         print(evaluation_dataset)
 
     video_dir = os.path.join(experiment_dir, config['video_config']['dir_name'])
