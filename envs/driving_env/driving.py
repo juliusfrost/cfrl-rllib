@@ -131,7 +131,7 @@ class Driving(PyGameWrapper, gym.Env):
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
                  add_car_fn=add_car_top, collision_penalty=-100., n_noops=230,
                  default_dt=30, prob_car=50, time_reward_proportion=1, time_limit=500,
-                 normalize_reward=True, **kwargs):
+                 normalize_reward=True, avoid_cars=False, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -163,6 +163,7 @@ class Driving(PyGameWrapper, gym.Env):
             self.agent_img = kwargs["agent_img"]
 
         self.switch_prob = kwargs.get('switch_prob', 0.0)
+        self.avoid_cars = avoid_cars
         self.speed_multiplier = kwargs.get('speed_multiplier', 1.0)
 
         # Define environment visualization constants
@@ -362,7 +363,13 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
-            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob
+            adj_to_car = False
+            if self.avoid_cars:
+                for car2 in [*self.cpu_cars, self.agent_car]:
+                    if not (car == car2):
+                        if np.abs(car2.x - car.x) <= self.constants['lane_width'] * 1.9 and np.abs(car2.y - car.y) <= self.constants['car_height']:
+                            adj_to_car = True
+            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob and not adj_to_car
             if should_switch:
                 car.start_switch_lane(self.rng, **self.constants)
             car.update(ydiff=self.ydiff, dt=dt)
