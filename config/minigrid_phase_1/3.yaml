@@ -25,4 +25,4 @@ minigrid-phase-1:
     env: MiniGrid-FourRooms-v0
     env_config:
       agent_pos: null
-      goal_pos: [ 2, 2 ]
+      goal_pos: [ 6, 2 ]
