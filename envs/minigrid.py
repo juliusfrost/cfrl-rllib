@@ -58,7 +58,7 @@ class MiniGridSimulatorStateWrapper(SimulatorStateWrapper):
         return success
 
 
-def env_creator(**kwargs):
+def env_creator(normalize=False, normalize_constant=10, **kwargs):
     env = SmallFourRoomsEnv(
         agent_pos=kwargs.get('agent_pos', (2, 2)),
         goal_pos=kwargs.get('goal_pos', (2, 6)),
@@ -69,6 +69,8 @@ def env_creator(**kwargs):
     env = gym_minigrid.wrappers.FullyObsWrapper(env)
     env = MiniGridObservationWrapper(env)
     env = MiniGridActionWrapper(env)
+    if normalize:
+        env = gym.wrappers.TransformObservation(env, lambda obs: obs / normalize_constant)
     env.seed(kwargs.get('seed', random.randint(0, 1000)))
     return env
 
