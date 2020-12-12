@@ -4,7 +4,8 @@ import uuid
 import ray
 from ray.rllib.rollout import create_parser
 
-from envs import register
+import models
+import envs
 from explanations.data import Data, PolicyInfo
 from explanations.rollout import run
 
@@ -79,7 +80,9 @@ def main(parser_args=None):
     args = parser.parse_args(parser_args)
 
     # register environments
-    register()
+    envs.register()
+    # register models
+    models.register()
 
     # Collect Rollouts
     policy, policy_config = run(args, parser)

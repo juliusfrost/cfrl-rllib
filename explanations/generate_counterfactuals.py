@@ -12,7 +12,8 @@ import ray
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
 from typing import List
 
-from envs import register
+import envs
+import models
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
@@ -593,7 +594,9 @@ def main(parser_args=None):
 
     ray.init()
     # register environments
-    register()
+    envs.register()
+    # register models
+    models.register()
     if args.state_selection_method == 'manual':
         generate_with_selected_states(args)
     else:

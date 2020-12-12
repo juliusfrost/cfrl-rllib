@@ -1,6 +1,7 @@
 from ray.rllib.rollout import create_parser, run, deprecation_warning
 
 import envs
+import models
 
 if __name__ == "__main__":
     parser = create_parser()
@@ -27,4 +28,5 @@ if __name__ == "__main__":
             "--out as well!")
 
     envs.register()
+    models.register()
     run(args, parser)
