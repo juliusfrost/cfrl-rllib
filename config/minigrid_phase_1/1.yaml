@@ -2,6 +2,7 @@ minigrid-phase-1:
     run: A2C
     stop:
         time_total_s: 169200 # two days minus one hour in seconds
+#        info/num_steps_trained: 4000000
     checkpoint_freq: 1
     checkpoint_at_end: true
     keep_checkpoints_num: 1
@@ -20,14 +21,7 @@ minigrid-phase-1:
             [20000000, 0.000000000001],
         ]
         model:
-            # Filter config. List of [out_channels, kernel, stride] for each filter
-            conv_filters: [
-                [32, [3, 3], 1],
-                [64, [3, 3], 3],
-                [128, [3, 3], 1],
-                [256, [3, 3], 3],
-            ]
-            fcnet_hiddens: [256]
+            custom_model: minigrid_conv_torch_model
         env: MiniGrid-FourRooms-v0
         env_config:
             agent_pos: [2, 2]
