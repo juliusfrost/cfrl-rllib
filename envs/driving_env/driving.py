@@ -131,7 +131,7 @@ class Driving(PyGameWrapper, gym.Env):
                  state_ft_fn=get_state_ft, reward_ft_fn=get_reward_ft,
                  add_car_fn=add_car_top, collision_penalty=-100., n_noops=230,
                  default_dt=30, prob_car=50, time_reward_proportion=1, time_limit=500,
-                 normalize_reward=True, **kwargs):
+                 normalize_reward=True, avoid_cars=False, **kwargs):
 
         assert continuous_actions, "Driving simulator can only handle continuous actions"
         self.continuous_actions = continuous_actions
@@ -163,6 +163,7 @@ class Driving(PyGameWrapper, gym.Env):
             self.agent_img = kwargs["agent_img"]
 
         self.switch_prob = kwargs.get('switch_prob', 0.0)
+        self.avoid_cars = avoid_cars
         self.speed_multiplier = kwargs.get('speed_multiplier', 1.0)
 
         # Define environment visualization constants
@@ -271,7 +272,7 @@ class Driving(PyGameWrapper, gym.Env):
         robot_state, cpu_states = get_car_states_from_ft(state, **self.constants)
         self.time_steps = time_steps
         self.rng = copy.deepcopy(rng)
-        self.agent_car = robot_car_from_state(self, robot_state)
+        self.agent_car = robot_car_from_state(self, robot_state, fresh_init=False)
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
         self.cpu_cars = []
@@ -287,10 +288,12 @@ class Driving(PyGameWrapper, gym.Env):
             # print(car.x)
             self.cpu_cars.append(car)
             self.cars_group.add(car)
-        print("Load: ", len(self.cpu_cars))
 
     def getScore(self):
         return self.score_sum
+
+    def set_time_steps_remaining(self, time_steps_remaining):
+        self.time_limit = self.time_steps + time_steps_remaining * 5  # TODO: don't hardcode action repeat
 
     @property
     def ydiff(self):
@@ -327,9 +330,9 @@ class Driving(PyGameWrapper, gym.Env):
                             self.constants["default_heading"],
                             self.constants["default_speed_ratio_agent"] * self.height]
         self.agent_car = init_robot_car(self.images["agent"], robot_init_state,
-                                        self.players_speed_ratio_max * self.height,
-                                        self.players_speed_ratio_min * self.height,
-                                        **self.constants)
+                                    self.players_speed_ratio_max * self.height,
+                                    self.players_speed_ratio_min * self.height,
+                                    **self.constants)
         self.cpu_cars = []
         self.cars_group = pygame.sprite.Group()
         self.cars_group.add(self.agent_car)
@@ -360,7 +363,13 @@ class Driving(PyGameWrapper, gym.Env):
             self.cars_group.add(new_car)
 
         for car in self.cpu_cars:
-            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob
+            adj_to_car = False
+            if self.avoid_cars:
+                for car2 in [*self.cpu_cars, self.agent_car]:
+                    if not (car == car2):
+                        if np.abs(car2.x - car.x) <= self.constants['lane_width'] * 1.9 and np.abs(car2.y - car.y) <= self.constants['car_height']:
+                            adj_to_car = True
+            should_switch = not car.switch_duration_remaining > 0 and self.rng.random() < self.switch_prob and not adj_to_car
             if should_switch:
                 car.start_switch_lane(self.rng, **self.constants)
             car.update(ydiff=self.ydiff, dt=dt)

@@ -19,8 +19,11 @@ class DummyCar:
 
 
 def get_n_cpu_cars_from_ft(ft_dict):
-    n_cars = max([int(x.split("_")[0][3:]) for x in list(ft_dict.keys())
-                  if x.startswith("cpu")])
+    cars = [int(x.split("_")[0][3:]) for x in list(ft_dict.keys())
+                  if x.startswith("cpu")]
+    if len(cars) == 0:
+        return 0
+    n_cars = max(cars)
     return n_cars
 
 

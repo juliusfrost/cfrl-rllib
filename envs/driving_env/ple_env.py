@@ -98,7 +98,7 @@ class PLEEnv(gym.Env):
             state = self.img_preproc_fn(state)
             self.frames = np.c_[self.frames[:, :, 1:], state[:, :, np.newaxis]]
         terminal = self.game_state.game_over()
-        return np.array(self.frames), reward, terminal, {}
+        return np.array(self.frames), reward, terminal, {'failure': self.game_state.game.crashed()}
 
     def _get_image(self, img=True):
         if img:

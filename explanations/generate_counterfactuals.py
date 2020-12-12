@@ -27,7 +27,8 @@ def get_env_creator(env_name):
 def window_slice(arr, index: int, window_radius: int):
     window_low = max(0, index - window_radius)
     window_high = min(len(arr), index + window_radius)
-    return arr[window_low: window_high]
+    cropped_end = window_high < len(arr)
+    return arr[window_low: window_high], cropped_end
 
 
 def add_border(imgs, border_size=30, border_color=(255, 255, 255)):
@@ -89,28 +90,31 @@ def format_images(frames, start_timestep=0, trajectory_reward=None, initial_rewa
 
 
 def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop=True,
-                  show_blank_frames=False, downscale=2):
+                  show_blank_frames=False, downscale=2, crashed=False):
     w, h = image_shape
     font_scale = 4
     color = (255, 255, 255)
     thickness = 8
+    font = cv2.FONT_HERSHEY_SIMPLEX
     if show_blank_frames:
         blank_frames = np.zeros((fps, h, w, 3))
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
+    if show_stop:
+        final_frame = frames[-1]
+        if crashed:
+            text = 'CRASHED'
+        else:
+            text = 'DONE'
+        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        frames = np.concatenate([frames, [final_frame] * fps * 2]).astype(np.uint8)
     if show_start:
-        font = cv2.FONT_HERSHEY_SIMPLEX
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
         start_frame = np.zeros((h, w, 3)).astype(np.uint8) + 100
         bottom_left = (int(w / 2) - 310, int(h / 2))
         start_frame = cv2.putText(start_frame, 'Restarting', bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [start_frame] * fps]).astype(np.uint8)
-    if show_stop:
-        blank_frame = np.zeros((h, w, 3)).astype(np.uint8)
-        bottom_left = (int(w / 2) - 200, int(h / 2))
-        blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
-                                  font_scale, color, thickness, cv2.LINE_AA)
-        frames = np.concatenate([frames, [blank_frame] * fps]).astype(np.uint8)
     w = w // downscale
     h = h // downscale
     frames = [cv2.resize(img, dsize=(w, h), interpolation=cv2.INTER_CUBIC) for img in frames]
@@ -168,6 +172,9 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             show_timestep=show_timestep,
                             show_reward=False,
                             show_driver=True)
+    # Get failure, if it's recorded
+    last_env_info = cf_trajectory.env_info_range[-1]
+    crashed = last_env_info.get('failure', 0)
     
     img_shape = (cf_imgs[0].shape[1], cf_imgs[0].shape[0])
 
@@ -181,51 +188,57 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         cf_video = np.concatenate((prefix_video, cf_imgs))
     else:
         cf_video = cf_imgs
-    cf_window_video = window_slice(cf_video, split, args.window_len)
+    cf_window_video, cropped_end = window_slice(cf_video, split, args.window_len)
+    window_crashed = crashed and not cropped_end
 
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
-        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True,
+                    downscale=args.downscale, crashed=crashed)
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
-        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+                    downscale=args.downscale, crashed=crashed)
     if args.save_all or not args.side_by_side:
         # Writing video 3 == shorter version of 2
         cf_window_explanation_file = os.path.join(args.save_path,
                                                   vidpath('counterfactual_window', cf_name, save_id))
-        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True,
+                    downscale=args.downscale, crashed=window_crashed)
 
-    return cf_imgs, cf_video, cf_window_video
+    return (cf_imgs, crashed), (cf_video, crashed), (cf_window_video, window_crashed)
 
 
 def save_joint_video(video_list, video_names, base_video_name, id, args):
-    h, w, c = video_list[0][0].shape
+    h, w, c = video_list[0][0][0].shape
     font = cv2.FONT_HERSHEY_SIMPLEX
-    # Approximately center at the middle of the image
-    # The -200 offset is so the text is about centered horizontally
-    bottom_left = (int(w / 2) - 200, int(h / 2))
     font_scale = 4
     color = (255, 255, 255)
     thickness = 8
 
     order = np.random.permutation(len(video_list))
     padded_videos = []
-    max_len = max([len(v) for v in video_list]) + args.fps
+    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
     for i in order.tolist():
-        curr_vid = video_list[i]
-        blank_frame = np.zeros((h, w, c)).astype(np.uint8)
-        blank_frame = cv2.putText(blank_frame, 'DONE', bottom_left, font,
-                                font_scale, color, thickness, cv2.LINE_AA)
-        padded_video = np.concatenate([curr_vid, [blank_frame] * (max_len - len(curr_vid))])
+        curr_vid, crashed = video_list[i]
+        final_frame = curr_vid[-1]
+        if crashed:
+            text = 'CRASHED'
+        else:
+            text = 'DONE'
+        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         padded_videos.append(padded_video.astype(np.uint8))
     combined_video = np.concatenate(padded_videos, axis=2)
 
     t, h, w, c = combined_video.shape
     save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.gif")
     answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
-    write_video(combined_video, save_file, (w, h), args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+    write_video(combined_video, save_file, (w, h), args.fps, show_start=True, show_stop=False,
+                downscale=args.downscale)
     with open(answer_key_file, 'a') as f:
         f.write(f"{id},")
         for i in order.tolist():
@@ -252,7 +265,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         pre_timestep = original_dataset.get_timestep(state_index)
 
         original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
-        split = state_index - original_trajectory.timestep_range_start
+        split = state_index - original_trajectory.timestep_range_start + 1
         original_rewards = original_trajectory.reward_range
         original_imgs = format_images(original_trajectory.image_observation_range,
                                       start_timestep=0,
@@ -265,7 +278,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       show_reward=False)
 
         #  (2) Create images of exploration
-        has_explored = len(exploration_dataset.all_trajectory_ids) != 0
+        if exploration_dataset is None:
+            has_explored = False
+        else:
+            has_explored = len(exploration_dataset.all_trajectory_ids) != 0
         if has_explored:
             exp_id = exploration_dataset.all_trajectory_ids[i]
             exp_trajectory = exploration_dataset.get_trajectory(exp_id)
@@ -317,24 +333,30 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+                        downscale=args.downscale, crashed=False)
 
             if has_explored:
                 #  (2) Exploration video
                 exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
-                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True,
+                            downscale=args.downscale, crashed=False)
 
             #  (3) Beginning + Exploration
             pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
-            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=False, downscale=args.downscale)
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+                        downscale=args.downscale, crashed=False)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'baseline_window-trial_{i}.gif')
-        baseline_window_video = window_slice(original_imgs, split, args.window_len)
+        baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
+        # Get failure, if it's recorded
+        last_env_info = original_trajectory.env_info_range[-1]
+        crashed = last_env_info.get('failure', 0) and not cropped_end
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps,
-                    show_start=True, show_stop=True, downscale=args.downscale)
+                    show_start=True, show_stop=True, downscale=args.downscale, crashed=crashed)
 
 
 def generate_videos_state_method(original_dataset, args, state_indices):
@@ -366,18 +388,22 @@ def generate_videos_state_method(original_dataset, args, state_indices):
         if args.save_all:
             #  (1) Beginning video
             old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, downscale=args.downscale)
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps,
+                        downscale=args.downscale, crashed=False)
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'baseline_window-trial_{i}.gif')
-        baseline_window_video = window_slice(original_imgs, split, args.window_len)
+        baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video, border_size=args.border_width)
         # print(len(baseline_window_video))
         # print(baseline_window_video[0].shape)
         # print(img_shape)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
-        write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps, downscale=args.downscale)
+        last_env_info = original_trajectory.env_info_range[-1]
+        crashed = last_env_info.get('failure', 0) and not cropped_end
+        write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps,
+                    downscale=args.downscale, crashed=crashed)
 
 
 def select_states(args):
@@ -390,8 +416,6 @@ def select_states(args):
         "random": random_state,
         "low_reward": low_reward_state,
     }
-    # state_selection_fn = state_selection_dict[args.state_selection_method]
-    # state_indices = state_selection_fn(dataset, args.num_states, policy)
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
     alternative_agents.append((agent, args.run, args.policy_name))
@@ -480,6 +504,62 @@ def select_states(args):
         generate_videos_state_method(dataset, args, state_indices)
 
 
+def generate_with_selected_states(args):
+    with open(args.dataset_file, "rb") as f:
+        dataset: Data = pkl.load(f)
+    eval_policies = args.eval_policies
+    if args.behavioral_policy is not None:
+        eval_policies.append({'name': args.policy_name, 'run': args.run, 'checkpoint': args.behavioral_policy})
+    alternative_agents = load_other_policies(args.eval_policies)
+    # Add the original policy in too
+    test_rollout_savers = []
+    for agent, run_type, name in alternative_agents:
+        counterfactual_rollout_saver = RolloutSaver(
+            outfile=args.save_path + f"/{name}_counterfactual.pkl",
+            target_steps=None,
+            target_episodes=args.num_states,
+            save_info=True)
+        # Neither of these seem to be used, just required to save dataset
+        counterfactual_args = DatasetArgs(out=args.save_path + f"/{name}_counterfactual.pkl", env="DrivingPLE-v0",
+                                          run=run_type, checkpoint=1)
+        test_rollout_savers.append((counterfactual_rollout_saver, counterfactual_args))
+    counterfactual_policy_config = {}
+    state_indices = [i for i in range(len(dataset.all_simulator_states)) if dataset.all_simulator_states[i] is not None]
+    if not len(state_indices) >= args.num_states:
+        print(f"Couldn't generate the requested {args.num_states} state since we only have {len(state_indices)} "
+              "pre-selected states.")
+    env_creator = get_env_creator(args.env)
+    env = env_creator(args.env_config)
+    env.reset()
+    num_states = min(len(state_indices), args.num_states)
+    cf_to_exp_index = {i: i for i in range(num_states)}
+    assert args.save_path is not None
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+    successful_trajs = 0
+    for i in range(num_states):
+        state_id = state_indices[i]
+        selected_state = dataset.all_simulator_states[state_id]
+        env_obs = dataset.all_observations[state_id]
+        for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
+            env.load_simulator_state(selected_state)
+            env.env.game_state.game.set_time_steps_remaining(args.window_len)
+            agent, run_type, name = agent_stuff
+            counterfactual_saver, counterfactual_args = saver_stuff
+            with counterfactual_saver as saver:
+                rollout_env(agent, env, until_end_handoff, env_obs, saver=saver, no_render=False)
+            successful_trajs += 1
+    cf_datasets = []
+    for counterfactual_saver, counterfactual_args in test_rollout_savers:
+        counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
+                                                write_data=args.save_all)
+        cf_datasets.append(counterfactual_dataset)
+
+    exploration_dataset = None
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+    generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
+                                          cf_names, state_indices)
+
 def main(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
@@ -488,10 +568,10 @@ def main(parser_args=None):
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
-                        choices=['critical', 'random', 'low_reward'], default='critical')
+                        choices=['critical', 'random', 'low_reward', 'manual'], default='critical')
     parser.add_argument('--explanation-method', type=str, help='Explanation Method',
                         choices=['counterfactual', 'critical', 'random'], default='counterfactual')
-    parser.add_argument('--eval-policies', type=json.loads, required=True, default="{}",
+    parser.add_argument('--eval-policies', type=json.loads, default=None,
                         help='list of evaluation policies to continue rollouts. '
                              'Policies are a tuple of (name, algorithm, checkpoint)')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
@@ -503,6 +583,7 @@ def main(parser_args=None):
                         help='environment configuration')
     parser.add_argument('--policy-name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
+    parser.add_argument('--behavioral-policy', type=str, default=None)
     parser.add_argument('--side-by-side', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
@@ -510,9 +591,13 @@ def main(parser_args=None):
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     args = parser.parse_args(parser_args)
 
+    ray.init()
     # register environments
     register()
-    select_states(args)
+    if args.state_selection_method == 'manual':
+        generate_with_selected_states(args)
+    else:
+        select_states(args)
     ray.shutdown()
 
 
