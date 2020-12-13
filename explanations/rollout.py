@@ -1,15 +1,13 @@
-from ray.rllib.rollout import *
-from ray.tune.utils import merge_dicts
-from ray.tune.registry import get_trainable_cls
-from ray.rllib.env.base_env import _DUMMY_AGENT_ID
-
 import pickle
-import copy
+
+from ray.rllib.env.base_env import _DUMMY_AGENT_ID
+from ray.rllib.rollout import *
+from ray.tune.registry import get_trainable_cls
+from ray.tune.utils import merge_dicts
 
 
 # All functions included are modifications of rllib's functions
 def run(args, parser):
-    config = {}
     # Load configuration from checkpoint file.
     config_dir = os.path.dirname(args.checkpoint)
     config_path = os.path.join(config_dir, "params.pkl")
@@ -23,33 +21,39 @@ def run(args, parser):
             raise ValueError(
                 "Could not find params.pkl in either the checkpoint dir or "
                 "its parent directory AND no config given on command line!")
+        else:
+            config = args.config
 
     # Load the config from pickled.
     else:
         with open(config_path, "rb") as f:
-            config = pickle.load(f)
+            config = cloudpickle.load(f)
 
     # Set num_workers to be at least 2.
     if "num_workers" in config:
         config["num_workers"] = min(2, config["num_workers"])
 
-    # Merge with `evaluation_config`.
-    evaluation_config = copy.deepcopy(config.get("evaluation_config", {}))
+    # Make sure worker 0 has an Env.
+    config["create_env_on_driver"] = True
+
+    # Merge with `evaluation_config` (first try from command line, then from
+    # pkl file).
+    evaluation_config = copy.deepcopy(
+        args.config.get("evaluation_config", config.get(
+            "evaluation_config", {})))
     config = merge_dicts(config, evaluation_config)
-    # Merge with command line `--config` settings.
+    # Merge with command line `--config` settings (if not already the same
+    # anyways).
     config = merge_dicts(config, args.config)
     if not args.env:
         if not config.get("env"):
             parser.error("the following arguments are required: --env")
         args.env = config.get("env")
 
-    ray.init(ignore_reinit_error=True)
+    ray.init(ignore_reinit_error=True)  # TODO: find a reason for this hack
 
     # Create the Trainer from config.
     cls = get_trainable_cls(args.run)
-    # print(config)
-    # print(cls)
-    # print(type(cls))
     agent = cls(env=args.env, config=config)
     # Load state from checkpoint.
     agent.restore(args.checkpoint)
@@ -209,13 +213,10 @@ def rollout(agent,
             video_dir=None):
     policy_agent_mapping = default_policy_agent_mapping
 
-    print("AGENT TYPE", type(agent))  # TODO: remove
-    print("AGENT POLICY", agent.get_policy())  # TODO: remove
     if saver is None:
         saver = RolloutSaver()
 
     if hasattr(agent, "workers") and isinstance(agent.workers, WorkerSet):
-        print("IF CASE")
         env = agent.workers.local_worker().env
         multiagent = isinstance(env, MultiAgentEnv)
         if agent.workers.local_worker().multiagent:
@@ -224,10 +225,8 @@ def rollout(agent,
 
         policy_map = agent.workers.local_worker().policy_map
         state_init = {p: m.get_initial_state() for p, m in policy_map.items()}
-        print("STUFF", policy_map.items())
         use_lstm = {p: len(s) > 0 for p, s in state_init.items()}
     else:
-        print("ELSE CASE")
         env = gym.make(env_name)
         multiagent = False
         try:
@@ -246,7 +245,7 @@ def rollout(agent,
     # If monitoring has been requested, manually wrap our environment with a
     # gym monitor, which is set to record every episode.
     if video_dir:
-        env = gym.wrappers.Monitor(
+        env = gym_wrappers.Monitor(
             env=env,
             directory=video_dir,
             video_callable=lambda x: True,
@@ -307,6 +306,7 @@ def rollout(agent,
             else:
                 reward_total += reward
             if not no_render:
+                # TODO: why is img saved when append_step asks for next_obs?
                 img = env.render(mode="rgb_array")
             saver.append_step(obs, action, img, reward, done, info, env.get_simulator_state())
             steps += 1

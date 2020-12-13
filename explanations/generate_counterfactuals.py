@@ -2,15 +2,15 @@ import argparse
 import copy
 import json
 import os
-import pickle as pkl
 from collections import namedtuple
-import imageio
+from typing import List
 
+import pickle5 as pkl
 import cv2
+import imageio
 import numpy as np
 import ray
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
-from typing import List
 
 import envs
 import models
