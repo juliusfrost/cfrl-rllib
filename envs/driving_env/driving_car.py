@@ -188,7 +188,7 @@ class Car(pygame.sprite.Sprite):
         lane_width = kwargs['lane_width']
         lane = np.argmin(list(map(lambda lane_coord: (lane_coord - self.x) ** 2, lane_centers)))
         if lane == 1:
-            self.switching_direction = random.randint(0, 1) * 2 - 1
+            self.switching_direction = rng.randint(0, 1) * 2 - 1
         elif lane == 0:
             self.switching_direction = 1
         else:
