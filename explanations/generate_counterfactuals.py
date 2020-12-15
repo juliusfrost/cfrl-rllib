@@ -314,7 +314,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             cf_driver = 'A'
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
             continuation, cf, window = generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args,
-                                                          cf_id, i, split, prefix_video, cf_driver)
+                                                          cf_id, cf_id, split, prefix_video, cf_driver)
             continuation_list.append(continuation)
             cf_list.append(cf)
             window_list.append(window)
@@ -325,7 +325,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                 save_joint_video(continuation_list, cf_names, continuation_file, i, args)
                 save_joint_video(cf_list, cf_names, cf_file, i, args)
             cf_window_file = 'counterfactual_window'
-            save_joint_video(window_list, cf_names, cf_window_file, i, args)
+            save_joint_video(window_list, cf_names, cf_window_file, cf_id, args)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -396,9 +396,6 @@ def generate_videos_state_method(original_dataset, args, state_indices):
                                                         f'baseline_window-trial_{i}.gif')
         baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video, border_size=args.border_width)
-        # print(len(baseline_window_video))
-        # print(baseline_window_video[0].shape)
-        # print(img_shape)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         last_env_info = original_trajectory.env_info_range[-1]
         crashed = last_env_info.get('failure', 0) and not cropped_end
