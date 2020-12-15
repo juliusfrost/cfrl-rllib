@@ -104,6 +104,8 @@ DEFAULT_CONFIG = {
     'create_dataset_arguments': ['--save-info'],
     # remove files with this extension
     'remove_ext': ['pkl'],
+    'exploration_method': 'random',
+    'exploration_policy': None,
 }
 
 
@@ -175,6 +177,8 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         args += ['--video-format', 'mp4']
     else:
         args += ['--video-format', 'gif']
+    args += ['--exploration-method', config['exploration_method']]
+    args += ['--exploration-policy', json.dumps(config['exploration_policy'])]
     generate_counterfactuals_main(args)
 
 
@@ -201,6 +205,8 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
         args += ['--video-format', 'mp4']
     else:
         args += ['--video-format', 'gif']
+    args += ['--exploration-method', 'random']
+    args += ['--exploration-policy', json.dumps(None)]
     generate_counterfactuals_main(args)
 
 
