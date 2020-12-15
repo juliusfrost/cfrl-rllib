@@ -171,6 +171,10 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
+    if config['stop'] == 'html':
+        args += ['--video-format', 'mp4']
+    else:
+        args += ['--video-format', 'gif']
     generate_counterfactuals_main(args)
 
 
@@ -193,6 +197,10 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
     args += ['--side-by-side']
+    if config['stop'] == 'html':
+        args += ['--video-format', 'mp4']
+    else:
+        args += ['--video-format', 'gif']
     generate_counterfactuals_main(args)
 
 
@@ -219,6 +227,17 @@ def generate_doc(config, video_dir):
         config['doc_config']['id'] = f'{random.randint(0, 1000):03d}'
     args += ['--config', json.dumps(config)]
     generate_doc_main(args)
+
+def generate_html(config, video_dir):
+    from explanations.generate_html import main as generate_html_main
+    args = []
+    args += ['--video-dir', video_dir]
+    args += ['--save-dir', video_dir]
+    if config['doc_config']['id'] is None:
+        import random
+        config['doc_config']['id'] = f'{random.randint(0, 1000):03d}'
+    args += ['--config', json.dumps(config)]
+    generate_html_main(args)
 
 
 def remove_ext(path, ext='pkl'):
@@ -319,6 +338,8 @@ def main(argv=None):
         generate_forms(config, video_dir)
     elif stop == 'doc':
         generate_doc(config, video_dir)
+    elif stop == 'html':
+        generate_html(config, video_dir)
 
     for ext in config.get('remove_ext', []):
         remove_ext(experiment_dir, ext)
