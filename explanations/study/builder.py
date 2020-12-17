@@ -35,8 +35,8 @@ class StudyBuilder:
         explanation_study_text = get_explain_study_text(self.explanation_method, self.text_config)
         eval_study_text = get_eval_study_text(self.text_config, self.config)
         for trial in range(self.num_trials):
-            explanation_dir = os.path.join(self.video_dir, f'explain-{self.explanation_method}')
-            eval_dir = os.path.join(self.video_dir, 'eval')
+            explanation_dir = f'explain-{self.explanation_method}'
+            eval_dir = 'eval'
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
             explain_heading_text = get_explain_heading_text()
@@ -44,8 +44,8 @@ class StudyBuilder:
             explain_image_path = name_formula(explanation_dir, trial)
             eval_image_path = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
             question_text = get_question_text(self.text_config)
-            self.add_explanations(explain_image_path, explain_heading_text, explanation_study_text)
-            self.add_evaluations(eval_image_path, eval_heading_text, eval_study_text, question_text)
+            self.add_explanations(explain_image_path, self.video_dir, explain_heading_text, explanation_study_text)
+            self.add_evaluations(eval_image_path, self.video_dir, eval_heading_text, eval_study_text, question_text)
         self.build_outro()
         self.save()
 
@@ -55,10 +55,10 @@ class StudyBuilder:
     def build_outro(self):
         pass
 
-    def add_explanations(self, video_path, heading_text, body_text):
+    def add_explanations(self, image_path, video_path, heading_text, body_text):
         raise NotImplementedError
 
-    def add_evaluations(self, video_path, heading_text, body_text, question_text):
+    def add_evaluations(self, image_path, video_path, heading_text, body_text, question_text):
         raise NotImplementedError
 
     def save(self):

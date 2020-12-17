@@ -12,22 +12,22 @@ class DocumentStudyBuilder(StudyBuilder):
         super().__init__(save_dir, video_dir, explanation_method, num_trials, config, name)
         self.document = docx.Document()
 
-    def add_explanations(self, video_path, heading_text, body_text):
+    def add_explanations(self, image_path, video_path, heading_text, body_text):
         self.document.add_heading(heading_text, level=2)
         self.document.add_paragraph(body_text)
         p = self.document.add_paragraph('')
         r: Run = p.add_run()
         try:
-            r.add_picture(video_path, height=Inches(2))
+            r.add_picture(os.path.join(video_path, image_path), height=Inches(2))
         except FileNotFoundError:
-            print(f'Could not find image {video_path}')
+            print(f'Could not find image {image_path}')
 
-    def add_evaluations(self, video_path, heading_text, body_text, question_text):
+    def add_evaluations(self, image_path, video_path, heading_text, body_text, question_text):
         self.document.add_heading(heading_text, level=2)
         self.document.add_paragraph(body_text)
         p = self.document.add_paragraph('')
         r = p.add_run()
-        r.add_picture(video_path, height=Inches(2))
+        r.add_picture(os.path.join(video_path, image_path), height=Inches(2))
         self.document.add_paragraph(question_text)
 
     def save(self):
