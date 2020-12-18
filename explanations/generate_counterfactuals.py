@@ -462,11 +462,21 @@ def select_states(args):
                 simulator_state = timestep.simulator_state
                 obs = timestep.observation
                 env.load_simulator_state(simulator_state)
-                random_agent = RandomAgent(env.action_space)
+                if args.exploration_method == 'random':
+                    exploration_agent = RandomAgent(env.action_space)
+                else:
+                    config_dir = os.path.dirname(args.exploration_policy['checkpoint'])
+                    config_path = os.path.join(config_dir, "../params.pkl")
+                    with open(config_path, "rb") as f:
+                        config = pkl.load(f)
+                    cls = get_trainable_cls(args.exploration_policy['run'])
+                    exploration_agent = cls(env=config["env"], config=config)
+                    exploration_agent.restore(args.exploration_policy['checkpoint'])
+
                 handoff_func = make_handoff_func(args.timesteps)
 
                 with exploration_rollout_saver as saver:
-                    exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
+                    exp_env, env_obs, env_done = rollout_env(exploration_agent, env, handoff_func, obs, saver=saver,
                                                              no_render=False)
 
                 post_explore_state = exp_env.get_simulator_state()
@@ -591,6 +601,10 @@ def main(parser_args=None):
                              'Note that this will take up a lot of space!')
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     parser.add_argument('--video-format', type=str, help='Video file format', choices=['mp4', 'gif'], default='gif')
+    parser.add_argument('--exploration-method', type=str, help='Type of policy to use for exploration',
+                        choices=['random', 'policy'], default='random')
+    parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
+                        default=None)
     args = parser.parse_args(parser_args)
 
     ray.init()
