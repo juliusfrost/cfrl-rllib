@@ -183,31 +183,32 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (1) Continuation video alone
     #   (2) beginning video + continuation
     #   (3) Shorter version of (2) centered around the selected state.
-    # f'{video_type}-{cf_name}-t_{save_id}.gif'
-    vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.gif'
+    # f'{video_type}-{cf_name}-t_{save_id}.{args.video_format}'
+    vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.{args.video_format}'
     if len(prefix_video) > 0:
         cf_video = np.concatenate((prefix_video, cf_imgs))
     else:
         cf_video = cf_imgs
     cf_window_video, cropped_end = window_slice(cf_video, split, args.window_len)
     window_crashed = crashed and not cropped_end
+    show_start = args.video_format == 'gif'
 
     if args.save_all:
         # Writing video 1 == continuation video alone
         cf_explanation_file = os.path.join(args.save_path, vidpath('continuation', cf_name, save_id))
-        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=True, show_stop=True,
+        write_video(cf_imgs, cf_explanation_file, img_shape, args.fps, show_start=show_start, show_stop=True,
                     downscale=args.downscale, crashed=crashed)
     if args.save_all:
         # Writing video 2 == beginning + continuation
         new_trajectory_file = os.path.join(args.save_path, vidpath('counterfactual_vid', cf_name, save_id))
-        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+        write_video(cf_video, new_trajectory_file, img_shape, args.fps, show_start=show_start, show_stop=True,
                     downscale=args.downscale, crashed=crashed)
     if args.save_all or not args.side_by_side:
         # Writing video 3 == shorter version of 2
         cf_window_explanation_file = os.path.join(args.save_path,
                                                   vidpath('counterfactual_window', cf_name, save_id))
-        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=True, show_stop=True,
-                    downscale=args.downscale, crashed=window_crashed)
+        write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=show_start,
+                    show_stop=True, downscale=args.downscale, crashed=window_crashed)
 
     return (cf_imgs, crashed), (cf_video, crashed), (cf_window_video, window_crashed)
 
@@ -236,9 +237,10 @@ def save_joint_video(video_list, video_names, base_video_name, id, args):
     combined_video = np.concatenate(padded_videos, axis=2)
 
     t, h, w, c = combined_video.shape
-    save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.gif")
+    save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.{args.video_format}")
     answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
-    write_video(combined_video, save_file, (w, h), args.fps, show_start=True, show_stop=False,
+    show_start = args.video_format == 'gif'
+    write_video(combined_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
                 downscale=args.downscale)
     with open(answer_key_file, 'a') as f:
         f.write(f"{id},")
@@ -315,7 +317,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             cf_driver = 'A'
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
             continuation, cf, window = generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args,
-                                                          cf_id, i, split, prefix_video, cf_driver)
+                                                          cf_id, cf_id, split, prefix_video, cf_driver)
             continuation_list.append(continuation)
             cf_list.append(cf)
             window_list.append(window)
@@ -326,38 +328,39 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                 save_joint_video(continuation_list, cf_names, continuation_file, i, args)
                 save_joint_video(cf_list, cf_names, cf_file, i, args)
             cf_window_file = 'counterfactual_window'
-            save_joint_video(window_list, cf_names, cf_window_file, i, args)
+            save_joint_video(window_list, cf_names, cf_window_file, cf_id, args)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
+        show_start = args.video_format == 'gif'
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
-            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.{args.video_format}')
+            write_video(original_imgs, old_trajectory_file, img_shape, args.fps, show_start=show_start, show_stop=True,
                         downscale=args.downscale, crashed=False)
 
             if has_explored:
                 #  (2) Exploration video
-                exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.gif')
-                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=True, show_stop=True,
+                exploration_file = os.path.join(args.save_path, f'exploration-t_{cf_id}.{args.video_format}')
+                write_video(exp_imgs, exploration_file, img_shape, args.fps, show_start=show_start, show_stop=True,
                             downscale=args.downscale, crashed=False)
 
             #  (3) Beginning + Exploration
-            pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.gif')
-            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=True, show_stop=True,
+            pre_trajectory_file = os.path.join(args.save_path, f'prefix-t_{cf_id}.{args.video_format}')
+            write_video(prefix_video, pre_trajectory_file, img_shape, args.fps, show_start=show_start, show_stop=True,
                         downscale=args.downscale, crashed=False)
 
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baseline_window-trial_{i}.gif')
+                                                        f'baseline_window-trial_{i}.{args.video_format}')
         baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
         # Get failure, if it's recorded
         last_env_info = original_trajectory.env_info_range[-1]
         crashed = last_env_info.get('failure', 0) and not cropped_end
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps,
-                    show_start=True, show_stop=True, downscale=args.downscale, crashed=crashed)
+                    show_start=show_start, show_stop=True, downscale=args.downscale, crashed=crashed)
 
 
 def generate_videos_state_method(original_dataset, args, state_indices):
@@ -388,23 +391,21 @@ def generate_videos_state_method(original_dataset, args, state_indices):
 
         if args.save_all:
             #  (1) Beginning video
-            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.gif')
+            old_trajectory_file = os.path.join(args.save_path, f'original-t_{i}.{args.video_format}')
             write_video(original_imgs, old_trajectory_file, img_shape, args.fps,
                         downscale=args.downscale, crashed=False)
 
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
-                                                        f'baseline_window-trial_{i}.gif')
+                                                        f'baseline_window-trial_{i}.{args.video_format}')
         baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video, border_size=args.border_width)
-        # print(len(baseline_window_video))
-        # print(baseline_window_video[0].shape)
-        # print(img_shape)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         last_env_info = original_trajectory.env_info_range[-1]
         crashed = last_env_info.get('failure', 0) and not cropped_end
+        show_start = args.video_format == 'gif'
         write_video(baseline_window_video, baseline_window_explanation_file, img_shape, args.fps,
-                    downscale=args.downscale, crashed=crashed)
+                    downscale=args.downscale, crashed=crashed, show_start=show_start)
 
 
 def select_states(args):
@@ -462,11 +463,21 @@ def select_states(args):
                 simulator_state = timestep.simulator_state
                 obs = timestep.observation
                 env.load_simulator_state(simulator_state)
-                random_agent = RandomAgent(env.action_space)
+                if args.exploration_method == 'random':
+                    exploration_agent = RandomAgent(env.action_space)
+                else:
+                    config_dir = os.path.dirname(args.exploration_policy['checkpoint'])
+                    config_path = os.path.join(config_dir, "../params.pkl")
+                    with open(config_path, "rb") as f:
+                        config = pkl.load(f)
+                    cls = get_trainable_cls(args.exploration_policy['run'])
+                    exploration_agent = cls(env=config["env"], config=config)
+                    exploration_agent.restore(args.exploration_policy['checkpoint'])
+
                 handoff_func = make_handoff_func(args.timesteps)
 
                 with exploration_rollout_saver as saver:
-                    exp_env, env_obs, env_done = rollout_env(random_agent, env, handoff_func, obs, saver=saver,
+                    exp_env, env_obs, env_done = rollout_env(exploration_agent, env, handoff_func, obs, saver=saver,
                                                              no_render=False)
 
                 post_explore_state = exp_env.get_simulator_state()
@@ -590,6 +601,11 @@ def main(parser_args=None):
                         help='Save all possible combinations of videos. '
                              'Note that this will take up a lot of space!')
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
+    parser.add_argument('--video-format', type=str, help='Video file format', choices=['mp4', 'gif'], default='gif')
+    parser.add_argument('--exploration-method', type=str, help='Type of policy to use for exploration',
+                        choices=['random', 'policy'], default='random')
+    parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
+                        default=None)
     args = parser.parse_args(parser_args)
 
     ray.init()

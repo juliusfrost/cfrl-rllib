@@ -1,0 +1,7 @@
+agent_article: "an"
+agent_name: "agent"
+agent_name_plural: "agents"
+agent_visual_description: ""
+action_name: "acts"
+explain_env_dist: "distribution 1"
+test_env_dist: "distribution 2"

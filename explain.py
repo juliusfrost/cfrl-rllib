@@ -57,6 +57,12 @@ DEFAULT_CONFIG = {
         'rollout_policy': 'behavior',  # [behavior, random]
         # number of time steps to use the counterfactual policy
         'timesteps': 10,
+        # method for counterfactual exploration to get to the counterfactual state
+        # random: take random actions
+        # policy: use the policy specified in exploration_policy
+        'exploration_method': 'random',  # [random, policy]
+        # to use a custom exploration policy, set checkpoint, run, and name arguments like in the behavior_policy_config
+        'exploration_policy': None,
     },
     'video_config': {
         # directory name to store videos in result directory
@@ -66,7 +72,9 @@ DEFAULT_CONFIG = {
         # width of the colored boarder around the videos
         'border_width': 30,
         # downscaling of videos, primarily used to save space
-        'downscale': 2
+        'downscale': 2,
+        # mp4 or gif
+        'format': None,
     },
     'form_config': {
         # REQUIRED
@@ -83,6 +91,9 @@ DEFAULT_CONFIG = {
     },
     'doc_config': {
         # id of the document user study
+        'id': None,
+    },
+    'study_config': {
         'id': None,
     },
     'eval_config': {
@@ -171,6 +182,22 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
+    if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
+        print(f'When generating a html study, the video format must be mp4. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to mp4 in the configuration file. '
+              f'Retroactively setting video_config/format to mp4...')
+        config['video_config']['format'] = 'mp4'
+    if config['stop'] == 'doc' and config['video_config']['format'] != 'gif':
+        print(f'When generating a doc study, the video format must be gif. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to gif in the configuration file. '
+              f'Retroactively setting video_config/format to gif...')
+        config['video_config']['format'] = 'gif'
+    if config['video_config']['format'] is not None:
+        args += ['--video-format', config['video_config']['format']]
+    args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
+    args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
     generate_counterfactuals_main(args)
 
 
@@ -193,6 +220,12 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
     args += ['--side-by-side']
+    if config['stop'] == 'html':
+        args += ['--video-format', 'mp4']
+    else:
+        args += ['--video-format', 'gif']
+    args += ['--exploration-method', 'random']
+    args += ['--exploration-policy', json.dumps(None)]
     generate_counterfactuals_main(args)
 
 
@@ -209,8 +242,8 @@ def generate_forms(config, video_dir):
     generate_forms_main(args)
 
 
-def generate_doc(config, video_dir):
-    from explanations.generate_doc import main as generate_doc_main
+def generate_study(config, video_dir, builder='doc'):
+    from explanations.generate_study import main as generate_study_main
     args = []
     args += ['--video-dir', video_dir]
     args += ['--save-dir', video_dir]
@@ -218,7 +251,8 @@ def generate_doc(config, video_dir):
         import random
         config['doc_config']['id'] = f'{random.randint(0, 1000):03d}'
     args += ['--config', json.dumps(config)]
-    generate_doc_main(args)
+    args += ['--builder', builder]
+    generate_study_main(args)
 
 
 def remove_ext(path, ext='pkl'):
@@ -316,9 +350,12 @@ def main(argv=None):
         raise NotImplementedError
 
     if stop == 'form':
-        generate_forms(config, video_dir)
+        # broken for now
+        raise NotImplementedError
     elif stop == 'doc':
-        generate_doc(config, video_dir)
+        generate_study(config, video_dir, stop)
+    elif stop == 'html':
+        generate_study(config, video_dir, stop)
 
     for ext in config.get('remove_ext', []):
         remove_ext(experiment_dir, ext)
