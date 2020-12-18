@@ -1,0 +1,7 @@
+agent_article: "a"
+agent_name: "driver"
+agent_name_plural: "drivers"
+agent_visual_description: "in the yellow car"
+action_name: "steers the car"
+explain_env_dist: "highway route 1"
+test_env_dist: "highway route 2"
