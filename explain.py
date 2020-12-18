@@ -57,6 +57,12 @@ DEFAULT_CONFIG = {
         'rollout_policy': 'behavior',  # [behavior, random]
         # number of time steps to use the counterfactual policy
         'timesteps': 10,
+        # method for counterfactual exploration to get to the counterfactual state
+        # random: take random actions
+        # policy: use the policy specified in exploration_policy
+        'exploration_method': 'random',  # [random, policy]
+        # to use a custom exploration policy, set checkpoint, run, and name arguments like in the behavior_policy_config
+        'exploration_policy': None,
     },
     'video_config': {
         # directory name to store videos in result directory
@@ -190,7 +196,8 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         config['video_config']['format'] = 'gif'
     if config['video_config']['format'] is not None:
         args += ['--video-format', config['video_config']['format']]
-
+    args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
+    args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
     generate_counterfactuals_main(args)
 
 
@@ -217,6 +224,8 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
         args += ['--video-format', 'mp4']
     else:
         args += ['--video-format', 'gif']
+    args += ['--exploration-method', 'random']
+    args += ['--exploration-policy', json.dumps(None)]
     generate_counterfactuals_main(args)
 
 
