@@ -50,6 +50,10 @@ def run(args, parser):
             parser.error("the following arguments are required: --env")
         args.env = config.get("env")
 
+    # force num_workers 0
+    # TODO: consolidate loading policies into a single method
+    config['num_workers'] = 0
+
     ray.init(ignore_reinit_error=True)  # TODO: find a reason for this hack
 
     # Create the Trainer from config.

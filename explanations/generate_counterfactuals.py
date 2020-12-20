@@ -147,6 +147,9 @@ def load_other_policies(other_policies: List[dict]):  # TODO: include original p
         else:
             with open(config_path, "rb") as f:
                 config = pkl.load(f)
+        # force num_workers 0
+        # TODO: consolidate loading policies into a single method
+        config['num_workers'] = 0
 
         # Create the Trainer from config.
         cls = get_trainable_cls(run_type)
@@ -470,6 +473,9 @@ def select_states(args):
                     config_path = os.path.join(config_dir, "../params.pkl")
                     with open(config_path, "rb") as f:
                         config = pkl.load(f)
+                    # force num_workers 0
+                    # TODO: consolidate loading policies into a single method
+                    config['num_workers'] = 0
                     cls = get_trainable_cls(args.exploration_policy['run'])
                     exploration_agent = cls(env=config["env"], config=config)
                     exploration_agent.restore(args.exploration_policy['checkpoint'])
