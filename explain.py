@@ -75,6 +75,10 @@ DEFAULT_CONFIG = {
         'downscale': 2,
         # mp4 or gif
         'format': None,
+        # settings configuration
+        # this gets added to the kwargs in generate_counterfactuals.py
+        # useful for configuring text settings and video settings
+        'settings_config': {}
     },
     'form_config': {
         # REQUIRED
@@ -177,6 +181,7 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--timesteps', str(config['counterfactual_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--border-width', str(config['video_config']['border_width'])]
+    args += ['--settings-config', json.dumps(config['video_config']['settings_config'])]
     args += ['--downscale', str(config['video_config']['downscale'])]
     args += ['--env-config', json.dumps(config['env_config'])]
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
@@ -213,6 +218,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--timesteps', str(config['eval_config']['timesteps'])]
     args += ['--fps', str(config['video_config']['fps'])]
     args += ['--border-width', str(config['video_config']['border_width'])]
+    args += ['--settings-config', json.dumps(config['video_config']['settings_config'])]
     args += ['--downscale', str(config['video_config']['downscale'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
