@@ -35,7 +35,7 @@ def filter(state_indices, num_states, min_dist):
         for j in range(i+1, len(state_indices)):
             if blocked[j]:
                 continue
-            other_state, other_traj_id = selected_states[j]
+            other_state, other_traj_id = state_indices[j]
             if traj_id == other_traj_id and np.abs(state - other_state) < min_dist:
                 blocked[j] = True
         selected_states.append(state)
