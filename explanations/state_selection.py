@@ -10,10 +10,12 @@ from explanations.data import Data
 
 
 def random_state(data: Data, num_states, policy, min_dist=20, **kwargs):
-    state_indices = list(zip(data.all_time_steps, data.all_trajectories))
+    indices = np.arange(len(data.all_time_steps))
+    state_indices = list(zip(indices, data.all_trajectories))
     random.seed(kwargs.get('seed', None))
     random.shuffle(state_indices)
     selected_states = filter(state_indices, num_states, min_dist)
+    print(selected_states)
     return selected_states
 
 
@@ -71,7 +73,7 @@ def critical_state(data: Data, num_states, policy, min_dist=20, **kwargs):
     state_indices = [(state, traj_id) for entropy, state, traj_id in state_indices]
     # Filter out states which are too near other states
     selected_states = filter(state_indices, num_states, min_dist)
-    # Strip out the entropies
+    print(selected_states)
     return selected_states
 
 
