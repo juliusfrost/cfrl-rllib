@@ -25,30 +25,31 @@ def filter(state_indices, num_states, min_dist):
     :param min_dist: minimum number of timesteps between selected states
     :return: list of state indices of length num_states
     """
+    blocked = [False] * len(state_indices)
     selected_states = []
-    for state, traj_id in state_indices:
-        if len(selected_states) == num_states:  # Done
+    for i, (state, traj_id) in enumerate(state_indices):
+        if len(selected_states) >= num_states:
             break
-        too_close = False
-        for other_state, other_traj_id in selected_states:
-            # Too close to another selected state
+        if blocked[i]:
+            continue
+        for j in range(i+1, len(state_indices)):
+            if blocked[j]:
+                continue
+            other_state, other_traj_id = selected_states[j]
             if traj_id == other_traj_id and np.abs(state - other_state) < min_dist:
-                too_close = True
-                break
-        if not too_close:
-            selected_states.append((state, traj_id))
+                blocked[j] = True
+        selected_states.append(state)
     if len(selected_states) < num_states:
         num_states_remaining = num_states - len(selected_states)
         print(f"Warning: You requested {num_states} non-overlapping states. "
               f"We were only able to generate {len(selected_states)}, "
               f"so the remaining {num_states_remaining} may overlap.")
-        # This time through, include states which are less than min_dist apart, so long as we haven't selected them yet.
-        for state_tuple in state_indices:
-            if len(selected_states) == num_states:
+        for i in range(len(state_indices)):
+            if len(selected_states) >= num_states:
                 break
-            if not state_tuple in selected_states:
-                selected_states.append(state_tuple)
-    return [state for state, traj_id in selected_states]
+            if blocked[i]:
+                selected_states.append(state_indices[i][0])
+    return selected_states
 
 
 def user_state(data: Data, num_states, user, **kwargs):
