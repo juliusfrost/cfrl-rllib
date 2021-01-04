@@ -1,0 +1,7 @@
+agent_article: "an"
+agent_name: "agent"
+agent_name_plural: "agents"
+agent_visual_description: "shaped like a red arrow head"
+action_name: "acts"
+explain_env_dist: "starting position 1"
+test_env_dist: "starting position 2"

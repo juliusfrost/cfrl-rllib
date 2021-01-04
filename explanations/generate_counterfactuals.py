@@ -2,17 +2,18 @@ import argparse
 import copy
 import json
 import os
-import pickle as pkl
 from collections import namedtuple
-import imageio
+from typing import List
 
+import pickle5 as pkl
 import cv2
+import imageio
 import numpy as np
 import ray
 from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
-from typing import List
 
-from envs import register
+import envs
+import models
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
@@ -153,6 +154,9 @@ def load_other_policies(other_policies: List[dict]):  # TODO: include original p
         else:
             with open(config_path, "rb") as f:
                 config = pkl.load(f)
+        # force num_workers 0
+        # TODO: consolidate loading policies into a single method
+        config['num_workers'] = 0
 
         # Create the Trainer from config.
         cls = get_trainable_cls(run_type)
@@ -484,6 +488,9 @@ def select_states(args):
                     config_path = os.path.join(config_dir, "../params.pkl")
                     with open(config_path, "rb") as f:
                         config = pkl.load(f)
+                    # force num_workers 0
+                    # TODO: consolidate loading policies into a single method
+                    config['num_workers'] = 0
                     cls = get_trainable_cls(args.exploration_policy['run'])
                     exploration_agent = cls(env=config["env"], config=config)
                     exploration_agent.restore(args.exploration_policy['checkpoint'])
@@ -626,7 +633,9 @@ def main(parser_args=None):
 
     ray.init()
     # register environments
-    register()
+    envs.register()
+    # register models
+    models.register()
     if args.state_selection_method == 'manual':
         generate_with_selected_states(args)
     else:
