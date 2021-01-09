@@ -14,3 +14,4 @@ google-auth-httplib2
 google-auth-oauthlib
 python-docx
 pickle5
+Django
