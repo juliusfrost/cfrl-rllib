@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
 # Create your views here.
@@ -14,5 +14,9 @@ def about(request):
     return render(request, 'study/about.html')
 
 
-def study(request, template_name):
-    return render(request, template_name)
+def study(request):
+    return redirect('start')
+
+
+def questionnaire(request, questionnaire_id):
+    return render(request, 'study/questionnaire.html', dict(questionnaire_id=questionnaire_id))
