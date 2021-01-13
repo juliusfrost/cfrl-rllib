@@ -32,3 +32,11 @@ def questionnaire(request, questionnaire_id):
         raise Http404("Questionnaire does not exist")
     context = {'questionnaire': q}
     return render(request, 'study/questionnaire.html', context=context)
+
+
+def submit(request, questionnaire_id):
+    try:
+        q = Questionnaire.objects.get(pk=questionnaire_id)
+    except Questionnaire.DoesNotExist:
+        raise Http404("Questionnaire does not exist")
+    return render(request, 'study/submit.html')

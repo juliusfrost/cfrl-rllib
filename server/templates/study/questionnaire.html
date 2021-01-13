@@ -4,5 +4,11 @@
 <h1>Questionnaire</h1>
 
 {{ questionnaire.name }}
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'study:submit' questionnaire.id %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Submit">
+</form>
 
 {% endblock %}
