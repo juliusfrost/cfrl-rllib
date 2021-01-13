@@ -1,7 +1,7 @@
 import os
-import yaml
+import json
 
-from explanations.study.files import get_eval_name, get_explain_name
+from explanations.study.files import get_eval_name, get_explain_name, get_solutions
 from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, get_title_text, \
     get_explain_heading_text, get_eval_heading_text, get_question_text
 
@@ -47,6 +47,7 @@ class StudyBuilder:
         explain_heading_text = get_explain_heading_text()
         eval_heading_text = get_eval_heading_text()
         question_text = get_question_text(self.text_config)
+        solutions = get_solutions(self.root_dir, self.config)
 
         # save to build config
         self.build_config['name'] = self.name
@@ -58,6 +59,7 @@ class StudyBuilder:
         self.build_config['explain_heading_text'] = explain_heading_text
         self.build_config['eval_heading_text'] = eval_heading_text
         self.build_config['question_text'] = question_text
+        self.build_config['solutions'] = solutions
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
@@ -94,9 +96,9 @@ class StudyBuilder:
         raise NotImplementedError
 
     def save_build_config(self):
-        build_config_file = os.path.join(self.save_dir, self.name + '.yaml')
+        build_config_file = os.path.join(self.save_dir, self.name + '_config.yaml')
         with open(build_config_file, mode='w') as f:
-            yaml.safe_dump(self.build_config, f)
+            json.dump(self.build_config, f)
 
     def save(self):
         raise NotImplementedError
