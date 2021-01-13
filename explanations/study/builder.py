@@ -98,7 +98,7 @@ class StudyBuilder:
         raise NotImplementedError
 
     def save_build_config(self):
-        build_config_file = os.path.join(self.save_dir, self.name + '_config.yaml')
+        build_config_file = os.path.join(self.save_dir, self.name + '_config.json')
         with open(build_config_file, mode='w') as f:
             json.dump(self.build_config, f)
 
