@@ -1,9 +1,11 @@
-import os
 import json
+import os
+
+import yaml
 
 from explanations.study.files import get_eval_name, get_explain_name, get_solutions
-from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, get_title_text, \
-    get_explain_heading_text, get_eval_heading_text, get_question_text
+from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
+    get_title_text, get_explain_heading_text, get_eval_heading_text, get_question_text
 
 
 class StudyBuilder:
