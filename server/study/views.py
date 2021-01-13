@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render, redirect
 
 from .models import Questionnaire
@@ -25,4 +26,9 @@ def study(request):
 
 
 def questionnaire(request, questionnaire_id):
-    return render(request, 'study/questionnaire.html', dict(questionnaire_id=questionnaire_id))
+    try:
+        q = Questionnaire.objects.get(pk=questionnaire_id)
+    except Questionnaire.DoesNotExist:
+        raise Http404("Questionnaire does not exist")
+    context = {'questionnaire': q}
+    return render(request, 'study/questionnaire.html', context=context)
