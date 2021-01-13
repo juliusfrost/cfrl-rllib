@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 
+from .models import Questionnaire
+
 
 # Create your views here.
 def index(request):
@@ -7,7 +9,11 @@ def index(request):
 
 
 def start(request):
-    return render(request, 'study/start.html')
+    questionnaire_list = Questionnaire.objects.all()
+    context = {
+        'questionnaire_list': questionnaire_list,
+    }
+    return render(request, 'study/start.html', context=context)
 
 
 def about(request):
