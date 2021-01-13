@@ -24,8 +24,11 @@ def get_eval_name(eval_dir, trial, extension='gif'):
 def get_solutions(root_dir, config):
     solution_file = os.path.join(root_dir, 'eval', 'counterfactual_window-answer_key.txt')
     solutions = []
+    num_choices = None
     with open(solution_file) as csvfile:
         for row in csv.reader(csvfile):
             solution = row[1:].index(config['behavior_policy_config']['name'])
             solutions.append(solution)
-    return solutions
+            if num_choices is None:
+                num_choices = len(row) - 1
+    return solutions, num_choices

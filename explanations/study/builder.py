@@ -49,7 +49,7 @@ class StudyBuilder:
         explain_heading_text = get_explain_heading_text()
         eval_heading_text = get_eval_heading_text()
         question_text = get_question_text(self.text_config)
-        solutions = get_solutions(self.root_dir, self.config)
+        solutions, num_choices = get_solutions(self.root_dir, self.config)
 
         # save to build config
         self.build_config['name'] = self.name
@@ -61,6 +61,7 @@ class StudyBuilder:
         self.build_config['explain_heading_text'] = explain_heading_text
         self.build_config['eval_heading_text'] = eval_heading_text
         self.build_config['question_text'] = question_text
+        self.build_config['num_choices'] = num_choices
         self.build_config['solutions'] = solutions
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
