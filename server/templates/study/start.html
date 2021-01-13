@@ -6,7 +6,7 @@
 {% if questionnaire_list %}
     <ul>
     {% for questionnaire in questionnaire_list %}
-        <li><a href="/study/{{ questionnaire.id }}/">{{ questionnaire.name }}</a></li>
+        <li><a href="{% url 'questionnaire' questionnaire.id %}">{{ questionnaire.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
