@@ -18,12 +18,18 @@
         <p>{{ questionnaire.question_text }}</p>
         {% with ''|center:trial.get_evaluation.num_choices as range %}
         {% for _ in range %}
-            <input type="radio" name="trial_{{ trial.order }}" id="choice{{ forloop.counter }}" value="{{ forloop.counter }}">
-            <label for="choice{{ forloop.counter }}">{{ forloop.counter }}</label>
+            <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="trial_{{ trial.order }}"
+                   id="trial_{{ trial.order }}_choice_{{ forloop.counter }}" value="{{ forloop.counter }}" required>
+            <label class="form-check-label"
+                   for="trial_{{ trial.order }}_choice_{{ forloop.counter }}">{{ forloop.counter }}</label>
+            </div>
         {% endfor %}
         {% endwith %}
     {% endfor %}
-    <input type="submit" value="Submit">
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </div>
 </form>
 
 {% endblock %}
