@@ -1,4 +1,5 @@
 import argparse
+import os
 import json
 
 from django.core.management.base import BaseCommand
@@ -12,10 +13,19 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: argparse.ArgumentParser):
         parser.add_argument('config_path', nargs='+', type=str,
-                            help='The path to the study config file (generated after running explain.py)')
+                            help='The path to the study config file (generated after running explain.py) '
+                                 'or directory containing it')
 
     def handle(self, *args, **options):
-        for config_path in options['config_path']:
+        import_list = options['config_path']
+        for config_path in import_list:
+            # if the path is a directory, search for config files and add it to the import list
+            if os.path.isdir(config_path):
+                for file in os.listdir(config_path):
+                    if 'config.json' in file:
+                        import_list.append(os.path.join(config_path, file))
+                continue
+            # load config from json file
             with open(config_path, 'r') as f:
                 config = json.load(f)
             with transaction.atomic():
@@ -50,3 +60,5 @@ class Command(BaseCommand):
                         solution=config['solutions'][t],
                     )
                     evaluation.save()
+
+            self.stdout.write('successfully imported questionnaire: ' + config['name'])
