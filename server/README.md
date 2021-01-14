@@ -24,6 +24,9 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## Adding additional studies
+## Adding Questionnaires
 
-TODO: implement
+```bash
+# The path to the study config file (generated after running explain.py) or directory containing it
+python manage.py importquestionnaire path/to/config.json
+```
