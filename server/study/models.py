@@ -13,11 +13,20 @@ class Questionnaire(models.Model):
     eval_heading_text = models.CharField(max_length=200)
     question_text = models.CharField(max_length=1000)
 
+    def get_trials(self):
+        return self.trial_set.order_by('order')
+
 
 class Trial(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
     trial_heading_text = models.CharField(max_length=200)
     order = models.IntegerField()
+
+    def get_explanation(self):
+        return self.explanation_set.get()
+
+    def get_evaluation(self):
+        return self.evaluation_set.get()
 
 
 class Explanation(models.Model):

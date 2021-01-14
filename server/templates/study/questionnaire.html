@@ -1,13 +1,28 @@
 {% extends "study/base.html" %}
 
 {% block content %}
-<h1>Questionnaire</h1>
+<h1>{{ questionnaire.title_text }}</h1>
 
-{{ questionnaire.name }}
+<p>{{ questionnaire.intro_text }}</p>
+
 {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
 
 <form action="{% url 'study:submit' questionnaire.id %}" method="post">
     {% csrf_token %}
+    {% for trial in questionnaire.get_trials %}
+        <h2>{{ trial.trial_heading_text }}</h2>
+        <h3>{{ questionnaire.explain_heading_text }}</h3>
+        <p>{{ questionnaire.explanation_study_text }}</p>
+        <h3>{{ questionnaire.eval_heading_text }}</h3>
+        <p>{{ questionnaire.eval_study_text }}</p>
+        <p>{{ questionnaire.question_text }}</p>
+        {% with ''|center:trial.get_evaluation.num_choices as range %}
+        {% for _ in range %}
+            <input type="radio" name="trial_{{ trial.order }}" id="choice{{ forloop.counter }}" value="{{ forloop.counter }}">
+            <label for="choice{{ forloop.counter }}">{{ forloop.counter }}</label>
+        {% endfor %}
+        {% endwith %}
+    {% endfor %}
     <input type="submit" value="Submit">
 </form>
 
