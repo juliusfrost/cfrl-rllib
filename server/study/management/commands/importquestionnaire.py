@@ -46,7 +46,7 @@ class Command(BaseCommand):
                     evaluation = Evaluation(
                         trial=trial,
                         static_path='',
-                        num_choices=config['num_trials'],
+                        num_choices=config['num_choices'],
                         solution=config['solutions'][t],
                     )
                     evaluation.save()
