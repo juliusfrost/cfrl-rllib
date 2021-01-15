@@ -13,8 +13,14 @@
         <h2>{{ trial.trial_heading_text }}</h2>
         <h3>{{ questionnaire.explain_heading_text }}</h3>
         <p>{{ questionnaire.explanation_study_text }}</p>
+        {% load static %}
+        <iframe src="{% static trial.get_explanation.static_path %}"></iframe>
+
         <h3>{{ questionnaire.eval_heading_text }}</h3>
         <p>{{ questionnaire.eval_study_text }}</p>
+        {% load static %}
+        <iframe src="{% static trial.get_evaluation.static_path %}"></iframe>
+
         <p>{{ questionnaire.question_text }}</p>
         {% with ''|center:trial.get_evaluation.num_choices as range %}
         {% for _ in range %}
@@ -31,5 +37,27 @@
         <button class="btn btn-primary" type="submit">Submit</button>
     </div>
 </form>
+
+<script type="application/javascript">
+
+function resizeIFrameToFitContent( iFrame ) {
+
+    iFrame.width  = iFrame.contentWindow.document.body.scrollWidth;
+    iFrame.height = iFrame.contentWindow.document.body.scrollHeight;
+}
+
+window.addEventListener('DOMContentLoaded', function(e) {
+
+    // var iFrame = document.getElementById( 'iFrame1' );
+    // resizeIFrameToFitContent( iFrame );
+
+    // or, to resize all iframes:
+    var iframes = document.querySelectorAll("iframe");
+    for( var i = 0; i < iframes.length; i++) {
+        resizeIFrameToFitContent( iframes[i] );
+    }
+} );
+
+</script>
 
 {% endblock %}

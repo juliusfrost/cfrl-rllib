@@ -1,11 +1,14 @@
 import argparse
 import os
 import json
+import uuid
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from study.models import Questionnaire, Trial, Explanation, Evaluation
+from server.settings import STATIC_DIRS
+from ._static_upload import upload_video
 
 
 class Command(BaseCommand):
@@ -48,14 +51,19 @@ class Command(BaseCommand):
                     # TODO: convert local files into static files
                     explain_video_path = config['explain_video_paths'][t]
                     eval_video_path = config['eval_video_paths'][t]
+                    video_dir = os.path.dirname(config_path)
+                    explain_static_path = upload_video(os.path.join(video_dir, explain_video_path), STATIC_DIRS[0],
+                                                       str(uuid.uuid4()))
+                    eval_static_path = upload_video(os.path.join(video_dir, eval_video_path), STATIC_DIRS[0],
+                                                    str(uuid.uuid4()))
                     explanation = Explanation(
                         trial=trial,
-                        static_path='',
+                        static_path=explain_static_path,
                     )
                     explanation.save()
                     evaluation = Evaluation(
                         trial=trial,
-                        static_path='',
+                        static_path=eval_static_path,
                         num_choices=config['num_choices'],
                         solution=config['solutions'][t],
                     )
