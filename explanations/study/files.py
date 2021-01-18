@@ -27,8 +27,9 @@ def get_solutions(root_dir, config):
     num_choices = None
     with open(solution_file) as csvfile:
         for row in csv.reader(csvfile):
-            solution = row[1:].index(config['behavior_policy_config']['name'])
+            policies = row[1:-1]
+            solution = policies.index(config['behavior_policy_config']['name'])
             solutions.append(solution)
             if num_choices is None:
-                num_choices = len(row) - 1
+                num_choices = len(policies)
     return solutions, num_choices
