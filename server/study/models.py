@@ -29,14 +29,21 @@ class Trial(models.Model):
         return self.evaluation_set.get()
 
 
+class Video(models.Model):
+    static_path = models.CharField(max_length=1000)
+    height = models.IntegerField()
+    width = models.IntegerField()
+    md5 = models.CharField(max_length=32)
+
+
 class Explanation(models.Model):
     trial = models.ForeignKey(Trial, on_delete=models.CASCADE)
-    static_path = models.CharField(max_length=1000)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
 
 
 class Evaluation(models.Model):
     trial = models.ForeignKey(Trial, on_delete=models.CASCADE)
-    static_path = models.CharField(max_length=1000)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
     num_choices = models.IntegerField()
     solution = models.IntegerField()
 

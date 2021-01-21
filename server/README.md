@@ -10,9 +10,8 @@ pip install -r requirements.txt
 
 ### Migrate database:
 ```bash
-python manage.py migrate
+python manage.py migrate --run-syncdb
 ```
-If you are getting the error `django.db.utils.OperationalError: no such table:` then add `--run-syncdb`
 
 ### Add an admin account (optional):
 ```bash

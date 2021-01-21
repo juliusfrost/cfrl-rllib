@@ -31,7 +31,29 @@ def questionnaire(request, questionnaire_id):
         q = Questionnaire.objects.get(pk=questionnaire_id)
     except Questionnaire.DoesNotExist:
         raise Http404("Questionnaire does not exist")
-    context = {'questionnaire': q}
+    context = {
+        'questionnaire': q,
+        'trials': []
+    }
+    for trial in q.get_trials():
+        explanation = trial.get_explanation()
+        evaluation = trial.get_evaluation()
+        explain_video = explanation.video
+        eval_video = evaluation.video
+        explain_aspect_ratio = explain_video.height / explain_video.width * 100
+        eval_aspect_ratio = eval_video.height / eval_video.width * 100
+        trial_context = {
+            'trial': trial,
+            'explanation': explanation,
+            'evaluation': evaluation,
+            'explain_video': explain_video,
+            'eval_video': eval_video,
+            'explain_aspect_ratio': explain_aspect_ratio,
+            'eval_aspect_ratio': eval_aspect_ratio,
+            'explain_style': f'--aspect-ratio: {explain_aspect_ratio}%;',
+            'eval_style': f'--aspect-ratio: {eval_aspect_ratio}%;',
+        }
+        context['trials'].append(trial_context)
     return render(request, 'study/questionnaire.html', context=context)
 
 

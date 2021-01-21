@@ -1,14 +1,43 @@
 import argparse
-import os
+import hashlib
 import json
-import uuid
+import os
 
+import imageio
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from study.models import Questionnaire, Trial, Explanation, Evaluation
-from server.settings import STATIC_DIRS
+from server.settings import STATICFILES_DIRS
+from study.models import Questionnaire, Trial, Explanation, Evaluation, Video
 from ._static_upload import upload_video
+
+
+def get_hash(path):
+    hasher = hashlib.md5()
+    with open(path, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
+
+def get_dimensions(path):
+    vid = imageio.get_reader(path, 'mp4')
+    img = vid.get_data(0)
+    h, w, _ = img.shape
+    return h, w
+
+
+def get_video(explain_video_path, video_dir):
+    abs_path = os.path.join(video_dir, explain_video_path)
+    md5_hash = get_hash(abs_path)
+    try:
+        video = Video.objects.get(md5=md5_hash)
+    except Video.DoesNotExist:
+        static_path = upload_video(abs_path, STATICFILES_DIRS[0], md5_hash)
+        height, width = get_dimensions(abs_path)
+        video = Video(static_path=static_path, height=height, width=width, md5=md5_hash)
+        video.save()
+    return video
 
 
 class Command(BaseCommand):
@@ -52,21 +81,21 @@ class Command(BaseCommand):
                     explain_video_path = config['explain_video_paths'][t]
                     eval_video_path = config['eval_video_paths'][t]
                     video_dir = os.path.dirname(config_path)
-                    explain_static_path = upload_video(os.path.join(video_dir, explain_video_path), STATIC_DIRS[0],
-                                                       str(uuid.uuid4()))
-                    eval_static_path = upload_video(os.path.join(video_dir, eval_video_path), STATIC_DIRS[0],
-                                                    str(uuid.uuid4()))
+
+                    explain_video = get_video(explain_video_path, video_dir)
+                    eval_video = get_video(eval_video_path, video_dir)
+
                     explanation = Explanation(
                         trial=trial,
-                        static_path=explain_static_path,
+                        video=explain_video,
                     )
-                    explanation.save()
                     evaluation = Evaluation(
                         trial=trial,
-                        static_path=eval_static_path,
+                        video=eval_video,
                         num_choices=config['num_choices'],
                         solution=config['solutions'][t],
                     )
+                    explanation.save()
                     evaluation.save()
 
             self.stdout.write('successfully imported questionnaire: ' + config['name'])
