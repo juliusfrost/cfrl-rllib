@@ -63,12 +63,16 @@ def submit(request, questionnaire_id):
         user = None
     else:
         user = request.user
-    respondent = Respondents(questionnaire=q, user=user)
     context = {
+        'questionnaire': q,
         'user': request.user,
         'choices': [],
         'score': 0,
     }
+    if (user is not None) and Respondents.objects.filter(user=user).exists():
+        return render(request, 'study/submitted.html', context)
+    respondent = Respondents(questionnaire=q, user=user)
+    respondent.save()
     for trial in q.get_trials():
         explanation = trial.get_explanation()
         evaluation = trial.get_evaluation()
@@ -78,5 +82,6 @@ def submit(request, questionnaire_id):
         if choice == evaluation.solution:
             context['score'] += 1
         response = Response(trial=trial, user=user, choice=choice)
+        response.save()
 
     return render(request, 'study/submit.html', context)
