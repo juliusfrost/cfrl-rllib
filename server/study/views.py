@@ -2,7 +2,7 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, AnonymousUser
 
-from .models import Questionnaire, Response, Respondents
+from .models import Questionnaire, Response, Respondent
 
 
 # Create your views here.
@@ -35,6 +35,8 @@ def questionnaire(request, questionnaire_id):
         'questionnaire': q,
         'trials': []
     }
+    if isinstance(request.user, User) and Respondent.objects.filter(user=request.user).exists():
+        return render(request, 'study/submitted.html', context)
     for trial in q.get_trials():
         explanation = trial.get_explanation()
         evaluation = trial.get_evaluation()
@@ -69,9 +71,9 @@ def submit(request, questionnaire_id):
         'choices': [],
         'score': 0,
     }
-    if (user is not None) and Respondents.objects.filter(user=user).exists():
+    if (user is not None) and Respondent.objects.filter(user=user).exists():
         return render(request, 'study/submitted.html', context)
-    respondent = Respondents(questionnaire=q, user=user)
+    respondent = Respondent(questionnaire=q, user=user)
     respondent.save()
     for trial in q.get_trials():
         explanation = trial.get_explanation()
@@ -81,7 +83,7 @@ def submit(request, questionnaire_id):
         context['choices'].append(choice)
         if choice == evaluation.solution:
             context['score'] += 1
-        response = Response(trial=trial, user=user, choice=choice)
+        response = Response(trial=trial, respondent=respondent, choice=choice)
         response.save()
 
     return render(request, 'study/submit.html', context)

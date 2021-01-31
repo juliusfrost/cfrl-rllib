@@ -49,12 +49,12 @@ class Evaluation(models.Model):
 
 
 # User related classes
-class Respondents(models.Model):
+class Respondent(models.Model):
     questionnaire = models.ForeignKey(Questionnaire, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
 
 class Response(models.Model):
     trial = models.ForeignKey(Trial, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    respondent = models.ForeignKey(Respondent, on_delete=models.CASCADE)
     choice = models.IntegerField()
