@@ -1,15 +1,26 @@
+import json
 import os
+
 import yaml
 
-from explanations.study.files import get_eval_name, get_explain_name
-from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, get_title_text, \
-    get_explain_heading_text, get_eval_heading_text, get_question_text
+from explanations.study.files import get_eval_name, get_explain_name, get_solutions
+from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
+    get_title_text, get_explain_heading_text, get_eval_heading_text, get_question_text
 
 
 class StudyBuilder:
-    def __init__(self, save_dir, video_dir, explanation_method, num_trials, config, name):
+    def __init__(self, save_dir, root_dir, explanation_method, num_trials, config, name):
+        """
+        Parent class to aid in building studies in various formats
+        @param save_dir: the directory to save the output study
+        @param root_dir: the directory containing generated videos
+        @param explanation_method: type of explanation method (random, critical, counterfactual)
+        @param num_trials: number of trials
+        @param config: same format as the config in explain.py
+        @param name: the name of the study
+        """
         self.save_dir = save_dir
-        self.video_dir = video_dir
+        self.root_dir = root_dir
         self.explanation_method = explanation_method
         self.num_trials = num_trials
         self.config = config
@@ -25,6 +36,7 @@ class StudyBuilder:
                 self.text_config = yaml.safe_load(f)
 
         self.name = name
+        self.build_config = {}
 
     def build(self):
         intro_text = get_introduction_text(self.text_config)
@@ -34,19 +46,44 @@ class StudyBuilder:
                                         extension=self.config['video_config']['format'])
         explanation_study_text = get_explain_study_text(self.explanation_method, self.text_config)
         eval_study_text = get_eval_study_text(self.text_config, self.config)
+        explain_heading_text = get_explain_heading_text()
+        eval_heading_text = get_eval_heading_text()
+        question_text = get_question_text(self.text_config)
+        solutions, num_choices = get_solutions(self.root_dir, self.config)
+
+        # save to build config
+        self.build_config['name'] = self.name
+        self.build_config['num_trials'] = self.num_trials
+        self.build_config['intro_text'] = intro_text
+        self.build_config['title_text'] = title_text
+        self.build_config['explanation_study_text'] = explanation_study_text
+        self.build_config['eval_study_text'] = eval_study_text
+        self.build_config['explain_heading_text'] = explain_heading_text
+        self.build_config['eval_heading_text'] = eval_heading_text
+        self.build_config['question_text'] = question_text
+        self.build_config['num_choices'] = num_choices
+        self.build_config['solutions'] = solutions
+        self.build_config['trial_heading_texts'] = []
+        self.build_config['explain_video_paths'] = []
+        self.build_config['eval_video_paths'] = []
+
         for trial in range(self.num_trials):
             explanation_dir = f'explain-{self.explanation_method}'
             eval_dir = 'eval'
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
-            explain_heading_text = get_explain_heading_text()
-            eval_heading_text = get_eval_heading_text()
-            explain_image_path = name_formula(explanation_dir, trial)
-            eval_image_path = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
-            question_text = get_question_text(self.text_config)
-            self.add_explanations(explain_image_path, self.video_dir, explain_heading_text, explanation_study_text)
-            self.add_evaluations(eval_image_path, self.video_dir, eval_heading_text, eval_study_text, question_text)
+            explain_video_path = name_formula(explanation_dir, trial)
+            eval_video_path = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
+            self.add_explanations(explain_video_path, self.root_dir, explain_heading_text, explanation_study_text)
+            self.add_evaluations(eval_video_path, self.root_dir, eval_heading_text, eval_study_text, question_text)
+
+            # save to build config
+            self.build_config['trial_heading_texts'].append(trial_heading_text)
+            self.build_config['explain_video_paths'].append(explain_video_path)
+            self.build_config['eval_video_paths'].append(eval_video_path)
+
         self.build_outro()
+        self.save_build_config()
         self.save()
 
     def build_intro(self, title: str, intro_text: list):
@@ -55,11 +92,16 @@ class StudyBuilder:
     def build_outro(self):
         pass
 
-    def add_explanations(self, image_path, video_path, heading_text, body_text):
+    def add_explanations(self, video_path, root_dir, heading_text, body_text):
         raise NotImplementedError
 
-    def add_evaluations(self, image_path, video_path, heading_text, body_text, question_text):
+    def add_evaluations(self, video_path, root_dir, heading_text, body_text, question_text):
         raise NotImplementedError
+
+    def save_build_config(self):
+        build_config_file = os.path.join(self.save_dir, self.name + '_config.json')
+        with open(build_config_file, mode='w') as f:
+            json.dump(self.build_config, f)
 
     def save(self):
         raise NotImplementedError

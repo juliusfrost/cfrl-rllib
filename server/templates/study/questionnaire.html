@@ -1,0 +1,47 @@
+{% extends "study/base.html" %}
+
+{% block content %}
+<h1>{{ questionnaire.title_text }}</h1>
+
+<p>{{ questionnaire.intro_text }}</p>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'study:submit' questionnaire.id %}" method="post">
+    {% csrf_token %}
+    {% for trial_context in trials %}
+    <h2>{{ trial_context.trial.trial_heading_text }}</h2>
+    <h3>{{ questionnaire.explain_heading_text }}</h3>
+    <p>{{ questionnaire.explanation_study_text }}</p>
+    {% load static %}
+    <div class="container" style="max-width: 400px;">
+        <div class="ratio" style="{{ trial_context.explain_style }}">
+            <iframe src="{% static trial_context.explain_video.static_path %}"></iframe>
+        </div>
+    </div>
+
+    <h3>{{ questionnaire.eval_heading_text }}</h3>
+    <p>{{ questionnaire.eval_study_text }}</p>
+    {% load static %}
+    <div class="ratio" style="{{ trial_context.eval_style }}">
+        <iframe src="{% static trial_context.eval_video.static_path %}"></iframe>
+    </div>
+
+    <p>{{ questionnaire.question_text }}</p>
+    {% with ''|center:trial_context.evaluation.num_choices as range %}
+    {% for _ in range %}
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="trial_{{ trial.order }}"
+               id="trial_{{ trial.order }}_choice_{{ forloop.counter }}" value="{{ forloop.counter }}" required>
+        <label class="form-check-label"
+               for="trial_{{ trial.order }}_choice_{{ forloop.counter }}">{{ forloop.counter }}</label>
+    </div>
+    {% endfor %}
+    {% endwith %}
+    {% endfor %}
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "study/base.html" %}
+
+{% block content %}
+<h1>Start</h1>
+
+{% if questionnaire_list %}
+    <ul>
+    {% for questionnaire in questionnaire_list %}
+        <li><a href="{% url 'study:questionnaire' questionnaire.id %}">{{ questionnaire.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No questionnaires are available.</p>
+{% endif %}
+
+
+{% endblock %}
