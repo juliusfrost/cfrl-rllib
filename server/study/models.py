@@ -13,6 +13,7 @@ class Questionnaire(models.Model):
     eval_heading_text = models.CharField(max_length=200)
     question_text = models.CharField(max_length=1000)
     num_respondents = models.IntegerField(default=0)
+    completion_code = models.CharField(max_length=6, default='984730')
 
     def get_trials(self):
         return self.trial_set.order_by('order')
