@@ -3,15 +3,20 @@
 {% block content %}
 <h1>Start</h1>
 
-{% if questionnaire_list %}
-    <ul>
-    {% for questionnaire in questionnaire_list %}
-        <li><a href="{% url 'study:questionnaire' questionnaire.id %}">{{ questionnaire.name }}</a></li>
-    {% endfor %}
-    </ul>
+{% if least_respondents_q %}
+    <a class="btn btn-primary" href="{% url 'study:questionnaire' least_respondents_q.id %}">
+        Start the questionnaire!
+    </a>
 {% else %}
-    <p>No questionnaires are available.</p>
+    {% if questionnaire_list %}
+        <ul>
+            {% for questionnaire in questionnaire_list %}
+            <li><a href="{% url 'study:questionnaire' questionnaire.id %}">{{ questionnaire.name }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No questionnaires are available.</p>
+    {% endif %}
 {% endif %}
-
 
 {% endblock %}

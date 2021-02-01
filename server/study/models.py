@@ -12,6 +12,7 @@ class Questionnaire(models.Model):
     explain_heading_text = models.CharField(max_length=200)
     eval_heading_text = models.CharField(max_length=200)
     question_text = models.CharField(max_length=1000)
+    num_respondents = models.IntegerField(default=0)
 
     def get_trials(self):
         return self.trial_set.order_by('order')
