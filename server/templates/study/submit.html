@@ -1,0 +1,17 @@
+{% extends "study/base.html" %}
+
+{% block content %}
+<h1>Submission success!</h1>
+<p>
+    Thank you for participating in our study!
+    Your completion code is {{ questionnaire.completion_code }}
+</p>
+
+{% if debug %}
+<h2>{{ questionnaire.name }}</h2>
+<p>User: {{ user.username }}</p>
+<p>Choices: {{ choices }}</p>
+<p>Score: {{ score }}</p>
+{% endif %}
+
+{% endblock %}

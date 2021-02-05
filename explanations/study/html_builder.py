@@ -14,8 +14,8 @@ def iframe_video(image_path, video_path):
 
 class HTMLStudyBuilder(StudyBuilder):
 
-    def __init__(self, save_dir, video_dir, explanation_method, num_trials, config, name):
-        super().__init__(save_dir, video_dir, explanation_method, num_trials, config, name)
+    def __init__(self, save_dir, root_dir, explanation_method, num_trials, config, name):
+        super().__init__(save_dir, root_dir, explanation_method, num_trials, config, name)
         self.file_name = os.path.join(save_dir, f'{name}.html')
         self.html = ''
 
@@ -39,25 +39,25 @@ class HTMLStudyBuilder(StudyBuilder):
             '<html>\n'
         )
 
-    def add_explanations(self, image_path, video_path, heading_text, body_text):
+    def add_explanations(self, video_path, root_dir, heading_text, body_text):
         self.html += (
             f'<h3>{heading_text}</h3>\n'
             f'<p>{body_text}</p>\n'
         )
         try:
-            self.html += iframe_video(image_path, video_path)
+            self.html += iframe_video(video_path, root_dir)
         except FileNotFoundError:
-            print(f'Could not find image {video_path}')
+            print(f'Could not find image {root_dir}')
 
-    def add_evaluations(self, image_path, video_path, heading_text, body_text, question_text):
+    def add_evaluations(self, video_path, root_dir, heading_text, body_text, question_text):
         self.html += (
             f'<h3>{heading_text}</h3>\n'
             f'<p>{body_text}</p>\n'
         )
         try:
-            self.html += iframe_video(image_path, video_path)
+            self.html += iframe_video(video_path, root_dir)
         except FileNotFoundError:
-            print(f'Could not find image {video_path}')
+            print(f'Could not find image {root_dir}')
         self.html += f'<p>{question_text}</p>'
 
     def save(self):

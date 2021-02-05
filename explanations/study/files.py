@@ -1,3 +1,4 @@
+import csv
 import os
 
 
@@ -18,3 +19,17 @@ def get_explain_name(explanation_method, config, extension='gif'):
 
 def get_eval_name(eval_dir, trial, extension='gif'):
     return os.path.join(eval_dir, f'counterfactual_window-t_{trial}.{extension}')
+
+
+def get_solutions(root_dir, config):
+    solution_file = os.path.join(root_dir, 'eval', 'counterfactual_window-answer_key.txt')
+    solutions = []
+    num_choices = None
+    with open(solution_file) as csvfile:
+        for row in csv.reader(csvfile):
+            policies = row[1:-1]
+            solution = policies.index(config['behavior_policy_config']['name'])
+            solutions.append(solution)
+            if num_choices is None:
+                num_choices = len(policies)
+    return solutions, num_choices
