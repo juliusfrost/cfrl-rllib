@@ -38,17 +38,26 @@ class StudyBuilder:
         self.name = name
         self.build_config = {}
 
+    def get_text(self, key, default):
+        if key in self.study_config['text']:
+            value = self.study_config['text'].get(key)
+            assert isinstance(value, type(default))
+            return value
+        else:
+            return default
+
     def build(self):
-        intro_text = get_introduction_text(self.text_config)
-        title_text = get_title_text()
+        intro_text = self.get_text('intro_text', get_introduction_text(self.text_config))
+        title_text = self.get_text('title_text', get_title_text())
         self.build_intro(title_text, intro_text)
         name_formula = get_explain_name(self.explanation_method, self.config,
                                         extension=self.config['video_config']['format'])
-        explanation_study_text = get_explain_study_text(self.explanation_method, self.text_config)
-        eval_study_text = get_eval_study_text(self.text_config, self.config)
-        explain_heading_text = get_explain_heading_text()
-        eval_heading_text = get_eval_heading_text()
-        question_text = get_question_text(self.text_config)
+        explanation_study_text = self.get_text('explanation_study_text',
+                                               get_explain_study_text(self.explanation_method, self.text_config))
+        eval_study_text = self.get_text('eval_study_text', get_eval_study_text(self.text_config, self.config))
+        explain_heading_text = self.get_text('explain_heading_text', get_explain_heading_text())
+        eval_heading_text = self.get_text('eval_heading_text', get_eval_heading_text())
+        question_text = self.get_text('question_text', get_question_text(self.text_config))
         solutions, num_choices = get_solutions(self.root_dir, self.config)
 
         # save to build config
