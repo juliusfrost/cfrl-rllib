@@ -17,6 +17,7 @@ import models
 from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
+from explanations.exploration_agent import ExplorationAgent
 from explanations.rollout import RolloutSaver, rollout_env
 from explanations.state_selection import random_state, critical_state, low_reward_state
 
@@ -483,7 +484,7 @@ def select_states(args):
                 env.load_simulator_state(simulator_state)
                 if args.exploration_method == 'random':
                     exploration_agent = RandomAgent(env.action_space)
-                else:
+                elif args.exploration_method == 'policy':
                     config_dir = os.path.dirname(args.exploration_policy['checkpoint'])
                     config_path = os.path.join(config_dir, "../params.pkl")
                     with open(config_path, "rb") as f:
@@ -494,6 +495,8 @@ def select_states(args):
                     cls = get_trainable_cls(args.exploration_policy['run'])
                     exploration_agent = cls(env=config["env"], config=config)
                     exploration_agent.restore(args.exploration_policy['checkpoint'])
+                elif args.exploration_method == 'dads':
+                    exploration_agent = ExplorationAgent(args.exploration_policy['checkpoint'])
 
                 handoff_func = make_handoff_func(args.timesteps)
 
@@ -626,7 +629,7 @@ def main(parser_args=None):
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     parser.add_argument('--video-format', type=str, help='Video file format', choices=['mp4', 'gif'], default='gif')
     parser.add_argument('--exploration-method', type=str, help='Type of policy to use for exploration',
-                        choices=['random', 'policy'], default='random')
+                        choices=['random', 'policy', 'dads'], default='random')
     parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
                         default=None)
     args = parser.parse_args(parser_args)

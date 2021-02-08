@@ -1,5 +1,6 @@
 import pickle
 
+import cloudpickle
 from ray.rllib.env.base_env import _DUMMY_AGENT_ID
 from ray.rllib.rollout import *
 from ray.tune.registry import get_trainable_cls

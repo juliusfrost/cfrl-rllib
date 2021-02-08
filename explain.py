@@ -4,6 +4,7 @@ import os
 import pickle
 import shutil
 
+import tensorflow as tf
 import yaml
 from ray.tune.utils import merge_dicts
 
@@ -203,7 +204,8 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         args += ['--video-format', config['video_config']['format']]
     args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
     args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
-    generate_counterfactuals_main(args)
+    args += ['--flagfile', config['counterfactual_config']['exploration_policy']['flagfile']]
+    tf.compat.v1.app.run(generate_counterfactuals_main, argv=args)
 
 
 def generate_evaluation_videos(config, dataset_file, video_dir):
