@@ -99,6 +99,8 @@ DEFAULT_CONFIG = {
     },
     'study_config': {
         'id': None,
+        # you can configure the text for the study builder
+        'text': {},
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
