@@ -78,7 +78,9 @@ DEFAULT_CONFIG = {
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
-        'settings_config': {}
+        'settings_config': {},
+        # save all types of video trajectory slices
+        'save_all': False,
     },
     'form_config': {
         # REQUIRED
@@ -169,6 +171,8 @@ def create_dataset(config, dataset_file, eval=False):
 
 def generate_explanation_videos(config, dataset_file, video_dir, explanation_method=None):
     args = []
+    if config.get('video_config').get('save_all', False):
+        args += ['--save-all']
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
@@ -210,6 +214,8 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
 
 def generate_evaluation_videos(config, dataset_file, video_dir):
     args = []
+    if config.get('video_config').get('save_all', False):
+        args += ['--save-all']
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
     args += ['--num-states', str(config['eval_config']['num_trials'])]
