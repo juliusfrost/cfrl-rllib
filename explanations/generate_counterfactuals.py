@@ -29,7 +29,8 @@ def window_slice(arr, index: int, window_radius: int):
     window_low = max(0, index - window_radius)
     window_high = min(len(arr), index + window_radius)
     cropped_end = window_high < len(arr)
-    return arr[window_low: window_high], cropped_end
+    center_index = index - window_low
+    return arr[window_low: window_high], cropped_end, center_index
 
 
 def add_border(imgs, border_size=30, border_color=(255, 255, 255)):
@@ -201,7 +202,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         cf_video = np.concatenate((prefix_video, cf_imgs))
     else:
         cf_video = cf_imgs
-    cf_window_video, cropped_end = window_slice(cf_video, split, args.window_len)
+    cf_window_video, cropped_end, window_center = window_slice(cf_video, split, args.window_len)
     window_crashed = crashed and not cropped_end
     show_start = args.video_format == 'gif'
 
@@ -222,7 +223,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
         write_video(cf_window_video, cf_window_explanation_file, img_shape, args.fps, show_start=show_start,
                     show_stop=True, downscale=args.downscale, crashed=window_crashed, **kwargs)
 
-    return (cf_imgs, crashed), (cf_video, crashed), (cf_window_video, window_crashed)
+    return (cf_imgs, crashed, split), (cf_video, crashed, split), (cf_window_video, window_crashed, window_center)
 
 
 def save_joint_video(video_list, video_names, base_video_name, id, args, **kwargs):
@@ -233,12 +234,18 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
     font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
+    split_context_continuation = kwargs.get('split_context_continuation', False)
+    final_frame_duration = kwargs.get('final_frame_duration', 5)
+    if split_context_continuation:
+        pass  # TODO
 
     order = np.random.permutation(len(video_list))
     padded_videos = []
     max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
+    splits = np.zeros(len(video_list))
     for i in order.tolist():
-        curr_vid, crashed = video_list[i]
+        curr_vid, crashed, split = video_list[i]
+        splits[i] = split
         final_frame = curr_vid[-1]
         if crashed:
             text = crashed_text
@@ -246,16 +253,38 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
             text = done_text
         bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        # if split_context_continuation:
+        #     padded_video = np.concatenate([curr_vid, [final_frame] * final_frame_duration])
+        # else:
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         padded_videos.append(padded_video.astype(np.uint8))
-    combined_video = np.concatenate(padded_videos, axis=2)
 
-    t, h, w, c = combined_video.shape
-    save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.{args.video_format}")
+    if not split_context_continuation:
+        combined_video = np.concatenate(padded_videos, axis=2)
+        t, h, w, c = combined_video.shape
+        save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.{args.video_format}")
+        show_start = args.video_format == 'gif'
+        write_video(combined_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
+                    downscale=args.downscale, **kwargs)
+    else:
+        context_file = os.path.join(args.save_path, f'{base_video_name}-t_{id}-context.{args.video_format}')
+        split = splits[0]
+        context_video = padded_videos[0][:split]
+        t, h, w, c = context_video.shape
+        write_video(context_video, context_file, (w, h), args.fps, show_start=True, show_stop=False,
+                    downscale=args.downscale, **kwargs)
+        for i, vid in enumerate(padded_videos):
+            save_file = os.path.join(args.save_path, f'{base_video_name}-t_{id}-continuation_{i}.{args.video_format}')
+            split = splits[i]
+            if len(vid) > split:
+                continuation_video = vid[split:]
+                t, h, w, c = continuation_video.shape
+                write_video(continuation_video, save_file, (w, h), args.fps, show_start=False, show_stop=False,
+                            downscale=args.downscale, **kwargs)
+            else:
+                print('failed to write continuation video')
+
     answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
-    show_start = args.video_format == 'gif'
-    write_video(combined_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
-                downscale=args.downscale, **kwargs)
     with open(answer_key_file, 'a') as f:
         f.write(f"{id},")
         for i in order.tolist():
@@ -371,7 +400,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         #  (4) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'baseline_window-trial_{i}.{args.video_format}')
-        baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
+        baseline_window_video, cropped_end, window_center = window_slice(original_imgs, split, args.window_len)
         # Get failure, if it's recorded
         last_env_info = original_trajectory.env_info_range[-1]
         crashed = last_env_info.get('failure', 0) and not cropped_end
@@ -416,7 +445,7 @@ def generate_videos_state_method(original_dataset, args, state_indices, **kwargs
         #  (2) Baseline (Critical-state-centered window)
         baseline_window_explanation_file = os.path.join(args.save_path,
                                                         f'baseline_window-trial_{i}.{args.video_format}')
-        baseline_window_video, cropped_end = window_slice(original_imgs, split, args.window_len)
+        baseline_window_video, cropped_end, window_center = window_slice(original_imgs, split, args.window_len)
         baseline_window_video = add_borders(baseline_window_video, border_size=args.border_width)
         img_shape = (baseline_window_video[0].shape[1], baseline_window_video[0].shape[0])
         last_env_info = original_trajectory.env_info_range[-1]

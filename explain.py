@@ -78,7 +78,10 @@ DEFAULT_CONFIG = {
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
-        'settings_config': {},
+        'settings_config': {
+            # this saves evaluation videos as one context video and multiple continuation videos
+            'split_context_continuation': True
+        },
         # save all types of video trajectory slices
         'save_all': False,
     },
