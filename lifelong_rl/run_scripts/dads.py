@@ -8,6 +8,7 @@ from experiment_configs.configs.dads.dads_config import get_config
 from experiment_configs.algorithms.batch import get_algorithm
 
 ENV_NAME = 'Gridworld'
+ACTION_SPACE = 'discrete'
 experiment_kwargs = dict(
     exp_name='dads-gridworld',
     num_seeds=1,
@@ -18,6 +19,7 @@ experiment_kwargs = dict(
 
 if __name__ == "__main__":
     variant = dict(
+        action_space=ACTION_SPACE,
         algorithm='DADS',
         collector_type='batch_latent',
         replay_buffer_size=int(1e6),   # for DADS, only used to store past history

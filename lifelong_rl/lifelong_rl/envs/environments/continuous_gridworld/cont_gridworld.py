@@ -69,20 +69,20 @@ class ContinuousGridworld:
         self.observation_space = gym.spaces.Box(
             -np.ones(obs_dim), np.ones(obs_dim)
         )
-        self.action_space = gym.spaces.Box(
-            np.array([-1, -1]), np.array([1, 1])
-        )
-        # self.action_space = gym.spaces.Discrete(4)
+        # self.action_space = gym.spaces.Box(
+        #     np.array([-1, -1]), np.array([1, 1])
+        # )
+        self.action_space = gym.spaces.Discrete(4)
 
     def step(self, action):
-        # if action == 0:
-        #     action = np.array([-1, -1], dtype=np.float64)
-        # elif action == 1:
-        #     action = np.array([-1, 1], dtype=np.float64)
-        # elif action == 2:
-        #     action = np.array([1, -1], dtype=np.float64)
-        # elif action == 3:
-        #     action = np.array([1, 1], dtype=np.float64)
+        if action == 0:
+            action = np.array([-1, -1], dtype=np.float64)
+        elif action == 1:
+            action = np.array([-1, 1], dtype=np.float64)
+        elif action == 2:
+            action = np.array([1, -1], dtype=np.float64)
+        elif action == 3:
+            action = np.array([1, 1], dtype=np.float64)
 
         action += np.random.randn(*action.shape) * self.act_noise
         action = np.clip(action, -1, 1)

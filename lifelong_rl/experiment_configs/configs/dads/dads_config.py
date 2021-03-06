@@ -28,7 +28,7 @@ def get_config(
     latent_dim = variant['policy_kwargs']['latent_dim']
     restrict_dim = variant['discriminator_kwargs']['restrict_input_size']
 
-    control_policy = TanhGaussianPolicy(
+    control_policy = DiscretePolicy(
         obs_dim=obs_dim + latent_dim,
         action_dim=action_dim,
         hidden_sizes=[M, M],

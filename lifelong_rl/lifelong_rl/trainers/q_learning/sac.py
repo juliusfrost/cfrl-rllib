@@ -183,15 +183,18 @@ class SACTrainer(TorchTrainer):
                 'Log Pis',
                 ptu.get_numpy(log_pi),
             ))
-            self.eval_statistics.update(create_stats_ordered_dict(
-                'Policy mu',
-                ptu.get_numpy(policy_mean),
-            ))
-            self.eval_statistics.update(create_stats_ordered_dict(
-                'Policy log std',
-                ptu.get_numpy(policy_logstd),
-            ))
-            self.eval_statistics['Policy std'] = np.mean(ptu.get_numpy(policy_avg_std))
+            try:
+                self.eval_statistics.update(create_stats_ordered_dict(
+                    'Policy mu',
+                    ptu.get_numpy(policy_mean),
+                ))
+                self.eval_statistics.update(create_stats_ordered_dict(
+                    'Policy log std',
+                    ptu.get_numpy(policy_logstd),
+                ))
+                self.eval_statistics['Policy std'] = np.mean(ptu.get_numpy(policy_avg_std))
+            except:
+                print("No mean and std; probably discrete")
 
             if self.use_automatic_entropy_tuning:
                 self.eval_statistics['Alpha'] = alpha.item()
