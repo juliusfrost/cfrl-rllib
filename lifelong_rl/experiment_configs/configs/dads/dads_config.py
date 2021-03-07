@@ -28,7 +28,8 @@ def get_config(
     latent_dim = variant['policy_kwargs']['latent_dim']
     restrict_dim = variant['discriminator_kwargs']['restrict_input_size']
 
-    control_policy = DiscretePolicy(
+    policy_class = DiscretePolicy if variant['action_space'] == 'discrete' else TanhGaussianPolicy
+    control_policy = policy_class(
         obs_dim=obs_dim + latent_dim,
         action_dim=action_dim,
         hidden_sizes=[M, M],
@@ -78,6 +79,7 @@ def get_config(
         qf2=qf2,
         target_qf1=target_qf1,
         target_qf2=target_qf2,
+        action_space=variant['action_space'],
         **variant['policy_trainer_kwargs'],
     )
 

@@ -41,7 +41,7 @@ class Mlp(nn.Module):
         self.batch_norms = []
 
         # data normalization
-        self.input_mu = nn.Parameter(ptu.zeros(input_size), requires_grad=False).float()
+                                                                                                                                                                                      = nn.Parameter(ptu.zeros(input_size), requires_grad=False).float()
         self.input_std = nn.Parameter(ptu.ones(input_size), requires_grad=False).float()
 
         in_size = input_size

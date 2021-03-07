@@ -111,7 +111,7 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
             if reparameterize is True:
                 action_hard = torch.nn.functional.gumbel_softmax(logits, hard=True, dim=-1)
                 action_soft = torch.nn.functional.gumbel_softmax(logits, hard=True, dim=-1)
-                action_dist = action_hard - action_soft.detach() + action_soft  # TODO: BAD BAD BAD!
+                action_dist = action_hard - action_soft.detach() + action_soft
                 action = torch.argmax(action_dist, dim=-1)
             else:
                 action_dist = torch.distributions.categorical.Categorical(logits=logits)
@@ -119,8 +119,8 @@ class DiscretePolicy(Mlp, ExplorationPolicy):
             log_prob = (action_dist * torch.nn.LogSoftmax(dim=-1)(logits)).sum(dim=1, keepdim=True)
 
         return (
-            action, logits, None, log_prob, entropy, None,
-            mean_action_log_prob, None
+            action.float(), logits, None, log_prob, entropy, None,
+            mean_action_log_prob, action_dist
         )
 
     def get_log_probs(self, obs, actions):

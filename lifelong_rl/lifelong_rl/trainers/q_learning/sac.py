@@ -38,6 +38,7 @@ class SACTrainer(TorchTrainer):
 
             soft_target_tau=5e-3,               # Rate of update of target networks
             target_update_period=1,             # How often to update target networks
+            action_space='continuous',          # Continous our discrete actions
     ):
         super().__init__()
 
@@ -52,6 +53,7 @@ class SACTrainer(TorchTrainer):
         self.reward_scale = reward_scale
         self.soft_target_tau = soft_target_tau
         self.target_update_period = target_update_period
+        self.action_space = action_space
 
         self.use_automatic_entropy_tuning = use_automatic_entropy_tuning
         if self.use_automatic_entropy_tuning:
@@ -96,9 +98,24 @@ class SACTrainer(TorchTrainer):
         """
         Policy and Alpha Loss
         """
-        _, policy_mean, policy_logstd, *_ = self.policy(obs)
-        dist = TanhNormal(policy_mean, policy_logstd.exp())
-        new_obs_actions, log_pi = dist.rsample_and_logprob()
+        if self.action_space == 'continuous':
+            _, policy_mean, policy_logstd, *_ = self.policy(obs)
+            dist = TanhNormal(policy_mean, policy_logstd.exp())
+            new_obs_actions, log_pi = dist.rsample_and_logprob()
+            _, next_policy_mean, next_policy_logstd, *_ = self.policy(next_obs)
+            next_dist = TanhNormal(next_policy_mean, next_policy_logstd.exp())
+            new_next_actions, new_log_pi = next_dist.rsample_and_logprob()
+        elif self.action_space == 'discrete':
+            new_obs_actions, t0, t1, log_pi, *_ = self.policy(obs,
+                                                              reparameterize=True,
+                                                              return_log_prob=True)
+            new_next_actions, t0, t1, new_log_pi, *_ = self.policy(next_obs,
+                                                                   reparameterize=True,
+                                                                   return_log_prob=True)
+            new_obs_actions = new_obs_actions.unsqueeze(1)
+            new_next_actions = new_next_actions.unsqueeze(1)
+        else:
+            raise NotImplementedError(self.action_space)
         log_pi = log_pi.sum(dim=-1, keepdims=True)
         if self.use_automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
@@ -118,9 +135,6 @@ class SACTrainer(TorchTrainer):
         """
         q1_pred = self.qf1(obs, actions)
         q2_pred = self.qf2(obs, actions)
-        _, next_policy_mean, next_policy_logstd, *_ = self.policy(next_obs)
-        next_dist = TanhNormal(next_policy_mean, next_policy_logstd.exp())
-        new_next_actions, new_log_pi = next_dist.rsample_and_logprob()
         new_log_pi = new_log_pi.sum(dim=-1, keepdims=True)
         target_q_values = torch.min(
             self.target_qf1(next_obs, new_next_actions),

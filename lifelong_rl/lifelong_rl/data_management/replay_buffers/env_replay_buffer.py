@@ -65,6 +65,7 @@ class EnvReplayBuffer(SimpleReplayBuffer):
             env_info = dict()
         if isinstance(self._action_space, Discrete):
             new_action = np.zeros(self._action_dim)
+            action = int(action.item())
             new_action[action] = 1
         else:
             new_action = action
