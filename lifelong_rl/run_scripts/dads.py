@@ -8,7 +8,7 @@ from experiment_configs.configs.dads.dads_config import get_config
 from experiment_configs.algorithms.batch import get_algorithm
 
 ENV_NAME = 'Gridworld'
-ACTION_SPACE = 'discrete'
+ACTION_SPACE = 'continuous'
 experiment_kwargs = dict(
     exp_name='dads-gridworld',
     num_seeds=1,

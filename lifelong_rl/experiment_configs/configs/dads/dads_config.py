@@ -45,7 +45,6 @@ def get_config(
         prior=prior,
         unconditional=True,
     )
-
     qf1, qf2, target_qf1, target_qf2 = ppp.group_init(
         4,
         FlattenMlp,

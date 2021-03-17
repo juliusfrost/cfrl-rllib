@@ -38,7 +38,7 @@ class SACTrainer(TorchTrainer):
 
             soft_target_tau=5e-3,               # Rate of update of target networks
             target_update_period=1,             # How often to update target networks
-            action_space='continuous',          # Continous our discrete actions
+            action_space='continuous',          # Continous or discrete actions
     ):
         super().__init__()
 
@@ -106,14 +106,22 @@ class SACTrainer(TorchTrainer):
             next_dist = TanhNormal(next_policy_mean, next_policy_logstd.exp())
             new_next_actions, new_log_pi = next_dist.rsample_and_logprob()
         elif self.action_space == 'discrete':
-            new_obs_actions, t0, t1, log_pi, *_ = self.policy(obs,
+            new_obs_actions_num, t0, t1, log_pi, *_ = self.policy(obs,
                                                               reparameterize=True,
                                                               return_log_prob=True)
-            new_next_actions, t0, t1, new_log_pi, *_ = self.policy(next_obs,
+            new_next_actions_num, t0, t1, new_log_pi, *_ = self.policy(next_obs,
                                                                    reparameterize=True,
                                                                    return_log_prob=True)
-            new_obs_actions = new_obs_actions.unsqueeze(1)
-            new_next_actions = new_next_actions.unsqueeze(1)
+            new_obs_actions = torch.zeros((len(new_obs_actions_num), self.env.action_space.n), dtype=torch.float32,
+                                          device=new_obs_actions_num.device)
+            new_obs_actions.scatter_(1, new_next_actions_num.unsqueeze(1), 1)
+
+            new_next_actions = torch.zeros((len(new_next_actions_num), self.env.action_space.n), dtype=torch.float32,
+                                          device=new_next_actions_num.device)
+            new_next_actions.scatter_(1, new_next_actions_num.unsqueeze(1), 1)
+
+            # new_obs_actions = new_obs_actions.unsqueeze(1).float()
+            # new_next_actions = new_next_actions.unsqueeze(1).float()
         else:
             raise NotImplementedError(self.action_space)
         log_pi = log_pi.sum(dim=-1, keepdims=True)
@@ -174,7 +182,6 @@ class SACTrainer(TorchTrainer):
             self._need_to_update_eval_statistics = False
 
             policy_loss = (log_pi - q_new_actions).mean()
-            policy_avg_std = torch.exp(policy_logstd).mean()
 
             self.eval_statistics['QF1 Loss'] = np.mean(ptu.get_numpy(qf1_loss))
             self.eval_statistics['QF2 Loss'] = np.mean(ptu.get_numpy(qf2_loss))
@@ -198,6 +205,7 @@ class SACTrainer(TorchTrainer):
                 ptu.get_numpy(log_pi),
             ))
             try:
+                policy_avg_std = torch.exp(policy_logstd).mean()
                 self.eval_statistics.update(create_stats_ordered_dict(
                     'Policy mu',
                     ptu.get_numpy(policy_mean),
