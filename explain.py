@@ -38,7 +38,11 @@ DEFAULT_CONFIG = {
     # whether to overwrite existing files (uses existing files if not set)
     'overwrite': False,
     # whether to stop at generating the videos or continue to generate forms as well
-    'stop': 'doc',  # [video, form, doc]
+    # video: generate videos and exit
+    # study: output config files necessary to import questionnaire to study server
+    # doc: (deprecated) output word doc study
+    # html: (deprecated) output html study
+    'stop': 'study',  # [video, doc, html, study]
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
@@ -130,7 +134,7 @@ def parse_args(argv=None):
                         help='experiment file config. see the default parameters in this file')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc', 'study'],
                         help='whether to stop at generating videos or create the user study form')
     parser.add_argument('--config', type=json.loads, default='{}', help='use json config instead of file config')
     args = parser.parse_args(argv)
@@ -360,10 +364,7 @@ def main(argv=None):
     if stop == 'form':
         # broken for now
         raise NotImplementedError
-    elif stop == 'doc':
-        generate_study(config, video_dir, stop)
-    elif stop == 'html':
-        generate_study(config, video_dir, stop)
+    generate_study(config, video_dir, stop)
 
     for ext in config.get('remove_ext', []):
         remove_ext(experiment_dir, ext)
