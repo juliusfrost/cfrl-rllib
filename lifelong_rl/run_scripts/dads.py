@@ -1,16 +1,22 @@
 import sys
-print(sys.path)
-sys.path.append('/home/olivia/Documents/XRL/doodad')
 
 from experiment_utils.launch_experiment import launch_experiment
 
 from experiment_configs.configs.dads.dads_config import get_config
 from experiment_configs.algorithms.batch import get_algorithm
 
-ENV_NAME = 'Gridworld'
-ACTION_SPACE = 'continuous'
+env_name = 'minigrid'
+if env_name == 'driving':
+    ENV_NAME = 'DrivingPLE-v0'
+    ACTION_SPACE = 'continuous'
+    EXP_NAME = 'dads-driving'
+else:
+    ENV_NAME = 'MiniGrid'
+    ACTION_SPACE = 'discrete'
+    EXP_NAME = 'dads-minigrid'
+
 experiment_kwargs = dict(
-    exp_name='dads-gridworld',
+    exp_name=EXP_NAME,
     num_seeds=1,
     instance_type='c4.4xlarge',
     use_gpu=True,

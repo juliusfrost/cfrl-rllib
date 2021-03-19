@@ -47,6 +47,14 @@ def make_env(env_name, terminates=True, **kwargs):
         from lifelong_rl.envs.environments.continuous_gridworld.cont_gridworld import ContinuousGridworld
         base_env = ContinuousGridworld
         env_infos['mujoco'] = False
+    elif env_name == 'DrivingPLE-v0':
+        from envs.driving import driving_creator
+        env = driving_creator()
+        env_infos['mujoco'] = False
+    elif env_name == 'MiniGrid':
+        from envs.minigrid import env_creator
+        env = env_creator(flat_obs=True)
+        env_infos['mujoco'] = False
     
     if env is None and base_env is None:
         raise NameError('env_name not recognized')

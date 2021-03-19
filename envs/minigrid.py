@@ -2,6 +2,7 @@ import copy
 import random
 
 import gym
+from gym.spaces import Box
 import gym_minigrid
 from gym_minigrid.envs import MiniGridEnv, FourRoomsEnv
 from ray.tune.registry import register_env
@@ -27,6 +28,16 @@ class MiniGridObservationWrapper(gym.ObservationWrapper):
 
     def observation(self, observation):
         return observation['image']
+
+class MiniGridFlatWrapper(MiniGridObservationWrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        # Existing observation space is a box (9, 9, 3)
+        self.observation_space = Box(low=self.observation_space.low.flatten(),
+                                     high=self.observation_space.high.flatten())
+
+    def observation(self, observation):
+        return observation['image'].flatten()
 
 
 class MiniGridActionWrapper(gym.ActionWrapper):
@@ -58,7 +69,7 @@ class MiniGridSimulatorStateWrapper(SimulatorStateWrapper):
         return success
 
 
-def env_creator(normalize=False, normalize_constant=10, **kwargs):
+def env_creator(normalize=False, normalize_constant=10, flat_obs=False, **kwargs):
     env = SmallFourRoomsEnv(
         agent_pos=kwargs.get('agent_pos', (2, 2)),
         goal_pos=kwargs.get('goal_pos', (2, 6)),
@@ -67,7 +78,10 @@ def env_creator(normalize=False, normalize_constant=10, **kwargs):
     )
     env = MiniGridSimulatorStateWrapper(env)
     env = gym_minigrid.wrappers.FullyObsWrapper(env)
-    env = MiniGridObservationWrapper(env)
+    if flat_obs:
+        env = MiniGridFlatWrapper(env)
+    else:
+        env = MiniGridObservationWrapper(env)
     env = MiniGridActionWrapper(env)
     if normalize:
         env = gym.wrappers.TransformObservation(env, lambda obs: obs / normalize_constant)
