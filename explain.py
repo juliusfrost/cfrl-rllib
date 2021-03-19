@@ -78,7 +78,7 @@ DEFAULT_CONFIG = {
         # downscaling of videos, primarily used to save space
         'downscale': 2,
         # mp4 or gif
-        'format': None,
+        'format': 'mp4',
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
@@ -232,10 +232,20 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
     args += ['--side-by-side']
-    if config['stop'] == 'html':
-        args += ['--video-format', 'mp4']
-    else:
-        args += ['--video-format', 'gif']
+    if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
+        print(f'When generating a html study, the video format must be mp4. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to mp4 in the configuration file. '
+              f'Retroactively setting video_config/format to mp4...')
+        config['video_config']['format'] = 'mp4'
+    if config['stop'] == 'doc' and config['video_config']['format'] != 'gif':
+        print(f'When generating a doc study, the video format must be gif. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to gif in the configuration file. '
+              f'Retroactively setting video_config/format to gif...')
+        config['video_config']['format'] = 'gif'
+    if config['video_config']['format'] is not None:
+        args += ['--video-format', config['video_config']['format']]
     args += ['--exploration-method', 'random']
     args += ['--exploration-policy', json.dumps(None)]
     generate_counterfactuals_main(args)
