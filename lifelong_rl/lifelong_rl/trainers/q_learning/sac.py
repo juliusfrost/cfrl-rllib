@@ -114,7 +114,7 @@ class SACTrainer(TorchTrainer):
                                                                    return_log_prob=True)
             new_obs_actions = torch.zeros((len(new_obs_actions_num), self.env.action_space.n), dtype=torch.float32,
                                           device=new_obs_actions_num.device)
-            new_obs_actions.scatter_(1, new_next_actions_num.unsqueeze(1), 1)
+            new_obs_actions.scatter_(1, new_obs_actions_num.unsqueeze(1), 1)
 
             new_next_actions = torch.zeros((len(new_next_actions_num), self.env.action_space.n), dtype=torch.float32,
                                           device=new_next_actions_num.device)
