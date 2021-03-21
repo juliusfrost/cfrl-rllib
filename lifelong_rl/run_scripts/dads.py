@@ -1,4 +1,5 @@
 import sys
+sys.path.append('lifelong_rl')
 
 from experiment_utils.launch_experiment import launch_experiment
 
