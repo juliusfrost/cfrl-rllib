@@ -2,7 +2,7 @@ import configparser
 import os
 import json
 
-from doodad.utils import REPO_DIR
+from doodad.utils_name import REPO_DIR
 
 class Autoconfig(object):
     def __init__(self, filename=None):

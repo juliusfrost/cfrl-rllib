@@ -7,7 +7,7 @@ Instructions:
 """
 import os
 import doodad
-from doodad.utils import TESTING_DIR
+from doodad.utils_name import TESTING_DIR
 from testing.config import GCP_PROJECT, GCP_BUCKET, GCP_IMAGE
 
 def run():

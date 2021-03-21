@@ -20,7 +20,7 @@ import random
 from datetime import datetime
 
 import doodad
-from doodad.utils import REPO_DIR
+from doodad.utils_name import REPO_DIR
 
 
 class Sweeper(object):

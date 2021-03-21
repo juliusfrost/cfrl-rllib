@@ -4,7 +4,7 @@ import doodad as dd
 import doodad.ec2 as ec2
 import doodad.ssh as ssh
 import doodad.mount as mount
-from doodad.utils import EXAMPLES_DIR, REPO_DIR
+from doodad.utils_name import EXAMPLES_DIR, REPO_DIR
 
 
 # Local run

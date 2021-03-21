@@ -1,7 +1,7 @@
 import os
 from doodad import mount, mode
 from doodad.launch import launch_api
-from doodad.utils import TESTING_DIR
+from doodad.utils_name import TESTING_DIR
 from testing.config import S3_BUCKET
 
 def run():
