@@ -6,12 +6,6 @@ import os
 import random
 import sys
 import time
-import sys
-sys.path = [p for p in sys.path if not 'doodad' in p]
-sys.path.append('/Users/oliviawatkins/Documents/Research/XRL/cfrl-rllib/lifelong_rl/doodad/doodad')
-print("YOLO", [p for p in sys.path if 'doodad' in p])
-import os
-print("cwd", os.getcwd())
 
 import doodad as dd
 import doodad.mount as mount
