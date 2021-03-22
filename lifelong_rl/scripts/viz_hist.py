@@ -1,4 +1,6 @@
 import torch
+import sys
+sys.path.append('lifelong_rl')
 
 import argparse
 import sys
