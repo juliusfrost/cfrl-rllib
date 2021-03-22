@@ -10,7 +10,7 @@ from explanations.data import Data
 
 
 def random_state(data: Data, num_states, policy, min_dist=20, **kwargs):
-    indices = np.arange(len(data.all_time_steps))
+    indices = np.arange(len(data.all_time_steps))[~data.all_dones]  # don't include done states
     state_indices = list(zip(indices, data.all_trajectories))
     random.seed(kwargs.get('seed', None))
     random.shuffle(state_indices)
@@ -34,7 +34,7 @@ def filter(state_indices, num_states, min_dist):
             break
         if blocked[i]:
             continue
-        for j in range(i+1, len(state_indices)):
+        for j in range(i + 1, len(state_indices)):
             if blocked[j]:
                 continue
             other_state, other_traj_id = state_indices[j]
@@ -63,6 +63,9 @@ def user_state(data: Data, num_states, user, **kwargs):
 def critical_state(data: Data, num_states, policy, min_dist=20, **kwargs):
     state_indices = []
     for obs_index, (obs, traj_id) in enumerate(zip(data.all_observations, data.all_trajectories)):
+        # don't include done states
+        if data.all_dones[obs_index]:
+            continue
         with torch.no_grad():
             logits, _ = policy.model.from_batch({"obs": torch.FloatTensor(obs).unsqueeze(0).to(policy.device)})
             action_dist = policy.dist_class(logits, policy.model)

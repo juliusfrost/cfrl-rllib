@@ -96,16 +96,16 @@ class StudyBuilder:
         self.save()
 
     def build_intro(self, title: str, intro_text: list):
-        raise NotImplementedError
+        pass
 
     def build_outro(self):
         pass
 
     def add_explanations(self, video_path, root_dir, heading_text, body_text):
-        raise NotImplementedError
+        pass
 
     def add_evaluations(self, video_path, root_dir, heading_text, body_text, question_text):
-        raise NotImplementedError
+        pass
 
     def save_build_config(self):
         build_config_file = os.path.join(self.save_dir, self.name + '_config.json')
@@ -113,7 +113,7 @@ class StudyBuilder:
             json.dump(self.build_config, f)
 
     def save(self):
-        raise NotImplementedError
+        pass
 
     def trial_heading(self, trial_heading_text):
-        raise NotImplementedError
+        pass

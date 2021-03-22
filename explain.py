@@ -38,7 +38,11 @@ DEFAULT_CONFIG = {
     # whether to overwrite existing files (uses existing files if not set)
     'overwrite': False,
     # whether to stop at generating the videos or continue to generate forms as well
-    'stop': 'doc',  # [video, form, doc]
+    # video: generate videos and exit
+    # study: output config files necessary to import questionnaire to study server
+    # doc: (deprecated) output word doc study
+    # html: (deprecated) output html study
+    'stop': 'study',  # [video, doc, html, study]
     # number of rollouts in the train environment used to generate explanations
     'episodes': 10,
     # location to save results and logs
@@ -74,7 +78,7 @@ DEFAULT_CONFIG = {
         # downscaling of videos, primarily used to save space
         'downscale': 2,
         # mp4 or gif
-        'format': None,
+        'format': 'mp4',
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
@@ -135,7 +139,7 @@ def parse_args(argv=None):
                         help='experiment file config. see the default parameters in this file')
     parser.add_argument('--overwrite', action='store_true',
                         help='whether to overwrite existing files (uses existing files if not set)')
-    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc'],
+    parser.add_argument('--stop', default=None, choices=['video', 'form', 'doc', 'study'],
                         help='whether to stop at generating videos or create the user study form')
     parser.add_argument('--config', type=json.loads, default='{}', help='use json config instead of file config')
     args = parser.parse_args(argv)
@@ -237,10 +241,20 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
     args += ['--side-by-side']
-    if config['stop'] == 'html':
-        args += ['--video-format', 'mp4']
-    else:
-        args += ['--video-format', 'gif']
+    if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
+        print(f'When generating a html study, the video format must be mp4. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to mp4 in the configuration file. '
+              f'Retroactively setting video_config/format to mp4...')
+        config['video_config']['format'] = 'mp4'
+    if config['stop'] == 'doc' and config['video_config']['format'] != 'gif':
+        print(f'When generating a doc study, the video format must be gif. '
+              f'You are currently using {config["video_config"]["format"]}. '
+              f'Set the video_config/format to gif in the configuration file. '
+              f'Retroactively setting video_config/format to gif...')
+        config['video_config']['format'] = 'gif'
+    if config['video_config']['format'] is not None:
+        args += ['--video-format', config['video_config']['format']]
     args += ['--exploration-method', 'random']
     args += ['--exploration-policy', json.dumps(None)]
     generate_counterfactuals_main(args)
@@ -369,10 +383,7 @@ def main(argv=None):
     if stop == 'form':
         # broken for now
         raise NotImplementedError
-    elif stop == 'doc':
-        generate_study(config, video_dir, stop)
-    elif stop == 'html':
-        generate_study(config, video_dir, stop)
+    generate_study(config, video_dir, stop)
 
     for ext in config.get('remove_ext', []):
         remove_ext(experiment_dir, ext)
