@@ -1,0 +1,29 @@
+minigrid-phase-1:
+  run: A2C
+  stop:
+    time_total_s: 169200 # two days minus one hour in seconds
+    info/num_steps_trained: 4000000
+  checkpoint_freq: 1
+  checkpoint_at_end: true
+  keep_checkpoints_num: 1
+  checkpoint_score_attr: episode_reward_mean
+  local_dir: results
+  num_samples: 1
+  log_to_file: log.txt
+  config:
+    framework: torch
+    rollout_fragment_length: 20
+    num_workers: 5
+    num_envs_per_worker: 5
+    num_gpus: 1
+    lr_schedule: [
+      [ 0, 0.0007 ],
+      [ 20000000, 0.000000000001 ],
+    ]
+    model:
+      custom_model: minigrid_conv_torch_model
+    env: MiniGrid-FourRooms-v0
+    env_config:
+      agent_pos: null
+      goal_pos: [ 2, 2 ]
+      reset_seed: 0
