@@ -58,6 +58,16 @@ class MiniGridSimulatorStateWrapper(SimulatorStateWrapper):
         return success
 
 
+class MiniGridResetSeedWrapper(gym.Wrapper):
+    def __init__(self, env, seed):
+        super().__init__(env)
+        self._reset_seed = seed
+
+    def reset(self, **kwargs):
+        self.seed(self._reset_seed)
+        return super().reset(**kwargs)
+
+
 def env_creator(normalize=False, normalize_constant=10, **kwargs):
     env = SmallFourRoomsEnv(
         agent_pos=kwargs.get('agent_pos', (2, 2)),
@@ -71,6 +81,8 @@ def env_creator(normalize=False, normalize_constant=10, **kwargs):
     env = MiniGridActionWrapper(env)
     if normalize:
         env = gym.wrappers.TransformObservation(env, lambda obs: obs / normalize_constant)
+    if 'reset_seed' in kwargs:
+        env = MiniGridResetSeedWrapper(env, kwargs.get('reset_seed'))
     env.seed(kwargs.get('seed', random.randint(0, 1000)))
     return env
 
