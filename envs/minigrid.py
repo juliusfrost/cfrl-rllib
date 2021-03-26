@@ -1,7 +1,5 @@
 import copy
-import random
 
-import numpy as np
 import gym
 import gym_minigrid
 from gym_minigrid.envs import MiniGridEnv, Grid, Goal
@@ -158,7 +156,8 @@ def env_creator(normalize=False, normalize_constant=10, **kwargs):
         env = gym.wrappers.TransformObservation(env, lambda obs: obs / normalize_constant)
     if 'reset_seed' in kwargs:
         env = MiniGridResetSeedWrapper(env, kwargs.get('reset_seed'))
-    env.seed(kwargs.get('seed', random.randint(0, 1000)))
+    if 'seed' in kwargs:
+        env.seed(kwargs.get('seed'))
     return env
 
 
