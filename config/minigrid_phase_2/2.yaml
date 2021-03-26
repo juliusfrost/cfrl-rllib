@@ -26,4 +26,4 @@ minigrid-phase-2:
     env_config:
       agent_pos: null
       goal_pos: [ 2, 6 ]
-      reset_seed: 0
+      deterministic_rooms: true

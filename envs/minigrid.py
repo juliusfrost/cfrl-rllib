@@ -13,15 +13,6 @@ ENV_IDS = [
     'MiniGrid-FourRooms-v0',
 ]
 
-seeds = np.random.randint(0, 10000, (1000,))
-
-
-def next_seed():
-    global seeds
-    seed = seeds[0]
-    seeds = np.roll(seeds, 1)
-    return int(seed)
-
 
 class ModifiedFourRoomsEnv(MiniGridEnv):
     """
@@ -29,10 +20,11 @@ class ModifiedFourRoomsEnv(MiniGridEnv):
     Can specify agent and goal position, if not it set at random.
     """
 
-    def __init__(self, agent_pos=None, goal_pos=None):
+    def __init__(self, agent_pos=None, goal_pos=None, deterministic_rooms=False, **kwargs):
         self._agent_default_pos = agent_pos
         self._goal_default_pos = goal_pos
-        super().__init__(grid_size=19, max_steps=100)
+        self.deterministic_rooms = deterministic_rooms
+        super().__init__(**kwargs)
 
     def _gen_grid(self, width, height):
         # Create the grid
@@ -60,17 +52,20 @@ class ModifiedFourRoomsEnv(MiniGridEnv):
                 # Bottom wall and door
                 if i + 1 < 2:
                     self.grid.vert_wall(xR, yT, room_h)
-                    pos = (xR, self._rand_int(yT + 1, yB))
+                    if self.deterministic_rooms:
+                        pos = (xR, (yT + 1 + yB) // 2)
+                    else:
+                        pos = (xR, self._rand_int(yT + 1, yB))
                     self.grid.set(*pos, None)
 
                 # Bottom wall and door
                 if j + 1 < 2:
                     self.grid.horz_wall(xL, yB, room_w)
-                    pos = (self._rand_int(xL + 1, xR), yB)
+                    if self.deterministic_rooms:
+                        pos = ((xL + 1 + xR) // 2, yB)
+                    else:
+                        pos = (self._rand_int(xL + 1, xR), yB)
                     self.grid.set(*pos, None)
-
-        # edit
-        self.seed(next_seed())
 
         # Randomize the player start position and orientation
         if self._agent_default_pos is not None:
@@ -95,10 +90,8 @@ class ModifiedFourRoomsEnv(MiniGridEnv):
 
 
 class SmallModifiedFourRoomsEnv(ModifiedFourRoomsEnv):
-    def __init__(self, agent_pos=None, goal_pos=None, grid_size=9, max_steps=100):
-        self._agent_default_pos = agent_pos
-        self._goal_default_pos = goal_pos
-        MiniGridEnv.__init__(self, grid_size=grid_size, max_steps=max_steps)
+    def __init__(self, agent_pos=None, goal_pos=None, grid_size=9, max_steps=100, deterministic_rooms=False, **kwargs):
+        super().__init__(agent_pos, goal_pos, deterministic_rooms, grid_size=grid_size, max_steps=max_steps, **kwargs)
 
 
 class MiniGridObservationWrapper(gym.ObservationWrapper):
@@ -155,6 +148,7 @@ def env_creator(normalize=False, normalize_constant=10, **kwargs):
         goal_pos=kwargs.get('goal_pos', (2, 6)),
         grid_size=kwargs.get('grid_size', 9),
         max_steps=kwargs.get('max_steps', 100),
+        deterministic_rooms=kwargs.get('deterministic_rooms', False),
     )
     env = MiniGridSimulatorStateWrapper(env)
     env = gym_minigrid.wrappers.FullyObsWrapper(env)
