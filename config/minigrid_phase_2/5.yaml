@@ -38,6 +38,6 @@ minigrid-phase-2:
       custom_model: minigrid_conv_torch_model
     env: MiniGrid-FourRooms-v0
     env_config:
-      agent_pos: None
+      agent_pos: null
       goal_pos: [ 2, 2 ]
       deterministic_rooms: true
