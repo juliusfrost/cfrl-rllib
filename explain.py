@@ -231,8 +231,10 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
-    # args += ['--side-by-side']
-    args += ['--save-separate']
+    if side_by_side:
+        args += ['--side-by-side']
+    else:
+        args += ['--save-separate']
     if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
         print(f'When generating a html study, the video format must be mp4. '
               f'You are currently using {config["video_config"]["format"]}. '
@@ -322,6 +324,7 @@ def main(argv=None):
         os.mkdir(experiment_dir)
     explanation_dataset = os.path.join(experiment_dir, 'explanation_dataset.pkl')
     manual_selection = config['eval_config']['state_selection'] == 'manual'
+    side_by_side = config['eval_config']['side_by_side']
     if manual_selection:
         evaluation_dataset = config['eval_config']['evaluation_dataset']
     else:
