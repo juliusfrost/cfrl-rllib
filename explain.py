@@ -123,6 +123,8 @@ DEFAULT_CONFIG = {
         'window_size': 20,
         # number of time steps to use the counterfactual policy
         'timesteps': 0,
+        # whether to save videos side by side or separately
+        'side_by_side': False,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
