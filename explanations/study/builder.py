@@ -3,7 +3,7 @@ import os
 
 import yaml
 
-from explanations.study.files import get_eval_names, get_explain_name, get_solutions
+from explanations.study.files import get_eval_names, get_explain_name, get_solutions, get_eval_name
 from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
     get_title_text, get_explain_heading_text, get_eval_heading_text, get_question_text
 
@@ -82,8 +82,11 @@ class StudyBuilder:
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
             explain_video_path = name_formula(explanation_dir, trial)
-            # TODO: Take list of form [context, [continuations]] for eval videos @julius
-            eval_video_paths = get_eval_names(eval_dir, trial, self.build_config['num_choices'], extension=self.config['video_config']['format'])
+            if self.config['eval_config']['side_by_side']:
+                eval_video_paths = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
+            else:
+                eval_video_paths = get_eval_names(eval_dir, trial, self.build_config['num_choices'],
+                                                  extension=self.config['video_config']['format'])
             self.add_explanations(explain_video_path, self.root_dir, explain_heading_text, explanation_study_text)
             self.add_evaluations(eval_video_paths, self.root_dir, eval_heading_text, eval_study_text, question_text)
 
