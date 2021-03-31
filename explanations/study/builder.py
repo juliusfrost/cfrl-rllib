@@ -82,14 +82,15 @@ class StudyBuilder:
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
             explain_video_path = name_formula(explanation_dir, trial)
-            eval_video_path = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
+            # TODO: Take list of form [context, [continuations]] for eval videos @julius
+            eval_video_paths = get_eval_names(eval_dir, trial, self.build_config['num_choices'], extension=self.config['video_config']['format'])
             self.add_explanations(explain_video_path, self.root_dir, explain_heading_text, explanation_study_text)
-            self.add_evaluations(eval_video_path, self.root_dir, eval_heading_text, eval_study_text, question_text)
+            self.add_evaluations(eval_video_paths, self.root_dir, eval_heading_text, eval_study_text, question_text)
 
             # save to build config
             self.build_config['trial_heading_texts'].append(trial_heading_text)
             self.build_config['explain_video_paths'].append(explain_video_path)
-            self.build_config['eval_video_paths'].append(eval_video_path)
+            self.build_config['eval_video_paths'].append(eval_video_paths)
 
         self.build_outro()
         self.save_build_config()
