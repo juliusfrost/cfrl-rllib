@@ -1,4 +1,4 @@
-minigrid-phase-1:
+minigrid-phase-2:
   run: A2C
   stop:
     time_total_s: 169200 # two days minus one hour in seconds
@@ -26,4 +26,4 @@ minigrid-phase-1:
     env_config:
       agent_pos: null
       goal_pos: [ 6, 2 ]
-      reset_seed: 0
+      deterministic_rooms: true

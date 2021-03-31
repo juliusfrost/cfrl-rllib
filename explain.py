@@ -47,6 +47,9 @@ DEFAULT_CONFIG = {
     'episodes': 10,
     # location to save results and logs
     'result_dir': 'experiments',
+    # whether to interpret paths in config as relative to the config file directory
+    # can be bool or path
+    'relative_config_path': False,
     # number of frames before and after the branching state
     'window_size': 20,
     # state selection method for the branching state
@@ -294,6 +297,10 @@ def main(argv=None):
     args = parse_args(argv)
     if args.experiment_config is not None and os.path.exists(args.experiment_config):
         config = load_config(args.experiment_config)
+        if isinstance(config['relative_config_path'], bool) and config['relative_config_path']:
+            os.chdir(os.path.dirname(args.experiment_config))
+        elif isinstance(config['relative_config_path'], str) and os.path.exists(config['relative_config_path']):
+            os.chdir(config['relative_config_path'])
     else:
         config = merge_dicts(DEFAULT_CONFIG, args.config)
 
