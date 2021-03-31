@@ -299,7 +299,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         with open(answer_key_file, 'a') as f:
             f.write(f"{id},")
             for i in order.tolist():
-                f.write(f"{i},")
+                f.write(f"{video_names[i]},")
             f.write("\n")
 
 
