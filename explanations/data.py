@@ -52,7 +52,7 @@ class Data:
         self.all_image_observations = np.array(all_image_observations)
         self.all_actions = np.array(all_actions)
         self.all_rewards = np.array(all_rewards)
-        self.all_dones = np.array(all_dones)
+        self.all_dones = np.array(all_dones, dtype=bool)
         self.all_env_infos = np.array(all_env_infos)
         self.all_policy_states = np.array(all_policy_states)
         self.all_simulator_states = np.array(all_simulator_states, dtype=object)
