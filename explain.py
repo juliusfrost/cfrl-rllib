@@ -123,6 +123,8 @@ DEFAULT_CONFIG = {
         'window_size': 20,
         # number of time steps to use the counterfactual policy
         'timesteps': 0,
+        # whether to save videos side by side or separately
+        'side_by_side': False,
         # anything in here overwrites video config for evaluation videos
         'video_config': {}
     },
@@ -237,7 +239,10 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
-    args += ['--side-by-side']
+    if config['eval_config']['side_by_side']:
+        args += ['--side-by-side']
+    else:
+        args += ['--save-separate']
     if config['stop'] == 'html' and video_config['format'] != 'mp4':
         print(f'When generating a html study, the video format must be mp4. '
               f'You are currently using {video_config["format"]}. '
