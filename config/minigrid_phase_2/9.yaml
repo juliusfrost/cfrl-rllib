@@ -1,0 +1,43 @@
+minigrid-phase-2:
+  run: DQN
+  stop:
+    time_total_s: 169200 # two days minus one hour in seconds
+    info/num_steps_trained: 4000000
+  checkpoint_freq: 1
+  checkpoint_at_end: true
+  keep_checkpoints_num: 1
+  checkpoint_score_attr: episode_reward_mean
+  local_dir: results
+  num_samples: 1
+  log_to_file: log.txt
+  config:
+    framework: torch
+    double_q: false
+    dueling: false
+    num_atoms: 1
+    noisy: false
+    prioritized_replay: false
+    n_step: 1
+    target_network_update_freq: 8000
+    lr: .0000625
+    adam_epsilon: .00015
+    hiddens: [ 512 ]
+    learning_starts: 20000
+    buffer_size: 1000000
+    rollout_fragment_length: 4
+    train_batch_size: 32
+    exploration_config:
+      epsilon_timesteps: 200000
+      final_epsilon: 0.01
+    prioritized_replay_alpha: 0.5
+    final_prioritized_replay_beta: 1.0
+    prioritized_replay_beta_annealing_timesteps: 2000000
+    num_gpus: 0.2
+    timesteps_per_iteration: 10000
+    model:
+      custom_model: minigrid_conv_torch_model
+    env: MiniGrid-FourRooms-v0
+    env_config:
+      agent_pos: [ 2, 2 ]
+      goal_pos: [ 2, 6 ]
+      deterministic_rooms: true
