@@ -340,7 +340,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       show_driver=True,
                                       show_reward=False,
                                       **kwargs)
-        first_eval_frame = copy.deepcopy(orignal_imgs[split-1])
+        first_eval_frame = copy.deepcopy(original_imgs[split-1])
 
         #  (2) Create images of exploration
         if exploration_dataset is None:
