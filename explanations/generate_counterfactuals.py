@@ -262,6 +262,52 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
             f.write(f"{video_names[i]},")
         f.write("\n")
 
+def save_separate_videos(video_list, video_names, base_video_name, id, args, **kwargs):
+    h, w, c = video_list[0][0][0].shape
+    font_scale = kwargs.get('end_font_scale', 4)
+    color = tuple(kwargs.get('end_color', (255, 255, 255)))
+    thickness = kwargs.get('end_thickness', 8)
+    font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
+    crashed_text = kwargs.get('crashed_text', 'CRASHED')
+    done_text = kwargs.get('done_text', 'DONE')
+    is_context = kwargs.get('is_context', False)
+    final_context = kwargs.get('final_context', None)
+    if not is_context:
+        videos_path = os.path.join(args.save_path, f"vids_{id}")
+        os.mkdir(videos_path)
+    else:
+        videos_path = args.save_path
+    order = np.random.permutation(len(video_list))
+    # max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
+    num_end_frames = 2
+    first_frame = final_context
+    for i in order.tolist():
+        curr_vid, crashed = video_list[i]
+        final_frame = curr_vid[-1]
+        if crashed:
+            text = crashed_text
+        else:
+            text = done_text
+        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        to_concat = [curr_vid, [final_frame] * num_end_frames]
+        if not is_context:
+            to_concat = [[first_frame]] + to_concat
+        padded_video = np.concatenate(to_concat)
+        save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{i}.{args.video_format}")
+        show_start = args.video_format == 'gif'
+        write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
+                downscale=args.downscale, **kwargs)
+
+    if not is_context:
+        answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
+
+        with open(answer_key_file, 'a') as f:
+            f.write(f"{id},")
+            for i in order.tolist():
+                f.write(f"{i},")
+            f.write("\n")
+
 
 def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
                                           cf_names, state_indices, **kwargs):
@@ -294,6 +340,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       show_driver=True,
                                       show_reward=False,
                                       **kwargs)
+        first_eval_frame = copy.deepcopy(orignal_imgs[split-1])
 
         #  (2) Create images of exploration
         if exploration_dataset is None:
@@ -327,7 +374,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         continuation_list = []
         cf_list = []
         window_list = []
-        if args.side_by_side:
+        if args.side_by_side or args.save_separate:
             cf_driver = '?'
         else:
             cf_driver = 'A'
@@ -346,6 +393,11 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                 save_joint_video(cf_list, cf_names, cf_file, i, args, **kwargs)
             cf_window_file = 'counterfactual_window'
             save_joint_video(window_list, cf_names, cf_window_file, cf_id, args, **kwargs)
+        elif args.save_separate:
+            context_file = "context_vid"
+            counterfactual_file = "counterfactual_vid"
+            save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
+            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, final_context=first_eval_frame, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -620,6 +672,7 @@ def main(parser_args=None):
     parser.add_argument('--run', type=str, default="PPO")
     parser.add_argument('--behavioral-policy', type=str, default=None)
     parser.add_argument('--side-by-side', default=False, action='store_true')
+    parser.add_argument('--save-separate', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
                              'Note that this will take up a lot of space!')

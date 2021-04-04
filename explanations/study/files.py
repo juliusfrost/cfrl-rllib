@@ -20,9 +20,18 @@ def get_explain_name(explanation_method, config, extension='gif'):
 def get_eval_name(eval_dir, trial, extension='gif'):
     return os.path.join(eval_dir, f'counterfactual_window-t_{trial}.{extension}')
 
+def get_eval_names(eval_dir, trial, num_choices, extension='gif'):
+    """
+    Returns [context_vid, [continuations]]
+    """
+    context_path = os.path.join(eval_dir, f'context_vid-t_{trial}_0.{extension}')
+    continuations_dir = os.path.join(eval_dir, f'vids_{trial}')
+    continuations = [os.path.join(continuations_dir, f'counterfactual_vid-t_{i}_0.{extension}') for i in range(num_choices)]
+    return [context_path, continuations]
+
 
 def get_solutions(root_dir, config):
-    solution_file = os.path.join(root_dir, 'eval', 'counterfactual_window-answer_key.txt')
+    solution_file = os.path.join(root_dir, 'eval', 'counterfactual_vid-answer_key.txt')
     solutions = []
     num_choices = None
     with open(solution_file) as csvfile:
