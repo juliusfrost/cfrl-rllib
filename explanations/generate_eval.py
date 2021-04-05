@@ -104,7 +104,9 @@ rewards = []
 
 save_index = 0
 
-while not done:
+timestep = 0
+while True:
+    print(f"Timestep {timestep}")
     img_list.append(copy.deepcopy(env.render(mode='rgb_array')))
 
     window_len = 20  # TODO: make this a flag!  Also make a config that it can take in.
@@ -140,7 +142,10 @@ while not done:
             load_state_index += 1
         else:
             obs = env.reset()
+        timestep = 0
+        print("resetting to timestep 0")
         action = None
+        img_list = []
     if 'p' in a:
         # Take the action the loaded policy would have taken.
         if policy is None:
@@ -191,6 +196,7 @@ while not done:
     if action is not None:
         print("stepping", action)
         obs, _, done, _ = env.step(action)
+        timestep += 1
     if args.env == 'Driving':
         env.render()
     else:
