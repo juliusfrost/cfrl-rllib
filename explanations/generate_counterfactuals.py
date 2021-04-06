@@ -278,7 +278,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         videos_path = args.save_path
     order = np.random.permutation(len(video_list))
     max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
-    for i in order.tolist():
+    for j, i in enumerate(order.tolist()):
         curr_vid, crashed = video_list[i]
         final_frame = curr_vid[-1]
         if crashed:
@@ -288,7 +288,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
-        save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{i}.{args.video_format}")
+        save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{j}.{args.video_format}")
         show_start = args.video_format == 'gif'
         write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
                 downscale=args.downscale, **kwargs)
