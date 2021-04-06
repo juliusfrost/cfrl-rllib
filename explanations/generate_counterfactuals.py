@@ -621,20 +621,24 @@ def generate_with_selected_states(args):
         env_obs = dataset.all_observations[state_id]
         for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
             env.load_simulator_state(selected_state)
-            env.env.game_state.game.set_time_steps_remaining(args.window_len)
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
-                rollout_env(agent, env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                handoff_func = make_handoff_func(20)
+                rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False)
             successful_trajs += 1
     cf_datasets = []
     for counterfactual_saver, counterfactual_args in test_rollout_savers:
         counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
                                                 write_data=args.save_all)
         cf_datasets.append(counterfactual_dataset)
-
+    if len(args.alt_file_names) > 0:
+        for file in args.alt_file_names:
+            with open(file, "rb") as f:
+                loaded_dataset = pkl.load(f)
+            cf_datasets.append(loaded_dataset)
     exploration_dataset = None
-    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents] + [f[:-4] for f in args.alt_file_names]
     generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
                                           cf_names, state_indices, **args.settings_config)
 
@@ -675,6 +679,8 @@ def main(parser_args=None):
                         choices=['random', 'policy'], default='random')
     parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
                         default=None)
+    parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
+                        default=[])
     args = parser.parse_args(parser_args)
 
     ray.init()
