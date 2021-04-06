@@ -126,7 +126,10 @@ DEFAULT_CONFIG = {
         # whether to save videos side by side or separately
         'side_by_side': False,
         # anything in here overwrites video config for evaluation videos
-        'video_config': {}
+        'video_config': {},
+        # Optional pkl files for hardcoded evaluation policies (expects list of paths)
+        # these are generated with explanations/generate_eval.py
+        'alt_file_names': None,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
@@ -259,6 +262,8 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
         args += ['--video-format', video_config['format']]
     args += ['--exploration-method', 'random']
     args += ['--exploration-policy', json.dumps(None)]
+    if config['eval_config']['alt_file_names'] is not None:
+        args += ['--alt-file-names', json.dumps(config['eval_config']['alt_file_names'])]
     generate_counterfactuals_main(args)
 
 

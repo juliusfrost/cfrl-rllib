@@ -172,10 +172,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                        driver,
                        show_timestep=True, show_reward=True, **kwargs):
     # Generate continuation video
-    try:
-        cf_trajectory = cf_dataset.get_trajectory(cf_id)
-    except:
-        print("ugh")
+    cf_trajectory = cf_dataset.get_trajectory(cf_id)
     cf_rewards = cf_trajectory.reward_range
     cf_imgs = format_images(cf_trajectory.image_observation_range,
                             start_timestep=start_timestep,
@@ -624,7 +621,6 @@ def generate_with_selected_states(args):
         env_obs = dataset.all_observations[state_id]
         for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
             env.load_simulator_state(selected_state)
-            # env.env.game_state.game.set_time_steps_remaining(args.window_len)   # TODO
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
