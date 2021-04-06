@@ -172,10 +172,7 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                        driver,
                        show_timestep=True, show_reward=True, **kwargs):
     # Generate continuation video
-    try:
-        cf_trajectory = cf_dataset.get_trajectory(cf_id)
-    except:
-        print("ugh")
+    cf_trajectory = cf_dataset.get_trajectory(cf_id)
     cf_rewards = cf_trajectory.reward_range
     cf_imgs = format_images(cf_trajectory.image_observation_range,
                             start_timestep=start_timestep,
@@ -274,16 +271,13 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
     is_context = kwargs.get('is_context', False)
-    final_context = kwargs.get('final_context', None)
     if not is_context:
         videos_path = os.path.join(args.save_path, f"vids_{id}")
         os.mkdir(videos_path)
     else:
         videos_path = args.save_path
     order = np.random.permutation(len(video_list))
-    # max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
-    num_end_frames = 2
-    first_frame = final_context
+    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
     for i in order.tolist():
         curr_vid, crashed = video_list[i]
         final_frame = curr_vid[-1]
@@ -293,10 +287,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
             text = done_text
         bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
-        to_concat = [curr_vid, [final_frame] * num_end_frames]
-        if not is_context:
-            to_concat = [[first_frame]] + to_concat
-        padded_video = np.concatenate(to_concat)
+        padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{i}.{args.video_format}")
         show_start = args.video_format == 'gif'
         write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
@@ -308,7 +299,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         with open(answer_key_file, 'a') as f:
             f.write(f"{id},")
             for i in order.tolist():
-                f.write(f"{i},")
+                f.write(f"{video_names[i]},")
             f.write("\n")
 
 
@@ -343,7 +334,6 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       show_driver=True,
                                       show_reward=False,
                                       **kwargs)
-        first_eval_frame = copy.deepcopy(original_imgs[split-1])
 
         #  (2) Create images of exploration
         if exploration_dataset is None:
@@ -400,7 +390,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             context_file = "context_vid"
             counterfactual_file = "counterfactual_vid"
             save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
-            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, final_context=first_eval_frame, **kwargs)
+            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -631,11 +621,13 @@ def generate_with_selected_states(args):
         env_obs = dataset.all_observations[state_id]
         for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
             env.load_simulator_state(selected_state)
-            # env.env.game_state.game.set_time_steps_remaining(args.window_len)   # TODO
+            # TODO: temporarily removed b/c we don't have a function for this and minigrid doesn't really need it.
+            #   Considerr re-adding.
+            # env.env.game_state.game.set_time_steps_remaining(args.window_len)
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
-                handoff_func = make_handoff_func(20)
+                handoff_func = make_handoff_func(args.num_eval_steps)
                 rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False)
             successful_trajs += 1
     cf_datasets = []
@@ -643,13 +635,9 @@ def generate_with_selected_states(args):
         counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
                                                 write_data=args.save_all)
         cf_datasets.append(counterfactual_dataset)
-    if len(args.alt_file_names) > 0:
-        for file in args.alt_file_names:
-            with open(file, "rb") as f:
-                loaded_dataset = pkl.load(f)
-            cf_datasets.append(loaded_dataset)
+
     exploration_dataset = None
-    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents] + [f[:-4] for f in args.alt_file_names]
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
     generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
                                           cf_names, state_indices, **args.settings_config)
 
@@ -669,6 +657,7 @@ def main(parser_args=None):
                         help='list of evaluation policies to continue rollouts. '
                              'Policies are a tuple of (name, algorithm, checkpoint)')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
+    parser.add_argument('--num_eval_steps', type=int, default=20, help='Number of timesteps to run the eval policy.')
     parser.add_argument('--fps', type=int, default=5)
     parser.add_argument('--border-width', type=int, default=30)
     parser.add_argument('--settings-config', type=json.loads, default='{}', help='text configuration')
