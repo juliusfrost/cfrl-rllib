@@ -556,7 +556,8 @@ def select_states(args):
                         agent, run_type, name = agent_stuff
                         counterfactual_saver, counterfactual_args = saver_stuff
                         with counterfactual_saver as saver:
-                            rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                            rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False,
+                                        save_start_img=True if args.save_separate else False)
                     successful_trajs += 1
                 exp_index += 1
             if not successful_trajs == args.num_states:
@@ -625,7 +626,7 @@ def generate_with_selected_states(args):
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
                 handoff_func = make_handoff_func(20)
-                rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False)
+                rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False, save_start_img=True)
             successful_trajs += 1
     cf_datasets = []
     for counterfactual_saver, counterfactual_args in test_rollout_savers:
