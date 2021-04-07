@@ -27,6 +27,7 @@ parser.add_argument('--algo', default='PPO', help='algorithm to run')  # TODO: a
 parser.add_argument('--env', default='MiniGrid', help='algorithm to run')
 parser.add_argument('--agent_pos', default='2 2', help='agent start pos')  # Train is 2 2, test is 6 2
 parser.add_argument('--goal_pos', default='2 6', help='goal pos')  # Train is 2 6, goal is 2 6
+parser.add_argument('--deterministic', action='store_true', help='make minigrid maze setup deterministic')
 parser.add_argument('--load_start_states', default=None, help='load a dataset of start states')
 args = parser.parse_args()
 
@@ -70,7 +71,8 @@ elif args.env.lower() == 'minigrid':
     assert len(agent_token) == 2, ("wrong format for agent_pos", agent_token)
     goal_token = [int(x) for x in args.goal_pos if not x == ' ']
     assert len(goal_token) == 2, ("wrong format for goal_pos", goal_token)
-    env = envs.minigrid.env_creator(agent_pos=np.array(agent_token), goal_pos=np.array(goal_token))
+    env = envs.minigrid.env_creator(agent_pos=np.array(agent_token), goal_pos=np.array(goal_token),
+                                    deterministic_rooms=args.deterministic)
 load_state_index = None
 if args.load_start_states is not None:
     load_start_state(0, env)
@@ -189,12 +191,11 @@ while True:
         with open(save_path, "wb") as f:
             pkl.dump(dataset, f)
         save_index += 1
-        print("SAVED")
+        print("SAVED", save_index)
         action = None
 
     print(action)
     if action is not None:
-        print("stepping", action)
         obs, _, done, _ = env.step(action)
         timestep += 1
     if args.env == 'Driving':

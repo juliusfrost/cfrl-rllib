@@ -625,7 +625,7 @@ def generate_with_selected_states(args):
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
-                handoff_func = make_handoff_func(20)
+                handoff_func = make_handoff_func(args.num_eval_steps)
                 rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False, save_start_img=True)
             successful_trajs += 1
     cf_datasets = []
@@ -682,6 +682,7 @@ def main(parser_args=None):
                         default=None)
     parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
                         default=[])
+    parser.add_argument('--num-eval-steps', type=int, default=20)
     args = parser.parse_args(parser_args)
 
     ray.init()
