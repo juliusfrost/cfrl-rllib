@@ -108,6 +108,10 @@ DEFAULT_CONFIG = {
         'id': None,
         # you can configure the text for the study builder
         'text': {},
+        # used by import questionnaire
+        'include_context': True,
+        # used by import questionnaire
+        'include_continuation': True,
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
