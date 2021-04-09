@@ -56,8 +56,8 @@ def add_borders(imgs, border_size=30, border_color1=(255, 255, 255), border_colo
     return prefix_imgs
 
 
-def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_timestep=True, show_agent_label=True,
-             show_reward=True, **kwargs):
+def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_timestep=False, show_agent_label=False,
+             show_reward=False, **kwargs):
     final_images = []
     agent_name = kwargs.get('overlay_agent_name', 'Driver')
     font = kwargs.get('overlay_font', cv2.FONT_HERSHEY_SIMPLEX)
@@ -85,7 +85,7 @@ def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
-                  border_color=(255, 255, 255), driver=None, show_timestep=True, show_driver=True, show_reward=True,
+                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_driver=False, show_reward=False,
                   **kwargs):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, driver,
                             show_timestep,
@@ -169,8 +169,7 @@ def load_other_policies(other_policies: List[dict]):  # TODO: include original p
 
 
 def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video,
-                       driver,
-                       show_timestep=True, show_reward=True, **kwargs):
+                       driver, **kwargs):
     # Generate continuation video
     cf_trajectory = cf_dataset.get_trajectory(cf_id)
     cf_rewards = cf_trajectory.reward_range
@@ -181,9 +180,6 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             border_color=[0, 255, 0],
                             border_size=args.border_width,
                             driver=driver,
-                            show_timestep=show_timestep,
-                            show_reward=False,
-                            show_driver=True,
                             **kwargs)
     # Get failure, if it's recorded
     last_env_info = cf_trajectory.env_info_range[-1]
@@ -331,8 +327,6 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       border_color=[255, 255, 255],
                                       border_size=args.border_width,
                                       driver='A',
-                                      show_driver=True,
-                                      show_reward=False,
                                       **kwargs)
 
         #  (2) Create images of exploration
@@ -351,8 +345,6 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                      border_color=[255, 0, 255],
                                      border_size=args.border_width,
                                      driver='B',
-                                     show_reward=False,
-                                     show_driver=True,
                                      **kwargs)
 
             #  (5) Create videos with the continuations
@@ -445,8 +437,6 @@ def generate_videos_state_method(original_dataset, args, state_indices, **kwargs
                                       border_color=[255, 255, 255],
                                       border_size=0,
                                       driver='A',
-                                      show_reward=False,
-                                      show_driver=True,
                                       **kwargs)
 
         # We've already generated the images; now we store them as a video
