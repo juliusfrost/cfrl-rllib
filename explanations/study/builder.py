@@ -75,6 +75,8 @@ class StudyBuilder:
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
+        self.build_config['include_context'] = self.study_config['include_context']
+        self.build_config['include_continuation'] = self.study_config['include_continuation']
 
         for trial in range(self.num_trials):
             explanation_dir = f'explain-{self.explanation_method}'
