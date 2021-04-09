@@ -85,7 +85,11 @@ DEFAULT_CONFIG = {
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
-        'settings_config': {}
+        'settings_config': {
+            'show_video': False,
+            'show_reward': False,
+            'show_driver': False
+        }
     },
     'form_config': {
         # REQUIRED
