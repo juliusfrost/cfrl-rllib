@@ -12,6 +12,14 @@ ENV_IDS = [
 ]
 
 
+class FullyObsWrapper(gym_minigrid.wrappers.FullyObsWrapper):
+    def render(self, *args, **kwargs):
+        return self.unwrapped.render(
+            mode='rgb_array',
+            highlight=False,
+        )
+
+
 class ModifiedFourRoomsEnv(MiniGridEnv):
     """
     Classic 4 rooms gridworld environment.
@@ -149,7 +157,7 @@ def env_creator(normalize=False, normalize_constant=10, **kwargs):
         deterministic_rooms=kwargs.get('deterministic_rooms', False),
     )
     env = MiniGridSimulatorStateWrapper(env)
-    env = gym_minigrid.wrappers.FullyObsWrapper(env)
+    env = FullyObsWrapper(env)
     env = MiniGridObservationWrapper(env)
     env = MiniGridActionWrapper(env)
     if normalize:
