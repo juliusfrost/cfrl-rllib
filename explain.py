@@ -264,6 +264,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--exploration-policy', json.dumps(None)]
     if config['eval_config']['alt_file_names'] is not None:
         args += ['--alt-file-names', json.dumps(config['eval_config']['alt_file_names'])]
+    args += ['--num-eval-steps', str(config['eval_config']['num_eval_steps'])]
     generate_counterfactuals_main(args)
 
 
