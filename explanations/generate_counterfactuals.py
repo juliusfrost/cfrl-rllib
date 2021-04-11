@@ -14,7 +14,7 @@ from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
 
 import envs
 import models
-from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
+from explanations.action_selection import RandomAgent, MinigridOracleAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
 from explanations.rollout import RolloutSaver, rollout_env
@@ -528,6 +528,8 @@ def select_states(args):
                 env.load_simulator_state(simulator_state)
                 if args.exploration_method == 'random':
                     exploration_agent = RandomAgent(env.action_space)
+                elif args.exploration_method == 'minigrid_oracle':
+                    exploration_agent = MinigridOracleAgent(env)
                 else:
                     config_dir = os.path.dirname(args.exploration_policy['checkpoint'])
                     config_path = os.path.join(config_dir, "../params.pkl")
@@ -677,7 +679,7 @@ def main(parser_args=None):
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     parser.add_argument('--video-format', type=str, help='Video file format', choices=['mp4', 'gif'], default='gif')
     parser.add_argument('--exploration-method', type=str, help='Type of policy to use for exploration',
-                        choices=['random', 'policy'], default='random')
+                        choices=['random', 'policy', 'minigrid_oracle'], default='random')
     parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
                         default=None)
     parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
