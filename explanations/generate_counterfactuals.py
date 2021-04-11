@@ -563,14 +563,14 @@ def select_states(args):
 
             cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
             generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
-                                                  cf_names, state_indices, **args.settings_config)
+                                                  cf_names, state_indices, **args.settings_config, **args.show_text)
     else:
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
                 os.makedirs(args.save_path)
         state_selection_fn = state_selection_dict[args.explanation_method]
         state_indices = state_selection_fn(dataset, args.num_states, policy)
-        generate_videos_state_method(dataset, args, state_indices, **args.settings_config)
+        generate_videos_state_method(dataset, args, state_indices, **args.settings_config, **args.show_text)
 
 
 def generate_with_selected_states(args):
@@ -673,6 +673,7 @@ def main(parser_args=None):
     parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
                         default=[])
     parser.add_argument('--num-eval-steps', type=int, default=20)
+    parser.add_argument('--show-text', type=json.loads, default='{}')
     args = parser.parse_args(parser_args)
 
     ray.init()
