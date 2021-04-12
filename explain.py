@@ -237,6 +237,8 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
     args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
     args += ['--show-text', json.dumps(config['video_config']['show_text'])]
+    if config['counterfactual_config']['show_exploration']:
+        args += ['--show-exploration']
     generate_counterfactuals_main(args)
 
 
