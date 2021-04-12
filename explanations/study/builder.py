@@ -2,6 +2,7 @@ import json
 import os
 
 import yaml
+from ray.tune.utils import merge_dicts
 
 from explanations.study.files import get_eval_names, get_explain_name, get_solutions, get_eval_name
 from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
@@ -75,6 +76,7 @@ class StudyBuilder:
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
+        self.build_config = merge_dicts(self.build_config, self.study_config['build_config'])
 
         for trial in range(self.num_trials):
             explanation_dir = f'explain-{self.explanation_method}'

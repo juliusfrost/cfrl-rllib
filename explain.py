@@ -87,7 +87,11 @@ DEFAULT_CONFIG = {
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
-        'settings_config': {}
+        'settings_config': {
+            'show_timestep': False,
+            'show_reward': False,
+            'show_driver': False
+        }
     },
     'form_config': {
         # REQUIRED
@@ -110,6 +114,15 @@ DEFAULT_CONFIG = {
         'id': None,
         # you can configure the text for the study builder
         'text': {},
+        # passed into config yaml that's generated and used to import questionnaires
+        'build_config': {
+            # used by import questionnaire
+            'include_context': True,
+            # used by import questionnaire
+            'include_continuation': True,
+            # puts all the explanations at the beginning
+            'batched_explanations': False,
+        }
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
