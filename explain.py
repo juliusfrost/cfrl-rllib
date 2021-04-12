@@ -83,7 +83,7 @@ DEFAULT_CONFIG = {
         # mp4 or gif
         'format': 'mp4',
         # Overlay text on videos showing driver, timestep, and/or reward info
-        'show_text' : {'show_driver':True, 'show_timestep':False, 'show_reward':False},
+        'show_text' : {'show_agent':True, 'show_timestep':False, 'show_reward':False},
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
@@ -129,7 +129,7 @@ DEFAULT_CONFIG = {
         'side_by_side': False,
         # anything in here overwrites video config for evaluation videos
         'video_config': {
-            'show_text' : {'show_driver':False, 'show_timestep':False, 'show_reward':False}
+            'show_text' : {'show_agent':False, 'show_timestep':False, 'show_reward':False}
         },
         # Optional pkl files for hardcoded evaluation policies (expects list of paths)
         # these are generated with explanations/generate_eval.py

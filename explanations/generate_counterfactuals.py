@@ -85,11 +85,11 @@ def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
-                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_driver=False, show_reward=False,
+                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_agent=False, show_reward=False,
                   **kwargs):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, driver,
                             show_timestep,
-                            show_driver, show_reward, **kwargs)
+                            show_agent, show_reward, **kwargs)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
 
