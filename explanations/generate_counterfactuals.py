@@ -85,11 +85,11 @@ def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
-                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_driver=False, show_reward=False,
+                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_agent=False, show_reward=False,
                   **kwargs):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, driver,
                             show_timestep,
-                            show_driver, show_reward, **kwargs)
+                            show_agent, show_reward, **kwargs)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
 
@@ -563,14 +563,14 @@ def select_states(args):
 
             cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
             generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
-                                                  cf_names, state_indices, **args.settings_config)
+                                                  cf_names, state_indices, **args.settings_config, **args.show_text)
     else:
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
                 os.makedirs(args.save_path)
         state_selection_fn = state_selection_dict[args.explanation_method]
         state_indices = state_selection_fn(dataset, args.num_states, policy)
-        generate_videos_state_method(dataset, args, state_indices, **args.settings_config)
+        generate_videos_state_method(dataset, args, state_indices, **args.settings_config, **args.show_text)
 
 
 def generate_with_selected_states(args):
@@ -673,6 +673,7 @@ def main(parser_args=None):
     parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
                         default=[])
     parser.add_argument('--num-eval-steps', type=int, default=20)
+    parser.add_argument('--show-text', type=json.loads, default='{}')
     args = parser.parse_args(parser_args)
 
     ray.init()

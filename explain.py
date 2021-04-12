@@ -77,11 +77,13 @@ DEFAULT_CONFIG = {
         # frames per second
         'fps': 3,
         # width of the colored boarder around the videos
-        'border_width': 30,
+        'border_width': 0,
         # downscaling of videos, primarily used to save space
         'downscale': 2,
         # mp4 or gif
         'format': 'mp4',
+        # Overlay text on videos showing driver, timestep, and/or reward info
+        'show_text' : {'show_agent':True, 'show_timestep':False, 'show_reward':False},
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
@@ -139,7 +141,9 @@ DEFAULT_CONFIG = {
         # whether to save videos side by side or separately
         'side_by_side': False,
         # anything in here overwrites video config for evaluation videos
-        'video_config': {},
+        'video_config': {
+            'show_text' : {'show_agent':False, 'show_timestep':False, 'show_reward':False}
+        },
         # Optional pkl files for hardcoded evaluation policies (expects list of paths)
         # these are generated with explanations/generate_eval.py
         'alt_file_names': None,
@@ -232,6 +236,7 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         args += ['--video-format', config['video_config']['format']]
     args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
     args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
+    args += ['--show-text', json.dumps(config['video_config']['show_text'])]
     generate_counterfactuals_main(args)
 
 
@@ -278,6 +283,7 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     if config['eval_config']['alt_file_names'] is not None:
         args += ['--alt-file-names', json.dumps(config['eval_config']['alt_file_names'])]
     args += ['--num-eval-steps', str(config['eval_config']['num_eval_steps'])]
+    args += ['--show-text', json.dumps(video_config['show_text'])]
     generate_counterfactuals_main(args)
 
 
