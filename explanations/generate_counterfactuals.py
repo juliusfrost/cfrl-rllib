@@ -107,7 +107,10 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         blank_frames = np.zeros((fps, h, w, 3))
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
     if show_stop:
-        final_frame = frames[-1]
+        try:
+            final_frame = frames[-1]
+        except:
+            print("uh oh")
         if crashed:
             text = crashed_text
         else:
@@ -193,10 +196,11 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (3) Shorter version of (2) centered around the selected state.
     # f'{video_type}-{cf_name}-t_{save_id}.{args.video_format}'
     vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.{args.video_format}'
-    if len(prefix_video) > 0:
+    if len(prefix_video) > 0 and args.show_exploration:
         cf_video = np.concatenate((prefix_video, cf_imgs))
     else:
         cf_video = cf_imgs
+        split = 0
     cf_window_video, cropped_end = window_slice(cf_video, split, args.window_len)
     window_crashed = crashed and not cropped_end
     show_start = args.video_format == 'gif'
@@ -318,7 +322,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         pre_timestep = original_dataset.get_timestep(state_index)
 
         original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
+        # if args.show_exploration:
         split = state_index - original_trajectory.timestep_range_start + 1
+        # else:
+        #     split = state_index + 1
         original_rewards = original_trajectory.reward_range
         original_imgs = format_images(original_trajectory.image_observation_range,
                                       start_timestep=0,
@@ -674,6 +681,7 @@ def main(parser_args=None):
                         default=[])
     parser.add_argument('--num-eval-steps', type=int, default=20)
     parser.add_argument('--show-text', type=json.loads, default='{}')
+    parser.add_argument('--show-exploration', action='store_true')
     args = parser.parse_args(parser_args)
 
     ray.init()
