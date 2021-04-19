@@ -6,15 +6,19 @@ from experiment_utils.launch_experiment import launch_experiment
 from experiment_configs.configs.dads.dads_config import get_config
 from experiment_configs.algorithms.batch import get_algorithm
 
-env_name = 'minigrid'
+env_name = 'gridworld'
 if env_name == 'driving':
     ENV_NAME = 'DrivingPLE-v0'
     ACTION_SPACE = 'continuous'
     EXP_NAME = 'dads-driving'
-else:
+elif env_name == 'minigrid':
     ENV_NAME = 'MiniGrid'
     ACTION_SPACE = 'discrete'
     EXP_NAME = 'dads-minigrid'
+elif env_name == 'gridworld':
+    ENV_NAME = 'Gridworld'
+    ACTION_SPACE = 'continuous'
+    EXP_NAME = 'dads-gridwold'
 
 experiment_kwargs = dict(
     exp_name=EXP_NAME,
@@ -61,7 +65,7 @@ if __name__ == "__main__":
             soft_target_tau=5e-3,
         ),
         algorithm_kwargs=dict(
-            num_epochs=100,
+            num_epochs=1000,
             num_eval_steps_per_epoch=5000,
             num_trains_per_train_loop=1,
             num_expl_steps_per_train_loop=2000,
