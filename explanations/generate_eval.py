@@ -195,11 +195,14 @@ while True:
         action = None
 
     print(action)
-    if action is not None:
-        obs, _, done, _ = env.step(action)
-        timestep += 1
-    if args.env == 'Driving':
-        env.render()
-    else:
-        plt.imshow(env.render('rgb_array'))
-        plt.show()
+    try:
+        if action is not None:
+            obs, _, done, _ = env.step(action)
+            timestep += 1
+        if args.env == 'Driving':
+            env.render()
+        else:
+            plt.imshow(env.render('rgb_array'))
+            plt.show()
+    except:
+        print(f"Bad action, P")

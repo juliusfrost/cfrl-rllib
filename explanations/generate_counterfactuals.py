@@ -115,7 +115,7 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [final_frame] * fps * 2]).astype(np.uint8)
     if show_start:
@@ -244,7 +244,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         padded_videos.append(padded_video.astype(np.uint8))
@@ -285,7 +285,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{j}.{args.video_format}")
@@ -478,6 +478,7 @@ def select_states(args):
         "random": random_state,
         "low_reward": low_reward_state,
     }
+    args_dict = {**args.settings_config, **args.show_text}
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
     alternative_agents.append((agent, args.run, args.policy_name))
@@ -572,14 +573,14 @@ def select_states(args):
 
             cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
             generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
-                                                  cf_names, state_indices, **args.settings_config, **args.show_text)
+                                                  cf_names, state_indices, **args_dict)
     else:
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
                 os.makedirs(args.save_path)
         state_selection_fn = state_selection_dict[args.explanation_method]
         state_indices = state_selection_fn(dataset, args.num_states, policy)
-        generate_videos_state_method(dataset, args, state_indices, **args.settings_config, **args.show_text)
+        generate_videos_state_method(dataset, args, state_indices, **args_dict)
 
 
 def generate_with_selected_states(args):
