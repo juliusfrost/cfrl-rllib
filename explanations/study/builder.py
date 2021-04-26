@@ -2,8 +2,9 @@ import json
 import os
 
 import yaml
+from ray.tune.utils import merge_dicts
 
-from explanations.study.files import get_eval_name, get_explain_name, get_solutions
+from explanations.study.files import get_eval_names, get_explain_name, get_solutions, get_eval_name
 from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
     get_title_text, get_explain_heading_text, get_eval_heading_text, get_question_text
 
@@ -75,6 +76,7 @@ class StudyBuilder:
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
+        self.build_config = merge_dicts(self.build_config, self.study_config['build_config'])
 
         for trial in range(self.num_trials):
             explanation_dir = f'explain-{self.explanation_method}'
@@ -82,30 +84,34 @@ class StudyBuilder:
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
             explain_video_path = name_formula(explanation_dir, trial)
-            eval_video_path = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
+            if self.config['eval_config']['side_by_side']:
+                eval_video_paths = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
+            else:
+                eval_video_paths = get_eval_names(eval_dir, trial, self.build_config['num_choices'],
+                                                  extension=self.config['video_config']['format'])
             self.add_explanations(explain_video_path, self.root_dir, explain_heading_text, explanation_study_text)
-            self.add_evaluations(eval_video_path, self.root_dir, eval_heading_text, eval_study_text, question_text)
+            self.add_evaluations(eval_video_paths, self.root_dir, eval_heading_text, eval_study_text, question_text)
 
             # save to build config
             self.build_config['trial_heading_texts'].append(trial_heading_text)
             self.build_config['explain_video_paths'].append(explain_video_path)
-            self.build_config['eval_video_paths'].append(eval_video_path)
+            self.build_config['eval_video_paths'].append(eval_video_paths)
 
         self.build_outro()
         self.save_build_config()
         self.save()
 
     def build_intro(self, title: str, intro_text: list):
-        raise NotImplementedError
+        pass
 
     def build_outro(self):
         pass
 
     def add_explanations(self, video_path, root_dir, heading_text, body_text):
-        raise NotImplementedError
+        pass
 
     def add_evaluations(self, video_path, root_dir, heading_text, body_text, question_text):
-        raise NotImplementedError
+        pass
 
     def save_build_config(self):
         build_config_file = os.path.join(self.save_dir, self.name + '_config.json')
@@ -113,7 +119,7 @@ class StudyBuilder:
             json.dump(self.build_config, f)
 
     def save(self):
-        raise NotImplementedError
+        pass
 
     def trial_heading(self, trial_heading_text):
-        raise NotImplementedError
+        pass

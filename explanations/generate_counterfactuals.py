@@ -14,7 +14,7 @@ from ray.tune.registry import _global_registry, ENV_CREATOR, get_trainable_cls
 
 import envs
 import models
-from explanations.action_selection import RandomAgent, make_handoff_func, until_end_handoff
+from explanations.action_selection import RandomAgent, MinigridOracleAgent, make_handoff_func, until_end_handoff
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
 from explanations.rollout import RolloutSaver, rollout_env
@@ -56,8 +56,8 @@ def add_borders(imgs, border_size=30, border_color1=(255, 255, 255), border_colo
     return prefix_imgs
 
 
-def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_timestep=True, show_agent_label=True,
-             show_reward=True, **kwargs):
+def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_timestep=False, show_agent_label=False,
+             show_reward=False, **kwargs):
     final_images = []
     agent_name = kwargs.get('overlay_agent_name', 'Driver')
     font = kwargs.get('overlay_font', cv2.FONT_HERSHEY_SIMPLEX)
@@ -85,11 +85,11 @@ def add_text(images, traj_start, initial_reward, traj_rewards, agent=None, show_
 
 
 def format_images(frames, start_timestep=0, trajectory_reward=None, initial_reward=0, border_size=30,
-                  border_color=(255, 255, 255), driver=None, show_timestep=True, show_driver=True, show_reward=True,
+                  border_color=(255, 255, 255), driver=None, show_timestep=False, show_agent=False, show_reward=False,
                   **kwargs):
     final_images = add_text(copy.deepcopy(frames), start_timestep, initial_reward, trajectory_reward, driver,
                             show_timestep,
-                            show_driver, show_reward, **kwargs)
+                            show_agent, show_reward, **kwargs)
     final_images = add_border(final_images, border_size, border_color)
     return final_images
 
@@ -107,12 +107,15 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
         blank_frames = np.zeros((fps, h, w, 3))
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
     if show_stop:
-        final_frame = frames[-1]
+        try:
+            final_frame = frames[-1]
+        except:
+            print("uh oh")
         if crashed:
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         frames = np.concatenate([frames, [final_frame] * fps * 2]).astype(np.uint8)
     if show_start:
@@ -169,8 +172,7 @@ def load_other_policies(other_policies: List[dict]):  # TODO: include original p
 
 
 def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args, cf_id, save_id, split, prefix_video,
-                       driver,
-                       show_timestep=True, show_reward=True, **kwargs):
+                       driver, **kwargs):
     # Generate continuation video
     cf_trajectory = cf_dataset.get_trajectory(cf_id)
     cf_rewards = cf_trajectory.reward_range
@@ -181,9 +183,6 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
                             border_color=[0, 255, 0],
                             border_size=args.border_width,
                             driver=driver,
-                            show_timestep=show_timestep,
-                            show_reward=False,
-                            show_driver=True,
                             **kwargs)
     # Get failure, if it's recorded
     last_env_info = cf_trajectory.env_info_range[-1]
@@ -197,10 +196,11 @@ def generate_videos_cf(cf_dataset, cf_name, reward_so_far, start_timestep, args,
     #   (3) Shorter version of (2) centered around the selected state.
     # f'{video_type}-{cf_name}-t_{save_id}.{args.video_format}'
     vidpath = lambda vid_type, cf_name, save_id: f'{vid_type}-{cf_name}-t_{save_id}.{args.video_format}'
-    if len(prefix_video) > 0:
+    if len(prefix_video) > 0 and args.show_exploration:
         cf_video = np.concatenate((prefix_video, cf_imgs))
     else:
         cf_video = cf_imgs
+        split = 0
     cf_window_video, cropped_end = window_slice(cf_video, split, args.window_len)
     window_crashed = crashed and not cropped_end
     show_start = args.video_format == 'gif'
@@ -244,7 +244,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
         final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
         padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
         padded_videos.append(padded_video.astype(np.uint8))
@@ -261,6 +261,46 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
         for i in order.tolist():
             f.write(f"{video_names[i]},")
         f.write("\n")
+
+def save_separate_videos(video_list, video_names, base_video_name, id, args, **kwargs):
+    h, w, c = video_list[0][0][0].shape
+    font_scale = kwargs.get('end_font_scale', 4)
+    color = tuple(kwargs.get('end_color', (255, 255, 255)))
+    thickness = kwargs.get('end_thickness', 8)
+    font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
+    crashed_text = kwargs.get('crashed_text', 'CRASHED')
+    done_text = kwargs.get('done_text', 'DONE')
+    is_context = kwargs.get('is_context', False)
+    if not is_context:
+        videos_path = os.path.join(args.save_path, f"vids_{id}")
+        os.mkdir(videos_path)
+    else:
+        videos_path = args.save_path
+    order = np.random.permutation(len(video_list))
+    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
+    for j, i in enumerate(order.tolist()):
+        curr_vid, crashed = video_list[i]
+        final_frame = curr_vid[-1]
+        if crashed:
+            text = crashed_text
+        else:
+            text = done_text
+        bottom_left = (int(w / 2) - 30 * len(text), int(h / 2))
+        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
+        padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
+        save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{j}.{args.video_format}")
+        show_start = args.video_format == 'gif'
+        write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
+                downscale=args.downscale, **kwargs)
+
+    if not is_context:
+        answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
+
+        with open(answer_key_file, 'a') as f:
+            f.write(f"{id},")
+            for i in order.tolist():
+                f.write(f"{video_names[i]},")
+            f.write("\n")
 
 
 def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
@@ -282,7 +322,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         pre_timestep = original_dataset.get_timestep(state_index)
 
         original_trajectory = original_dataset.get_trajectory(pre_timestep.trajectory_id)
+        # if args.show_exploration:
         split = state_index - original_trajectory.timestep_range_start + 1
+        # else:
+        #     split = state_index + 1
         original_rewards = original_trajectory.reward_range
         original_imgs = format_images(original_trajectory.image_observation_range,
                                       start_timestep=0,
@@ -291,8 +334,6 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                       border_color=[255, 255, 255],
                                       border_size=args.border_width,
                                       driver='A',
-                                      show_driver=True,
-                                      show_reward=False,
                                       **kwargs)
 
         #  (2) Create images of exploration
@@ -311,8 +352,6 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                                      border_color=[255, 0, 255],
                                      border_size=args.border_width,
                                      driver='B',
-                                     show_reward=False,
-                                     show_driver=True,
                                      **kwargs)
 
             #  (5) Create videos with the continuations
@@ -327,7 +366,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         continuation_list = []
         cf_list = []
         window_list = []
-        if args.side_by_side:
+        if args.side_by_side or args.save_separate:
             cf_driver = '?'
         else:
             cf_driver = 'A'
@@ -346,6 +385,11 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
                 save_joint_video(cf_list, cf_names, cf_file, i, args, **kwargs)
             cf_window_file = 'counterfactual_window'
             save_joint_video(window_list, cf_names, cf_window_file, cf_id, args, **kwargs)
+        elif args.save_separate:
+            context_file = "context_vid"
+            counterfactual_file = "counterfactual_vid"
+            save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
+            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -400,8 +444,6 @@ def generate_videos_state_method(original_dataset, args, state_indices, **kwargs
                                       border_color=[255, 255, 255],
                                       border_size=0,
                                       driver='A',
-                                      show_reward=False,
-                                      show_driver=True,
                                       **kwargs)
 
         # We've already generated the images; now we store them as a video
@@ -436,6 +478,7 @@ def select_states(args):
         "random": random_state,
         "low_reward": low_reward_state,
     }
+    args_dict = {**args.settings_config, **args.show_text}
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
     alternative_agents.append((agent, args.run, args.policy_name))
@@ -483,6 +526,8 @@ def select_states(args):
                 env.load_simulator_state(simulator_state)
                 if args.exploration_method == 'random':
                     exploration_agent = RandomAgent(env.action_space)
+                elif args.exploration_method == 'minigrid_oracle':
+                    exploration_agent = MinigridOracleAgent(env)
                 else:
                     config_dir = os.path.dirname(args.exploration_policy['checkpoint'])
                     config_path = os.path.join(config_dir, "../params.pkl")
@@ -511,7 +556,8 @@ def select_states(args):
                         agent, run_type, name = agent_stuff
                         counterfactual_saver, counterfactual_args = saver_stuff
                         with counterfactual_saver as saver:
-                            rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                            rollout_env(agent, exp_env, until_end_handoff, env_obs, saver=saver, no_render=False,
+                                        save_start_img=True if args.save_separate else False)
                     successful_trajs += 1
                 exp_index += 1
             if not successful_trajs == args.num_states:
@@ -527,14 +573,14 @@ def select_states(args):
 
             cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
             generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
-                                                  cf_names, state_indices, **args.settings_config)
+                                                  cf_names, state_indices, **args_dict)
     else:
         if args.save_path is not None:
             if not os.path.exists(args.save_path):
                 os.makedirs(args.save_path)
         state_selection_fn = state_selection_dict[args.explanation_method]
         state_indices = state_selection_fn(dataset, args.num_states, policy)
-        generate_videos_state_method(dataset, args, state_indices, **args.settings_config)
+        generate_videos_state_method(dataset, args, state_indices, **args_dict)
 
 
 def generate_with_selected_states(args):
@@ -576,20 +622,24 @@ def generate_with_selected_states(args):
         env_obs = dataset.all_observations[state_id]
         for agent_stuff, saver_stuff in zip(alternative_agents, test_rollout_savers):
             env.load_simulator_state(selected_state)
-            env.env.game_state.game.set_time_steps_remaining(args.window_len)
             agent, run_type, name = agent_stuff
             counterfactual_saver, counterfactual_args = saver_stuff
             with counterfactual_saver as saver:
-                rollout_env(agent, env, until_end_handoff, env_obs, saver=saver, no_render=False)
+                handoff_func = make_handoff_func(args.num_eval_steps)
+                rollout_env(agent, env, handoff_func, env_obs, saver=saver, no_render=False, save_start_img=True)
             successful_trajs += 1
     cf_datasets = []
     for counterfactual_saver, counterfactual_args in test_rollout_savers:
         counterfactual_dataset = create_dataset(counterfactual_args, counterfactual_policy_config,
                                                 write_data=args.save_all)
         cf_datasets.append(counterfactual_dataset)
-
+    if len(args.alt_file_names) > 0:
+        for file in args.alt_file_names:
+            with open(file, "rb") as f:
+                loaded_dataset = pkl.load(f)
+            cf_datasets.append(loaded_dataset)
     exploration_dataset = None
-    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents]
+    cf_names = [agent_stuff[2] for agent_stuff in alternative_agents] + [f[:-4] for f in args.alt_file_names]
     generate_videos_counterfactual_method(dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
                                           cf_names, state_indices, **args.settings_config)
 
@@ -620,15 +670,21 @@ def main(parser_args=None):
     parser.add_argument('--run', type=str, default="PPO")
     parser.add_argument('--behavioral-policy', type=str, default=None)
     parser.add_argument('--side-by-side', default=False, action='store_true')
+    parser.add_argument('--save-separate', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',
                         help='Save all possible combinations of videos. '
                              'Note that this will take up a lot of space!')
     parser.add_argument('--num-buffer-states', type=int, default=10, help='Number of buffer states to select.')
     parser.add_argument('--video-format', type=str, help='Video file format', choices=['mp4', 'gif'], default='gif')
     parser.add_argument('--exploration-method', type=str, help='Type of policy to use for exploration',
-                        choices=['random', 'policy'], default='random')
+                        choices=['random', 'policy', 'minigrid_oracle'], default='random')
     parser.add_argument('--exploration-policy', type=json.loads, help='Checkpoint and run point for exploration policy',
                         default=None)
+    parser.add_argument('--alt-file-names', type=json.loads, help='Optional filename for alt policies',
+                        default=[])
+    parser.add_argument('--num-eval-steps', type=int, default=20)
+    parser.add_argument('--show-text', type=json.loads, default='{}')
+    parser.add_argument('--show-exploration', action='store_true')
     args = parser.parse_args(parser_args)
 
     ray.init()

@@ -4,6 +4,7 @@ import os
 import os.path
 
 from explanations.study import EXPLANATION_IDS
+from explanations.study.builder import StudyBuilder
 from explanations.study.document_builder import DocumentStudyBuilder
 from explanations.study.html_builder import HTMLStudyBuilder
 
@@ -14,7 +15,7 @@ def parse_args(parser_args=None):
     parser.add_argument('--save-dir', help='directory to save output docs')
     parser.add_argument('--config', type=json.loads, default="{}", help='experiment configuration')
     parser.add_argument('--doc-id', type=str, default='000', help='id to be used as the document title')
-    parser.add_argument('--builder', choices=['doc', 'html'])
+    parser.add_argument('--builder', choices=['doc', 'html', 'study'])
     args = parser.parse_args(parser_args)
     # if not os.path.exists(args.video_dir):
     #     raise FileNotFoundError(f'Video directory does not exist: {args.video_dir}')
@@ -38,6 +39,8 @@ def main(parser_args=None):
                 builder_cls = DocumentStudyBuilder
             elif args.builder == 'html':
                 builder_cls = HTMLStudyBuilder
+            elif args.builder == 'study':
+                builder_cls = StudyBuilder
             else:
                 raise NotImplementedError
             builder = builder_cls(args.save_dir, args.video_dir, explanation_method, num_trials, args.config,

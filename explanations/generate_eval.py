@@ -11,6 +11,7 @@ from ray.tune.registry import get_trainable_cls
 import torch
 import envs
 from explanations.data import Data, PolicyInfo
+import matplotlib.pyplot as plt
 
 sys.path.append('.')
 ray.init()
@@ -22,8 +23,26 @@ parser.add_argument('--load_name', default='', help='Which env to load within lo
 parser.add_argument('--save_path', default='.', help='if we save the trajectory, store it here.')
 parser.add_argument('--switch_prob', type=int, default=.005, help='car switch probability')  # TODO: add full config
 parser.add_argument('--prob_car', type=int, default=.2, help='car appearance probability')  # TODO: add full config
-parser.add_argument('--algo', default='PPO', help='algorithm to run')
+parser.add_argument('--algo', default='PPO', help='algorithm to run')  # TODO: add full config
+parser.add_argument('--env', default='MiniGrid', help='algorithm to run')
+parser.add_argument('--agent_pos', default='2 2', help='agent start pos')  # Train is 2 2, test is 6 2
+parser.add_argument('--goal_pos', default='2 6', help='goal pos')  # Train is 2 6, goal is 2 6
+parser.add_argument('--deterministic', action='store_true', help='make minigrid maze setup deterministic')
+parser.add_argument('--load_start_states', default=None, help='load a dataset of start states')
 args = parser.parse_args()
+
+
+def load_start_state(index, env):
+    with open(args.load_start_states, 'rb') as f:
+        dataset = pkl.load(f)
+    traj_ids = dataset.all_trajectory_ids
+    if index >= len(traj_ids):
+        print("ALL DONE WITH START STATES!")
+        exit(0)
+    traj_id = traj_ids[index]
+    traj = dataset.get_trajectory(traj_id)
+    simulator_state = traj.simulator_state_range[-1]
+    env.load_simulator_state(simulator_state)
 
 # Load Policy
 if args.policy is not None:
@@ -45,8 +64,20 @@ else:
 img_list = []
 save_index = 0
 done = False
-env = envs.driving.driving_creator(switch_prob=args.switch_prob, prob_car=args.prob_car, time_limit=float('inf'))
-if args.load_path is not None:
+if args.env == 'Driving':
+    env = envs.driving.driving_creator(switch_prob=args.switch_prob, prob_car=args.prob_car, time_limit=float('inf'))
+elif args.env.lower() == 'minigrid':
+    agent_token = [int(x) for x in args.agent_pos if not x == ' ']
+    assert len(agent_token) == 2, ("wrong format for agent_pos", agent_token)
+    goal_token = [int(x) for x in args.goal_pos if not x == ' ']
+    assert len(goal_token) == 2, ("wrong format for goal_pos", goal_token)
+    env = envs.minigrid.env_creator(agent_pos=np.array(agent_token), goal_pos=np.array(goal_token),
+                                    deterministic_rooms=args.deterministic)
+load_state_index = None
+if args.load_start_states is not None:
+    load_start_state(0, env)
+    load_state_index = 1
+elif args.load_path is not None:
     load_name = args.load_name
     with open(pathlib.Path(args.load_path).joinpath(f'env_state_{load_name}.pkl'), 'rb') as f:
         env_state = pkl.load(f)
@@ -54,8 +85,16 @@ if args.load_path is not None:
     with open(pathlib.Path(args.load_path).joinpath(f'obs_{load_name}.pkl'), 'rb') as f:
         obs = pkl.load(f)
 else:
-    obs = env.reset()
-env.render()
+    if args.load_start_states is not None:
+        load_start_state(load_state_index, env)
+        load_state_index += 1
+    else:
+        obs = env.reset()
+if args.env == 'Driving':
+    env.render()
+else:
+    plt.imshow(env.render('rgb_array'))
+    plt.show()
 
 all_time_steps = []
 trajectories = []
@@ -67,27 +106,48 @@ rewards = []
 
 save_index = 0
 
-while not done:
+timestep = 0
+while True:
+    print(f"Timestep {timestep}")
     img_list.append(copy.deepcopy(env.render(mode='rgb_array')))
 
     window_len = 20  # TODO: make this a flag!  Also make a config that it can take in.
     if len(img_list) > window_len:
         img_list = img_list[-window_len:]
-    action = [0,0]
+    action = [0, 0]
     a = input()
     # action[0] = +left -right, action[1] = +forward, -backward
-    if 'a' in a:
-        action[0] += 1
-    if 'd' in a:
-        action[0] -= 1
-    if 'w' in a:
-        action[1] += 1
-    if 's' in a:
-        action[1] -= 1
+    # if a ==
+    if args.env == 'Driving':
+        if 'a' in a:
+            action[0] += 1
+        if 'd' in a:
+            action[0] -= 1
+        if 'w' in a:
+            action[1] += 1
+        if 's' in a:
+            action[1] -= 1
+    elif args.env.lower() == 'minigrid':  # wasd navigation
+        if 'a' in a:
+            action = 0
+        elif 'd' in a:
+            action = 1
+        elif 'w' in a:
+            action = 2
     if 'v' in a:
         saved_state = env.get_simulator_state()
-    if 'r' in a:
+    if 'l' in a:
         env.load_simulator_state(saved_state)
+    if 'r' in a:
+        if args.load_start_states is not None:
+            load_start_state(load_state_index, env)
+            load_state_index += 1
+        else:
+            obs = env.reset()
+        timestep = 0
+        print("resetting to timestep 0")
+        action = None
+        img_list = []
     if 'p' in a:
         # Take the action the loaded policy would have taken.
         if policy is None:
@@ -131,8 +191,18 @@ while not done:
         with open(save_path, "wb") as f:
             pkl.dump(dataset, f)
         save_index += 1
+        print("SAVED", save_index)
+        action = None
 
     print(action)
-    if action is not None:
-        obs, _, done, _ = env.step(action)
-    env.render()
+    try:
+        if action is not None:
+            obs, _, done, _ = env.step(action)
+            timestep += 1
+        if args.env == 'Driving':
+            env.render()
+        else:
+            plt.imshow(env.render('rgb_array'))
+            plt.show()
+    except:
+        print(f"Bad action, P")

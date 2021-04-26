@@ -67,12 +67,12 @@ def run(args, parser):
     # Determine the video output directory.
     # Deprecated way: Use (--out|~/ray_results) + "/monitor" as dir.
     video_dir = None
-    if args.monitor:
-        video_dir = os.path.join(
-            os.path.dirname(args.out or "")
-            or os.path.expanduser("~/ray_results/"), "monitor")
+    # if args.monitor:
+    #     video_dir = os.path.join(
+    #         os.path.dirname(args.out or "")
+    #         or os.path.expanduser("~/ray_results/"), "monitor")
     # New way: Allow user to specify a video output path.
-    elif args.video_dir:
+    if args.video_dir:
         video_dir = os.path.expanduser(args.video_dir)
 
     # Do the actual rollout.
@@ -327,7 +327,8 @@ def rollout_env(agent,
                 obs,
                 saver=None,
                 no_render=True,
-                video_dir=None):
+                video_dir=None,
+                save_start_img=False):
     policy_agent_mapping = default_policy_agent_mapping
 
     if saver is None:
@@ -362,6 +363,14 @@ def rollout_env(agent,
     done = handoff_func(obs, None)
     env_done = False
     reward_total = 0.0
+
+    if save_start_img:
+        if not no_render:
+            img = env.render(mode="rgb_array")
+        else:
+            img = None
+        saver.append_step(obs * 0, -1, img, -1, False, {}, env.get_simulator_state())
+
     while not done:
         action_dict = {}
         a_obs = obs
