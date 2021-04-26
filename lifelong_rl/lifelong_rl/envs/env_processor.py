@@ -53,7 +53,7 @@ def make_env(env_name, terminates=True, **kwargs):
         env_infos['mujoco'] = False
     elif env_name == 'MiniGrid':
         from envs.minigrid import env_creator
-        env = env_creator(flat_obs=True)
+        env = env_creator(flat_obs=True, deterministic_rooms=True)
         env_infos['mujoco'] = False
     
     if env is None and base_env is None:
