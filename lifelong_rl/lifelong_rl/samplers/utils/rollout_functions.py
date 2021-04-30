@@ -155,7 +155,7 @@ def rollout(
         env_infos=env_infos,
     )
     if save_render:
-        traj_dict['images'] = images
+        traj_dict['images'] = np.stack(images)
     return traj_dict
 
 
