@@ -16,6 +16,8 @@ def create_parser():
                         help='number of different env configurations to test')
     parser.add_argument('--num_skills', type=int, default=5,
                         help='number of different skills to test in each env configuration')
+    parser.add_argument('--num_samples', type=int, default=5,
+                        help='number of different trials with each skill')
     parser.add_argument('--save_path', type=str, default='.',
                         help='where to save generated videos')
     parser.add_argument('--agent_path', type=str, required=True,
@@ -43,22 +45,23 @@ def load_agent(path):
         snapshot = torch.load(f, map_location='cpu')
     return snapshot['exploration/policy']
 
-def collect(num_resets, num_skills, save_path):
+def collect(num_resets, num_skills, num_samples, save_path):
     # Collect
     for env_i in range(num_resets):
         print(f"Collecting {env_i + 1} of {num_resets}")
         # TODO: wrap env in a wrapper so it resets the same way each time. Either that or just choose a version of minigrid where it resets each time anyway.
         for trial_j in range(num_skills):
             agent.sample_latent()
-            traj_dict = rollout(
-                env,
-                agent,
-                max_path_length=15,
-                render=True,
-                render_kwargs={'mode': 'rgb_array'},
-                save_render=True,
-            )
-            make_video(traj_dict, save_path.joinpath(f'env_{env_i}_trial_{trial_j}.gif'))
+            for sample_k in range(num_samples):
+                traj_dict = rollout(
+                    env,
+                    agent,
+                    max_path_length=15,
+                    render=True,
+                    render_kwargs={'mode': 'rgb_array'},
+                    save_render=True,
+                )
+                make_video(traj_dict, save_path.joinpath(f'env_{env_i}_trial_{trial_j}_sample{sample_k}.gif'))
 
 if __name__ == "__main__":
     parser = create_parser()
@@ -70,4 +73,4 @@ if __name__ == "__main__":
     agent = load_agent(args.agent_path)
     env, _ = make_env(args.env)
 
-    collect(args.num_resets, args.num_skills, save_path)
+    collect(args.num_resets, args.num_skills, args.num_samples, save_path)
