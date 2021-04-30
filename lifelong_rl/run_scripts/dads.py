@@ -6,7 +6,7 @@ from experiment_utils.launch_experiment import launch_experiment
 from experiment_configs.configs.dads.dads_config import get_config
 from experiment_configs.algorithms.batch import get_algorithm
 
-env_name = 'gridworld'
+env_name = 'minigrid'
 if env_name == 'driving':
     ENV_NAME = 'DrivingPLE-v0'
     ACTION_SPACE = 'continuous'
@@ -18,7 +18,7 @@ elif env_name == 'minigrid':
 elif env_name == 'gridworld':
     ENV_NAME = 'Gridworld'
     ACTION_SPACE = 'continuous'
-    EXP_NAME = 'dads-gridwold'
+    EXP_NAME = 'dads-gridworld'
 
 experiment_kwargs = dict(
     exp_name=EXP_NAME,
@@ -32,6 +32,7 @@ if __name__ == "__main__":
     variant = dict(
         action_space=ACTION_SPACE,
         algorithm='DADS',
+        empowerment_horizon=10,
         collector_type='batch_latent',
         replay_buffer_size=int(1e6),   # for DADS, only used to store past history
         generated_replay_buffer_size=10000,   # off-policy replay buffer helps learning
