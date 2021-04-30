@@ -78,6 +78,7 @@ def rollout(
         agent,
         max_path_length=np.inf,
         render=False,
+        save_render=False,
         render_kwargs=None,
 ):
     """
@@ -102,8 +103,12 @@ def rollout(
     terminals = []
     agent_infos = []
     env_infos = []
+    images = []
     o = env.reset()
     agent.reset()
+    if save_render:
+        image = env.render('rgb_array')
+        images.append(image)
     next_o = None
     path_length = 0
     if render:
@@ -111,6 +116,9 @@ def rollout(
     while path_length < max_path_length:
         a, agent_info = agent.get_action(o)
         next_o, r, d, env_info = env.step(a)
+        if save_render:
+            image = env.render('rgb_array')
+            images.append(image)
         observations.append(o)
         rewards.append(r)
         terminals.append(d)
@@ -137,7 +145,7 @@ def rollout(
             np.expand_dims(next_o, 0)
         )
     )
-    return dict(
+    traj_dict = dict(
         observations=observations,
         actions=actions,
         rewards=np.array(rewards).reshape(-1, 1),
@@ -146,6 +154,9 @@ def rollout(
         agent_infos=agent_infos,
         env_infos=env_infos,
     )
+    if save_render:
+        traj_dict['images'] = images
+    return traj_dict
 
 
 def rollout_with_latent(
