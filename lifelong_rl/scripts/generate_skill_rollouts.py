@@ -47,6 +47,7 @@ def load_agent(path):
 
 def collect(num_resets, num_skills, num_samples, save_path):
     # Collect
+    print("Saving to", save_path)
     for env_i in range(num_resets):
         print(f"Collecting {env_i + 1} of {num_resets}")
         # TODO: wrap env in a wrapper so it resets the same way each time. Either that or just choose a version of minigrid where it resets each time anyway.
