@@ -99,6 +99,7 @@ def get_config(
         replay_size=variant['generated_replay_buffer_size'],
         policy_trainer=policy_trainer,
         restrict_input_size=restrict_dim,
+        empowerment_horizon=variant['empowerment_horizon'],
         **variant['trainer_kwargs'],
     )
 
