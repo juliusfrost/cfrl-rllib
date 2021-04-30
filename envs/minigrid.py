@@ -169,10 +169,6 @@ def env_creator(normalize=False, normalize_constant=10, flat_obs=False, **kwargs
     )
     env = MiniGridSimulatorStateWrapper(env)
     env = gym_minigrid.wrappers.FullyObsWrapper(env)
-    if flat_obs:
-        env = MiniGridFlatWrapper(env)
-    else:
-        env = MiniGridObservationWrapper(env)
     env = FullyObsWrapper(env)
     if flat_obs:
         env = MiniGridFlatWrapper(env)
