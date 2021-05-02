@@ -78,7 +78,7 @@ class RandomAgent:
 
     def get_action(self, *args, **kwargs):
         import random
-        return random.choice([0, 1, 2, 3])
+        return random.choice([0, 1, 2, 3]), None
 
 if __name__ == "__main__":
     parser = create_parser()
