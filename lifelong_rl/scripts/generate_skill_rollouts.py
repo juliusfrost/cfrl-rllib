@@ -76,7 +76,7 @@ class RandomAgent:
     def sample_latent(self):
         pass
 
-    def get_action(self):
+    def get_action(self, *args, **kwargs):
         import random
         return random.choice([0, 1, 2, 3])
 
