@@ -20,7 +20,7 @@ def create_parser():
                         help='number of different trials with each skill')
     parser.add_argument('--save_path', type=str, default='.',
                         help='where to save generated videos')
-    parser.add_argument('--agent_path', type=str, required=True,
+    parser.add_argument('--agent_path', type=str, default=None,
                         help='path to agent checkpoint')
     parser.add_argument('--env', type=str, default='MiniGrid',
                         help='which env to run')
@@ -68,6 +68,15 @@ def collect(num_resets, num_skills, num_samples, save_path):
             final_img = np.max(np.stack(last_states), axis=0)
             imageio.imwrite(save_path.joinpath(f'final_states_env_{env_i}_trial_{trial_j}.gif'), final_img)
 
+
+class RandomAgent:
+    def reset(self):
+        pass
+
+    def get_action(self):
+        import random
+        return random.choice([0, 1, 2, 3])
+
 if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
@@ -75,7 +84,11 @@ if __name__ == "__main__":
     if not save_path.exists():
         save_path.mkdir()
     # Load trained agent
-    agent = load_agent(args.agent_path)
+    if args.agent_path is None:
+        print("No agent found, using random agent")
+        agent = RandomAgent()
+    else:
+        agent = load_agent(args.agent_path)
     env, _ = make_env(args.env)
 
     collect(args.num_resets, args.num_skills, args.num_samples, save_path)
