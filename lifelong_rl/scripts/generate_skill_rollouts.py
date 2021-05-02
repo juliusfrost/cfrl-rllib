@@ -73,6 +73,9 @@ class RandomAgent:
     def reset(self):
         pass
 
+    def sample_latent(self):
+        pass
+
     def get_action(self):
         import random
         return random.choice([0, 1, 2, 3])
