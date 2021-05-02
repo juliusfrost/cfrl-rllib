@@ -53,6 +53,7 @@ def collect(num_resets, num_skills, num_samples, save_path):
         # TODO: wrap env in a wrapper so it resets the same way each time. Either that or just choose a version of minigrid where it resets each time anyway.
         for trial_j in range(num_skills):
             agent.sample_latent()
+            last_states = []
             for sample_k in range(num_samples):
                 traj_dict = rollout(
                     env,
@@ -63,6 +64,9 @@ def collect(num_resets, num_skills, num_samples, save_path):
                     save_render=True,
                 )
                 make_video(traj_dict, save_path.joinpath(f'env_{env_i}_trial_{trial_j}_sample{sample_k}.gif'))
+                last_states.append(traj_dict['images'][-1])
+            final_img = np.max(np.stack(last_states), axis=0)
+            imageio.imwrite(save_path.joinpath(f'final_states_env_{env_i}_trial_{trial_j}.gif'), final_img)
 
 if __name__ == "__main__":
     parser = create_parser()
