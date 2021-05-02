@@ -164,7 +164,7 @@ def env_creator(normalize=False, normalize_constant=10, flat_obs=False, **kwargs
         agent_pos=kwargs.get('agent_pos', (2, 2)),
         goal_pos=kwargs.get('goal_pos', (2, 6)),
         grid_size=kwargs.get('grid_size', 9),
-        max_steps=kwargs.get('max_steps', 100),
+        max_steps=kwargs.get('max_steps', 20),
         deterministic_rooms=kwargs.get('deterministic_rooms', False),
     )
     env = MiniGridSimulatorStateWrapper(env)
