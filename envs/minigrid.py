@@ -123,13 +123,13 @@ class MiniGridFlatWrapper(MiniGridObservationWrapper):
 class MiniGridActionWrapper(gym.ActionWrapper):
     def __init__(self, env):
         super().__init__(env)
-        self.action_space = gym.spaces.Discrete(4)
+        self.action_space = gym.spaces.Discrete(3)
 
     def action(self, action):
         return action
 
     def reverse_action(self, action):
-        if action >= 4:
+        if action >= 3:
             raise NotImplementedError
         return action
 
