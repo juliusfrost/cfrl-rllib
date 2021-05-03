@@ -159,6 +159,22 @@ class DADSTrainer(TorchTrainer):
                     latents[t],
                     logprob=log_probs[t],
                 )
+                self.add_sample(
+                    obs[t],
+                    next_obs[t+self.empowerment_horizon-2],
+                    next_obs[t],
+                    actions[t],
+                    latents[t],
+                    logprob=log_probs[t],
+                )
+                self.add_sample(
+                    obs[t],
+                    next_obs[t+self.empowerment_horizon-3],
+                    next_obs[t],
+                    actions[t],
+                    latents[t],
+                    logprob=log_probs[t],
+                )
 
                 epoch_obs.append(obs[t:t+1])
                 epoch_next_obs.append(next_obs[t+self.empowerment_horizon-1:t+self.empowerment_horizon])

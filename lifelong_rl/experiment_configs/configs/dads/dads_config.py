@@ -36,9 +36,12 @@ def get_config(
         restrict_obs_dim=restrict_dim,
     )
 
-    prior = torch.distributions.uniform.Uniform(
-        -ptu.ones(latent_dim), ptu.ones(latent_dim),
-    )
+    if variant['discrete_latent']:
+        prior = torch.distributions.categorical.Categorical(ptu.ones(40) / 40)
+    else:
+        prior = torch.distributions.uniform.Uniform(
+            -ptu.ones(latent_dim), ptu.ones(latent_dim),
+        )
 
     policy = PriorLatentPolicy(
         policy=control_policy,

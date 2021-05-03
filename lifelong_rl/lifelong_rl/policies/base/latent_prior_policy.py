@@ -37,8 +37,11 @@ class PriorLatentPolicy(ExplorationPolicy):
     def sample_latent(self, state=None):
         if self.unconditional or state is None:  # this will probably be changed
             latent = self.prior.sample()  # n=1).squeeze(0)
+            if len(latent.shape) == 0:
+                latent = latent.unsqueeze(0)
         else:
             latent = self.prior.forward(ptu.from_numpy(state))
+        latent = latent.float()
         self.set_latent(latent)
         return latent
 
