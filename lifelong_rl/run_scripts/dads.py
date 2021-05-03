@@ -37,13 +37,14 @@ if __name__ == "__main__":
         replay_buffer_size=int(1e6),   # for DADS, only used to store past history
         generated_replay_buffer_size=10000,   # off-policy replay buffer helps learning
         env_name=ENV_NAME,
+        discrete_latent=True,
         env_kwargs=dict(
             grid_files=['blank'],  # specifies which file to load for gridworld
             terminates=False,
         ),
         policy_kwargs=dict(
             layer_size=256,
-            latent_dim=2,
+            latent_dim=1,
         ),
         discriminator_kwargs=dict(
             layer_size=512,
