@@ -10,6 +10,11 @@ from ray.tune.utils import merge_dicts
 from explanations.create_dataset import main as create_dataset_main
 from explanations.generate_counterfactuals import main as generate_counterfactuals_main
 
+
+CHOOSE_SUCCESSFUL_TASK = 'choose_successful'
+CHOOSE_BEHAVIOR_TASK = 'choose_behavior'
+    
+
 DEFAULT_CONFIG = {
     # experiment name
     'name': 'explanation-experiment',
@@ -149,7 +154,7 @@ DEFAULT_CONFIG = {
     'create_dataset_arguments': ['--save-info'],
     # remove files with this extension
     'remove_ext': ['pkl'],
-    'eval_task': 'guess_successful',
+    'eval_task': CHOOSE_SUCCESSFUL_TASK, # CHOOSE_SUCCESSFUL_TASK OR CHOOSE_BEHAVIOR_TASK
 }
 
 
@@ -366,7 +371,7 @@ def main(argv=None):
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
     #TODO new: 1 per policy
-    if config['eval_task'] == 'guess_successful':
+    if config['eval_task'] == CHOOSE_SUCCESSFUL_TASK:
         explanation_datasets = [os.path.join(experiment_dir, f'explanation_dataset_{d["name"]}.pkl')
                                 for d in config['eval_config']['eval_policies']]
     else:
@@ -378,7 +383,7 @@ def main(argv=None):
         evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
     # create dataset
     if overwrite or not os.path.exists(explanation_dataset):
-        if config['eval_task'] == 'guess_successful':
+        if config['eval_task'] == CHOOSE_SUCCESSFUL_TASK:
             for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
                 create_dataset(config, dset, eval=False, policy=policy_dict)
         else:
@@ -419,15 +424,15 @@ def main(argv=None):
             if isinstance(config['explanation_method'], list):
                 for expl_method in config['explanation_method']:
                     explain_dir = os.path.join(video_dir, f'explain-{expl_method}')
-                    config['new_eval_task'] = True
-                    if config['eval_task'] == 'guess_successful':
+                    # config['new_eval_task'] = True
+                    if config['eval_task'] == CHOOSE_SUCCESSFUL_TASK:
                         for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
                             explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
                             generate_explanation_videos(config, dset, explain_vid_dir, expl_method)    
                     else:
                         generate_explanation_videos(config, explanation_dataset, explain_dir, expl_method)
             else:
-                if config['eval_task'] == 'guess_successful':
+                if config['eval_task'] == CHOOSE_SUCCESSFUL_TASK:
                     for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
                             explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
                             generate_explanation_videos(config, dset, explain_vid_dir, expl_method) 
