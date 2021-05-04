@@ -704,7 +704,6 @@ def main(parser_args=None):
     parser.add_argument('--num-eval-steps', type=int, default=20)
     parser.add_argument('--show-text', type=json.loads, default='{}')
     parser.add_argument('--show-exploration', action='store_true')
-    parser.add_argument('--new-eval-task', action='store_true')
     args = parser.parse_args(parser_args)
 
     ray.init()
