@@ -416,8 +416,6 @@ def main(argv=None):
                     shutil.rmtree(video_dir)
                     os.mkdir(video_dir)
         if generate_videos:
-            if not os.path.exists(explain_dir):
-                os.mkdir(explain_dir)
             if isinstance(config['explanation_method'], list):
                 for expl_method in config['explanation_method']:
                     explain_dir = os.path.join(video_dir, f'explain-{expl_method}')

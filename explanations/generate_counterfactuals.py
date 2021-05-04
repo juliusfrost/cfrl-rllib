@@ -233,7 +233,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
     font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
-
+    cf_net_rewards = kwargs.get('cf_net_rewards', None)
     order = np.random.permutation(len(video_list))
     padded_videos = []
     max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
@@ -253,6 +253,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
     t, h, w, c = combined_video.shape
     save_file = os.path.join(args.save_path, f"{base_video_name}-t_{id}.{args.video_format}")
     answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
+    reward_answer_key_file = os.path.join(args.save_path, f"{base_video_name}-reward_answer_key.txt")
     show_start = args.video_format == 'gif'
     write_video(combined_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
                 downscale=args.downscale, **kwargs)
@@ -261,6 +262,12 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
         for i in order.tolist():
             f.write(f"{video_names[i]},")
         f.write("\n")
+    if cf_net_rewards is not None:
+        with open(reward_answer_key_file, 'a') as f:
+            f.write(f"{id},")
+            for i in order.tolist():
+                f.write(f"{video_names[i]},")
+            f.write("\n")
 
 def save_separate_videos(video_list, video_names, base_video_name, id, args, **kwargs):
     h, w, c = video_list[0][0][0].shape
@@ -271,6 +278,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
     is_context = kwargs.get('is_context', False)
+    cf_net_rewards = kwargs.get('cf_net_rewards', None)
     if not is_context:
         videos_path = os.path.join(args.save_path, f"vids_{id}")
         os.mkdir(videos_path)
@@ -295,12 +303,19 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
 
     if not is_context:
         answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
+        reward_answer_key_file = os.path.join(args.save_path, f"{base_video_name}-reward_answer_key.txt")
 
         with open(answer_key_file, 'a') as f:
             f.write(f"{id},")
             for i in order.tolist():
                 f.write(f"{video_names[i]},")
             f.write("\n")
+        if cf_net_rewards is not None:
+            with open(reward_answer_key_file, 'a') as f:
+                f.write(f"{id},")
+                for i in order.tolist():
+                    f.write(f"{cf_net_rewards[i]},")
+                f.write("\n")
 
 
 def generate_videos_counterfactual_method(original_dataset, exploration_dataset, cf_datasets, cf_to_exp_index, args,
@@ -370,11 +385,16 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             cf_driver = '?'
         else:
             cf_driver = 'A'
+        cf_net_rewards = []
         for cf_dataset, cf_name in zip(cf_datasets, cf_names):
             continuation, cf, window = generate_videos_cf(cf_dataset, cf_name, initial_rewards, start_timestep, args,
                                                           cf_id, cf_id, split, prefix_video, cf_driver,
                                                           **kwargs)
             continuation_list.append(continuation)
+            cf_trajectory = cf_dataset.get_trajectory(cf_id)
+            cf_rewards = cf_trajectory.reward_range
+            reward = np.sum(cf_rewards)
+            cf_net_rewards.append(reward)
             cf_list.append(cf)
             window_list.append(window)
         if args.side_by_side:
@@ -389,7 +409,7 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             context_file = "context_vid"
             counterfactual_file = "counterfactual_vid"
             save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
-            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, **kwargs)
+            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, cf_net_rewards=cf_net_rewards, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -684,6 +704,7 @@ def main(parser_args=None):
     parser.add_argument('--num-eval-steps', type=int, default=20)
     parser.add_argument('--show-text', type=json.loads, default='{}')
     parser.add_argument('--show-exploration', action='store_true')
+    parser.add_argument('--new-eval-task', action='store_true')
     args = parser.parse_args(parser_args)
 
     ray.init()
