@@ -70,6 +70,7 @@ DEFAULT_CONFIG = {
         'exploration_method': 'random',  # [random, policy]
         # to use a custom exploration policy, set checkpoint, run, and name arguments like in the behavior_policy_config
         'exploration_policy': None,
+        'show_exploration': False,
     },
     'video_config': {
         # directory name to store videos in result directory
@@ -87,11 +88,7 @@ DEFAULT_CONFIG = {
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
-        'settings_config': {
-            'show_timestep': False,
-            'show_reward': False,
-            'show_driver': False
-        }
+        'settings_config': {}
     },
     'form_config': {
         # REQUIRED
@@ -152,6 +149,7 @@ DEFAULT_CONFIG = {
     'create_dataset_arguments': ['--save-info'],
     # remove files with this extension
     'remove_ext': ['pkl'],
+    'eval_task': 'guess_successful',
 }
 
 
@@ -181,10 +179,14 @@ def load_policy_config_from_checkpoint(checkpoint_path):
     return config
 
 
-def create_dataset(config, dataset_file, eval=False):
+def create_dataset(config, dataset_file, eval=False, policy=None):
     args = []
-    args += [config['behavior_policy_config']['checkpoint']]
-    args += ['--run', config['behavior_policy_config']['run']]
+    if policy is not None:
+        args += [policy['checkpoint']]
+        args += ['--run', policy['run']]
+    else:
+        args += [config['behavior_policy_config']['checkpoint']]
+        args += ['--run', config['behavior_policy_config']['run']]
     if not eval:
         args += ['--env', config['env']]
         args += ['--config', json.dumps({'env_config': config['env_config']})]
@@ -198,7 +200,7 @@ def create_dataset(config, dataset_file, eval=False):
     create_dataset_main(args)
 
 
-def generate_explanation_videos(config, dataset_file, video_dir, explanation_method=None):
+def generate_explanation_videos(config, dataset_file, video_dir, explanation_method=None, policy_dict=None):
     args = []
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
@@ -218,8 +220,10 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
     args += ['--downscale', str(config['video_config']['downscale'])]
     args += ['--env-config', json.dumps(config['env_config'])]
     args += ['--eval-policies', json.dumps([])]  # no evaluation policies for explanations
-    args += ['--policy-name', config['behavior_policy_config']['name']]
-    args += ['--run', config['behavior_policy_config']['run']]
+    policy_name = config['behavior_policy_config']['name'] if policy_dict is None else policy_dict['name']
+    policy_run = config['behavior_policy_config']['run'] if policy_dict is None else policy_dict['run']
+    args += ['--policy-name', policy_name]
+    args += ['--run', policy_run]
     if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
         print(f'When generating a html study, the video format must be mp4. '
               f'You are currently using {config["video_config"]["format"]}. '
@@ -361,7 +365,12 @@ def main(argv=None):
     print(f'saving results to {experiment_dir}')
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
-    explanation_dataset = os.path.join(experiment_dir, 'explanation_dataset.pkl')
+    #TODO new: 1 per policy
+    if config['eval_task'] == 'guess_successful':
+        explanation_datasets = [os.path.join(experiment_dir, f'explanation_dataset_{d["name"]}.pkl')
+                                for d in config['eval_config']['eval_policies']]
+    else:
+        explanation_dataset = os.path.join(experiment_dir, 'explanation_dataset.pkl')
     manual_selection = config['eval_config']['state_selection'] == 'manual'
     if manual_selection:
         evaluation_dataset = config['eval_config']['evaluation_dataset']
@@ -369,7 +378,11 @@ def main(argv=None):
         evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
     # create dataset
     if overwrite or not os.path.exists(explanation_dataset):
-        create_dataset(config, explanation_dataset, eval=False)
+        if config['eval_task'] == 'guess_successful':
+            for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
+                create_dataset(config, dset, eval=False, policy=policy_dict)
+        else:
+            create_dataset(config, explanation_dataset, eval=False)
     else:
         print('Explanation dataset file already exists.')
         print(explanation_dataset)
@@ -403,12 +416,25 @@ def main(argv=None):
                     shutil.rmtree(video_dir)
                     os.mkdir(video_dir)
         if generate_videos:
+            if not os.path.exists(explain_dir):
+                os.mkdir(explain_dir)
             if isinstance(config['explanation_method'], list):
                 for expl_method in config['explanation_method']:
                     explain_dir = os.path.join(video_dir, f'explain-{expl_method}')
-                    generate_explanation_videos(config, explanation_dataset, explain_dir, expl_method)
+                    config['new_eval_task'] = True
+                    if config['eval_task'] == 'guess_successful':
+                        for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
+                            explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
+                            generate_explanation_videos(config, dset, explain_vid_dir, expl_method)    
+                    else:
+                        generate_explanation_videos(config, explanation_dataset, explain_dir, expl_method)
             else:
-                generate_explanation_videos(config, explanation_dataset, explain_dir)
+                if config['eval_task'] == 'guess_successful':
+                    for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
+                            explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
+                            generate_explanation_videos(config, dset, explain_vid_dir, expl_method) 
+                else:
+                    generate_explanation_videos(config, explanation_dataset, explain_dir)
             generate_evaluation_videos(config, evaluation_dataset, eval_dir)
     else:
         raise NotImplementedError
