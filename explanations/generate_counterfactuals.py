@@ -284,9 +284,12 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         os.mkdir(videos_path)
     else:
         videos_path = args.save_path
-    order = np.random.permutation(len(video_list))
+    if args.randomize_videos:
+        order = np.random.permutation(len(video_list)).tolist()
+    else:
+        order = np.arange(len(video_list))
     max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
-    for j, i in enumerate(order.tolist()):
+    for j, i in enumerate(order):
         curr_vid, crashed = video_list[i]
         final_frame = curr_vid[-1]
         if crashed:
@@ -704,6 +707,7 @@ def main(parser_args=None):
     parser.add_argument('--num-eval-steps', type=int, default=20)
     parser.add_argument('--show-text', type=json.loads, default='{}')
     parser.add_argument('--show-exploration', action='store_true')
+    parser.add_argument('--randomize-videos', action='store_true')
     args = parser.parse_args(parser_args)
 
     ray.init()
