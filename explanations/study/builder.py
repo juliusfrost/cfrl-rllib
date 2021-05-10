@@ -8,6 +8,13 @@ from explanations.study.files import get_eval_names, get_explain_name, get_solut
 from explanations.study.text import get_introduction_text, get_explain_study_text, get_eval_study_text, \
     get_title_text, get_explain_heading_text, get_eval_heading_text, get_question_text
 
+BEHAVIOR_CONTINUATION = 'behavior_continuation'
+PERFORMANCE_SELECTION = 'performance_selection'
+TASKS = [
+    BEHAVIOR_CONTINUATION,
+    PERFORMANCE_SELECTION,
+]
+
 
 class StudyBuilder:
     def __init__(self, save_dir, root_dir, explanation_method, num_trials, config, name):
@@ -76,6 +83,8 @@ class StudyBuilder:
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
+        # TODO: make this change with config to allow multiple policy explanations
+        self.build_config['task_name'] = BEHAVIOR_CONTINUATION
         self.build_config = merge_dicts(self.build_config, self.study_config['build_config'])
 
         for trial in range(self.num_trials):
@@ -83,6 +92,7 @@ class StudyBuilder:
             eval_dir = 'eval'
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
+            # TODO: make list of explanation paths for multiple policies
             explain_video_path = name_formula(explanation_dir, trial)
             if self.config['eval_config']['side_by_side']:
                 eval_video_paths = get_eval_name(eval_dir, trial, extension=self.config['video_config']['format'])
