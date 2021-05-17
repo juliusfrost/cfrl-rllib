@@ -47,6 +47,9 @@ DEFAULT_CONFIG = {
     'episodes': 10,
     # location to save results and logs
     'result_dir': 'experiments',
+    # whether to interpret paths in config as relative to the config file directory
+    # can be bool or path
+    'relative_config_path': False,
     # number of frames before and after the branching state
     'window_size': 20,
     # state selection method for the branching state
@@ -74,11 +77,13 @@ DEFAULT_CONFIG = {
         # frames per second
         'fps': 3,
         # width of the colored boarder around the videos
-        'border_width': 30,
+        'border_width': 0,
         # downscaling of videos, primarily used to save space
         'downscale': 2,
         # mp4 or gif
         'format': 'mp4',
+        # Overlay text on videos showing driver, timestep, and/or reward info
+        'show_text': {'show_agent': True, 'show_timestep': False, 'show_reward': False},
         # settings configuration
         # this gets added to the kwargs in generate_counterfactuals.py
         # useful for configuring text settings and video settings
@@ -105,6 +110,15 @@ DEFAULT_CONFIG = {
         'id': None,
         # you can configure the text for the study builder
         'text': {},
+        # passed into config yaml that's generated and used to import questionnaires
+        'build_config': {
+            # used by import questionnaire
+            'include_context': True,
+            # used by import questionnaire
+            'include_continuation': True,
+            # puts all the explanations at the beginning
+            'batched_explanations': False,
+        }
     },
     'eval_config': {
         # number of trial iterations of explanation and evaluation
@@ -120,6 +134,15 @@ DEFAULT_CONFIG = {
         'window_size': 20,
         # number of time steps to use the counterfactual policy
         'timesteps': 0,
+        # whether to save videos side by side or separately
+        'side_by_side': False,
+        # anything in here overwrites video config for evaluation videos
+        'video_config': {
+            'show_text': {'show_agent': False, 'show_timestep': False, 'show_reward': False}
+        },
+        # Optional pkl files for hardcoded evaluation policies (expects list of paths)
+        # these are generated with explanations/generate_eval.py
+        'alt_file_names': None,
     },
     # extra create_dataset.py arguments
     'create_dataset_arguments': ['--save-info'],
@@ -209,10 +232,14 @@ def generate_explanation_videos(config, dataset_file, video_dir, explanation_met
         args += ['--video-format', config['video_config']['format']]
     args += ['--exploration-method', config['counterfactual_config']['exploration_method']]
     args += ['--exploration-policy', json.dumps(config['counterfactual_config']['exploration_policy'])]
+    args += ['--show-text', json.dumps(config['video_config']['show_text'])]
+    if config['counterfactual_config']['show_exploration']:
+        args += ['--show-exploration']
     generate_counterfactuals_main(args)
 
 
 def generate_evaluation_videos(config, dataset_file, video_dir):
+    video_config = merge_dicts(config['video_config'], config['eval_config']['video_config'])
     args = []
     args += ['--dataset-file', dataset_file]
     args += ['--env', config['eval_env']]
@@ -222,32 +249,39 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--window-len', str(config['eval_config']['window_size'])]
     args += ['--state-selection-method', config['eval_config']['state_selection']]
     args += ['--timesteps', str(config['eval_config']['timesteps'])]
-    args += ['--fps', str(config['video_config']['fps'])]
-    args += ['--border-width', str(config['video_config']['border_width'])]
-    args += ['--settings-config', json.dumps(config['video_config']['settings_config'])]
-    args += ['--downscale', str(config['video_config']['downscale'])]
+    args += ['--fps', str(video_config['fps'])]
+    args += ['--border-width', str(video_config['border_width'])]
+    args += ['--settings-config', json.dumps(video_config['settings_config'])]
+    args += ['--downscale', str(video_config['downscale'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
-    args += ['--side-by-side']
-    if config['stop'] == 'html' and config['video_config']['format'] != 'mp4':
+    if config['eval_config']['side_by_side']:
+        args += ['--side-by-side']
+    else:
+        args += ['--save-separate']
+    if config['stop'] == 'html' and video_config['format'] != 'mp4':
         print(f'When generating a html study, the video format must be mp4. '
-              f'You are currently using {config["video_config"]["format"]}. '
+              f'You are currently using {video_config["format"]}. '
               f'Set the video_config/format to mp4 in the configuration file. '
               f'Retroactively setting video_config/format to mp4...')
-        config['video_config']['format'] = 'mp4'
-    if config['stop'] == 'doc' and config['video_config']['format'] != 'gif':
+        video_config['format'] = 'mp4'
+    if config['stop'] == 'doc' and video_config['format'] != 'gif':
         print(f'When generating a doc study, the video format must be gif. '
-              f'You are currently using {config["video_config"]["format"]}. '
+              f'You are currently using {video_config["format"]}. '
               f'Set the video_config/format to gif in the configuration file. '
               f'Retroactively setting video_config/format to gif...')
-        config['video_config']['format'] = 'gif'
-    if config['video_config']['format'] is not None:
-        args += ['--video-format', config['video_config']['format']]
+        video_config['format'] = 'gif'
+    if video_config['format'] is not None:
+        args += ['--video-format', video_config['format']]
     args += ['--exploration-method', 'random']
     args += ['--exploration-policy', json.dumps(None)]
+    if config['eval_config']['alt_file_names'] is not None:
+        args += ['--alt-file-names', json.dumps(config['eval_config']['alt_file_names'])]
+    args += ['--num-eval-steps', str(config['eval_config']['num_eval_steps'])]
+    args += ['--show-text', json.dumps(video_config['show_text'])]
     generate_counterfactuals_main(args)
 
 
@@ -291,6 +325,10 @@ def main(argv=None):
     args = parse_args(argv)
     if args.experiment_config is not None and os.path.exists(args.experiment_config):
         config = load_config(args.experiment_config)
+        if isinstance(config['relative_config_path'], bool) and config['relative_config_path']:
+            os.chdir(os.path.dirname(args.experiment_config))
+        elif isinstance(config['relative_config_path'], str) and os.path.exists(config['relative_config_path']):
+            os.chdir(config['relative_config_path'])
     else:
         config = merge_dicts(DEFAULT_CONFIG, args.config)
 
