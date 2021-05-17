@@ -269,6 +269,7 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
                 f.write(f"{video_names[i]},")
             f.write("\n")
 
+
 def save_separate_videos(video_list, video_names, base_video_name, id, args, **kwargs):
     h, w, c = video_list[0][0][0].shape
     font_scale = kwargs.get('end_font_scale', 4)
@@ -302,7 +303,7 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{j}.{args.video_format}")
         show_start = args.video_format == 'gif'
         write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
-                downscale=args.downscale, **kwargs)
+                    downscale=args.downscale, **kwargs)
 
     if not is_context:
         answer_key_file = os.path.join(args.save_path, f"{base_video_name}-answer_key.txt")
@@ -412,7 +413,8 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
             context_file = "context_vid"
             counterfactual_file = "counterfactual_vid"
             save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
-            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False, cf_net_rewards=cf_net_rewards, **kwargs)
+            save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False,
+                                 cf_net_rewards=cf_net_rewards, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
@@ -666,6 +668,14 @@ def generate_with_selected_states(args):
                                           cf_names, state_indices, **args.settings_config)
 
 
+def nullable_string(val):
+    if not val:
+        return None
+    if val == 'None':
+        return None
+    return val
+
+
 def main(parser_args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset-file', type=str, required=True, help='pkl file containing the dataset')
@@ -690,7 +700,7 @@ def main(parser_args=None):
                         help='environment configuration')
     parser.add_argument('--policy-name', type=str, default="test_policy_name")
     parser.add_argument('--run', type=str, default="PPO")
-    parser.add_argument('--behavioral-policy', type=str, default=None)
+    parser.add_argument('--behavioral-policy', type=nullable_string, default=None)
     parser.add_argument('--side-by-side', default=False, action='store_true')
     parser.add_argument('--save-separate', default=False, action='store_true')
     parser.add_argument('--save-all', action='store_true',

@@ -10,10 +10,8 @@ from ray.tune.utils import merge_dicts
 from explanations.create_dataset import main as create_dataset_main
 from explanations.generate_counterfactuals import main as generate_counterfactuals_main
 
-
 PERFORMANCE_SELECTION = 'performance_selection'
 BEHAVIOR_CONTINUATION = 'behavior_continuation'
-    
 
 DEFAULT_CONFIG = {
     # experiment name
@@ -154,7 +152,9 @@ DEFAULT_CONFIG = {
     'create_dataset_arguments': ['--save-info'],
     # remove files with this extension
     'remove_ext': ['pkl'],
-    'eval_task': PERFORMANCE_SELECTION, # PERFORMANCE_SELECTION OR BEHAVIOR_CONTINUATION
+    # which evaluation task to create
+    # if PERFORMANCE_SELECTION, the behavior policies are the eval_policies
+    'eval_task': BEHAVIOR_CONTINUATION,  # PERFORMANCE_SELECTION OR BEHAVIOR_CONTINUATION
 }
 
 
@@ -353,8 +353,11 @@ def main(argv=None):
     assert 'run' in config['behavior_policy_config']
     assert 'env' in config
     assert 'eval_env' in config
-    assert config['behavior_policy_config']['checkpoint'] is not None
-    assert config['behavior_policy_config']['run'] is not None
+    if config['eval_task'] == BEHAVIOR_CONTINUATION:
+        assert config['behavior_policy_config']['checkpoint'] is not None
+        assert config['behavior_policy_config']['run'] is not None
+    elif config['eval_task'] == PERFORMANCE_SELECTION:
+        assert len(config['eval_config']['eval_policies']) > 1
     assert config['env'] is not None
     assert config['eval_env'] is not None
 
@@ -372,7 +375,7 @@ def main(argv=None):
     print(f'saving results to {experiment_dir}')
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
-    #TODO new: 1 per policy
+    # TODO new: 1 per policy
     if config['eval_task'] == PERFORMANCE_SELECTION:
         explanation_datasets = [os.path.join(experiment_dir, f'explanation_dataset_{d["name"]}.pkl')
                                 for d in config['eval_config']['eval_policies']]
@@ -382,6 +385,10 @@ def main(argv=None):
     if manual_selection:
         evaluation_dataset = config['eval_config']['evaluation_dataset']
     else:
+        # must use behavior policy to select states
+        if config['behavior_policy_config']['checkpoint'] is None or config['behavior_policy_config']['run'] is None:
+            raise ValueError(
+                f"must define a behavior policy with state selection method {config['eval_config']['state_selection']}")
         evaluation_dataset = os.path.join(experiment_dir, 'evaluation_dataset.pkl')
     # create dataset
     if overwrite or not os.path.exists(explanation_dataset):
@@ -430,14 +437,14 @@ def main(argv=None):
                     if config['eval_task'] == PERFORMANCE_SELECTION:
                         for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
                             explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
-                            generate_explanation_videos(config, dset, explain_vid_dir, expl_method)    
+                            generate_explanation_videos(config, dset, explain_vid_dir, expl_method)
                     else:
                         generate_explanation_videos(config, explanation_dataset, explain_dir, expl_method)
             else:
                 if config['eval_task'] == PERFORMANCE_SELECTION:
                     for policy_dict, dset in zip(config['eval_config']['eval_policies'], explanation_datasets):
-                            explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
-                            generate_explanation_videos(config, dset, explain_vid_dir, expl_method) 
+                        explain_vid_dir = os.path.join(explain_dir, policy_dict['name'])
+                        generate_explanation_videos(config, dset, explain_vid_dir, config['explanation_method'])
                 else:
                     generate_explanation_videos(config, explanation_dataset, explain_dir)
             generate_evaluation_videos(config, evaluation_dataset, eval_dir)
