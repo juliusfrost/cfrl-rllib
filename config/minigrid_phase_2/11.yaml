@@ -1,4 +1,4 @@
-minigrid-phase-2-10:
+minigrid-phase-2-11:
   run: A2C
   stop:
     time_total_s: 169200 # two days minus one hour in seconds
@@ -24,6 +24,6 @@ minigrid-phase-2-10:
       custom_model: minigrid_conv_torch_model
     env: MiniGrid-FourRooms-v0
     env_config:
-      agent_pos: [ 2, 2 ]
+      agent_pos: [ 6, 6 ]
       goal_pos: [ 2, 6 ]
       deterministic_rooms: true
