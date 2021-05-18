@@ -11,7 +11,17 @@ from explanations.data import Data
 
 def random_state(data: Data, num_states, policy, min_dist=20, **kwargs):
     indices = np.arange(len(data.all_time_steps))[~data.all_dones]  # don't include done states
-    state_indices = list(zip(indices, data.all_trajectories))
+    state_indices = list(zip(indices, data.all_trajectories[indices]))
+    random.seed(kwargs.get('seed', None))
+    random.shuffle(state_indices)
+    selected_states = filter(state_indices, num_states, min_dist)
+    print(selected_states)
+    return selected_states
+
+
+def initial_state(data: Data, num_states, policy, min_dist=20, **kwargs):
+    indices = np.arange(len(data.all_time_steps))[data.all_time_steps == 0]
+    state_indices = list(zip(indices, data.all_trajectories[indices]))
     random.seed(kwargs.get('seed', None))
     random.shuffle(state_indices)
     selected_states = filter(state_indices, num_states, min_dist)

@@ -18,7 +18,7 @@ from explanations.action_selection import RandomAgent, MinigridOracleAgent, make
 from explanations.create_dataset import create_dataset
 from explanations.data import Data
 from explanations.rollout import RolloutSaver, rollout_env
-from explanations.state_selection import random_state, critical_state, low_reward_state
+from explanations.state_selection import random_state, critical_state, initial_state
 
 
 def get_env_creator(env_name):
@@ -501,7 +501,7 @@ def select_states(args):
     state_selection_dict = {
         "critical": critical_state,
         "random": random_state,
-        "low_reward": low_reward_state,
+        "initial": initial_state,
     }
     alternative_agents = load_other_policies(args.eval_policies)
     # Add the original policy in too
@@ -684,7 +684,7 @@ def main(parser_args=None):
     parser.add_argument('--save-path', type=str, default='videos', help='Place to save states found.')
     parser.add_argument('--window-len', type=int, default=20, help='config')
     parser.add_argument('--state-selection-method', type=str, help='State selection method.',
-                        choices=['critical', 'random', 'low_reward', 'manual'], default='critical')
+                        choices=['critical', 'random', 'initial', 'manual'], default='critical')
     parser.add_argument('--explanation-method', type=str, help='Explanation Method',
                         choices=['counterfactual', 'critical', 'random'], default='counterfactual')
     parser.add_argument('--eval-policies', type=json.loads, default=None,
