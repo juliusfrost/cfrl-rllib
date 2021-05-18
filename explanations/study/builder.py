@@ -88,7 +88,6 @@ class StudyBuilder:
         self.build_config['trial_heading_texts'] = []
         self.build_config['explain_video_paths'] = []
         self.build_config['eval_video_paths'] = []
-        # TODO: make this change with config to allow multiple policy explanations
         self.build_config['task_name'] = self.config['eval_task']
         self.build_config = merge_dicts(self.build_config, self.study_config['build_config'])
 
@@ -97,7 +96,6 @@ class StudyBuilder:
             eval_dir = 'eval'
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
-            # TODO: make list of explanation paths for multiple policies
             if self.task == BEHAVIOR_CONTINUATION:
                 explain_video_paths = get_explain_name(self.explanation_method, self.config, explanation_dir, trial,
                                                       self.extension)
