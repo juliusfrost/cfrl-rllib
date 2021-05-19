@@ -20,7 +20,7 @@ def random_state(data: Data, num_states, policy, min_dist=20, **kwargs):
 
 
 def initial_state(data: Data, num_states, policy, min_dist=20, **kwargs):
-    indices = np.arange(len(data.all_time_steps))[data.all_time_steps == 0]
+    indices = np.arange(len(data.all_time_steps))[np.logical_and(data.all_time_steps == 0, ~data.all_dones)]
     state_indices = list(zip(indices, data.all_trajectories[indices]))
     random.seed(kwargs.get('seed', None))
     random.shuffle(state_indices)
