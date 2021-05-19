@@ -503,10 +503,11 @@ def select_states(args):
         "random": random_state,
         "initial": initial_state,
     }
-    alternative_agents = load_other_policies(args.eval_policies)
-    # Add the original policy in too
-    alternative_agents.append((agent, args.run, args.policy_name))
     if args.explanation_method == "counterfactual":
+        alternative_agents = load_other_policies(args.eval_policies)
+        # Add the original policy in too
+        if args.evaluate_behavior_policy or len(alternative_agents) == 0:
+            alternative_agents.append((agent, args.run, args.policy_name))
         state_selection_fn = state_selection_dict[args.state_selection_method]
         state_indices = state_selection_fn(dataset, args.num_states + args.num_buffer_states, policy)
         # Add
@@ -690,6 +691,8 @@ def main(parser_args=None):
     parser.add_argument('--eval-policies', type=json.loads, default=None,
                         help='list of evaluation policies to continue rollouts. '
                              'Policies are a tuple of (name, algorithm, checkpoint)')
+    parser.add_argument('--evaluate-behavior-policy', action='store_true',
+                        help='include the behavior policy in the evaluation videos')
     parser.add_argument('--timesteps', type=int, default=3, help='Number of timesteps to run the exploration policy.')
     parser.add_argument('--fps', type=int, default=5)
     parser.add_argument('--border-width', type=int, default=30)

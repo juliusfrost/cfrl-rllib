@@ -132,6 +132,8 @@ DEFAULT_CONFIG = {
         # list of evaluation policies to continue rollouts
         # Policies are a dict of {'name': name, 'run': run, 'checkpoint': checkpoint}
         'eval_policies': [],
+        # whether to include the behavior policy in the evaluation videos
+        'evaluate_behavior_policy': True,
         # distribution of states to pick
         # [random, critical, initial, manual]
         'state_selection': 'random',
@@ -271,6 +273,8 @@ def generate_evaluation_videos(config, dataset_file, video_dir):
     args += ['--downscale', str(video_config['downscale'])]
     args += ['--env-config', json.dumps(config['eval_env_config'])]
     args += ['--eval-policies', json.dumps(config['eval_config']['eval_policies'])]
+    if config['eval_config']['evaluate_behavior_policy']:
+        args += ['--evaluate-behavior-policy']
     args += ['--policy-name', config['behavior_policy_config']['name']]
     args += ['--run', config['behavior_policy_config']['run']]
     args += ['--behavioral-policy', config['behavior_policy_config']['checkpoint']]
