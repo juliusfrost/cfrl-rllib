@@ -139,6 +139,9 @@ DEFAULT_CONFIG = {
         'state_selection': 'random',
         # if manual selection, must have path to dataset pickle file
         'evaluation_dataset': None,
+        # takes effect with manual states
+        # TODO: not sure what this does, possibly duplicate of timesteps?
+        'num_eval_steps': 20,
         # window size of the evaluation videos
         'window_size': 20,
         # number of time steps to use the counterfactual policy

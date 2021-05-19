@@ -103,6 +103,8 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
     font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
+    end_text_org = tuple(kwargs.get('end_text_org', (int(w / 2) - 41 * len(done_text), int(h / 2))))
+    end_length = kwargs.get('end_length', 2)
     if show_blank_frames:
         blank_frames = np.zeros((fps, h, w, 3))
         frames = np.concatenate([frames, blank_frames]).astype(np.uint8)
@@ -115,9 +117,8 @@ def write_video(frames, filename, image_shape, fps=5, show_start=True, show_stop
             text = crashed_text
         else:
             text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
-        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
-        frames = np.concatenate([frames, [final_frame] * fps * 2]).astype(np.uint8)
+        final_frame = cv2.putText(final_frame, text, end_text_org, font, font_scale, color, thickness, cv2.LINE_AA)
+        frames = np.concatenate([frames, [final_frame] * fps * end_length]).astype(np.uint8)
     if show_start:
         # Approximately center at the middle of the image
         # The -200 offset is so the text is about centered horizontally
@@ -234,9 +235,10 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
     crashed_text = kwargs.get('crashed_text', 'CRASHED')
     done_text = kwargs.get('done_text', 'DONE')
     cf_net_rewards = kwargs.get('cf_net_rewards', None)
+    end_length = kwargs.get('end_length', 2)
     order = np.random.permutation(len(video_list))
     padded_videos = []
-    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
+    max_len = max([len(v[0]) for v in video_list]) + args.fps * end_length
     for i in order.tolist():
         curr_vid, crashed = video_list[i]
         final_frame = curr_vid[-1]
@@ -270,15 +272,8 @@ def save_joint_video(video_list, video_names, base_video_name, id, args, **kwarg
             f.write("\n")
 
 
-def save_separate_videos(video_list, video_names, base_video_name, id, args, **kwargs):
+def save_separate_videos(video_list, video_names, base_video_name, id, args, window_len, is_context=False, **kwargs):
     h, w, c = video_list[0][0][0].shape
-    font_scale = kwargs.get('end_font_scale', 4)
-    color = tuple(kwargs.get('end_color', (255, 255, 255)))
-    thickness = kwargs.get('end_thickness', 8)
-    font = kwargs.get('end_font', cv2.FONT_HERSHEY_SIMPLEX)
-    crashed_text = kwargs.get('crashed_text', 'CRASHED')
-    done_text = kwargs.get('done_text', 'DONE')
-    is_context = kwargs.get('is_context', False)
     cf_net_rewards = kwargs.get('cf_net_rewards', None)
     if not is_context:
         videos_path = os.path.join(args.save_path, f"vids_{id}")
@@ -289,20 +284,16 @@ def save_separate_videos(video_list, video_names, base_video_name, id, args, **k
         order = np.random.permutation(len(video_list)).tolist()
     else:
         order = np.arange(len(video_list))
-    max_len = max([len(v[0]) for v in video_list]) + args.fps * 2
     for j, i in enumerate(order):
         curr_vid, crashed = video_list[i]
-        final_frame = curr_vid[-1]
-        if crashed:
-            text = crashed_text
-        else:
-            text = done_text
-        bottom_left = (int(w / 2) - 41 * len(text), int(h / 2))
-        final_frame = cv2.putText(final_frame, text, bottom_left, font, font_scale, color, thickness, cv2.LINE_AA)
-        padded_video = np.concatenate([curr_vid, [final_frame] * (max_len - len(curr_vid))])
+        if len(curr_vid) > window_len:
+            if is_context:
+                curr_vid = curr_vid[-window_len:]
+            else:
+                curr_vid = curr_vid[:window_len]
         save_file = os.path.join(videos_path, f"{base_video_name}-t_{id}_{j}.{args.video_format}")
         show_start = args.video_format == 'gif'
-        write_video(padded_video, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
+        write_video(curr_vid, save_file, (w, h), args.fps, show_start=show_start, show_stop=False,
                     downscale=args.downscale, **kwargs)
 
     if not is_context:
@@ -412,9 +403,10 @@ def generate_videos_counterfactual_method(original_dataset, exploration_dataset,
         elif args.save_separate:
             context_file = "context_vid"
             counterfactual_file = "counterfactual_vid"
-            save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True, **kwargs)
+            save_separate_videos([[prefix_video, False]], ["A"], context_file, cf_id, args, is_context=True,
+                                 window_len=args.window_len, **kwargs)
             save_separate_videos(continuation_list, cf_names, counterfactual_file, cf_id, args, is_context=False,
-                                 cf_net_rewards=cf_net_rewards, **kwargs)
+                                 cf_net_rewards=cf_net_rewards, window_len=args.window_len, **kwargs)
 
         # We've already generated the images; now we store them as a video
         img_shape = (original_imgs[0].shape[1], original_imgs[0].shape[0])
