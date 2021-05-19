@@ -56,7 +56,7 @@ DEFAULT_CONFIG = {
     # number of frames before and after the branching state
     'window_size': 20,
     # state selection method for the branching state
-    'state_selection': 'random',  # [random, critical] (branching state for counterfactual states)
+    'state_selection': 'random',  # [random, critical, initial] (branching state for counterfactual states)
     # What explanation method to use
     'explanation_method': ['random', 'critical', 'counterfactual'],  # [counterfactual, critical, random]
     # use counterfactual states
@@ -133,7 +133,10 @@ DEFAULT_CONFIG = {
         # Policies are a dict of {'name': name, 'run': run, 'checkpoint': checkpoint}
         'eval_policies': [],
         # distribution of states to pick
+        # [random, critical, initial, manual]
         'state_selection': 'random',
+        # if manual selection, must have path to dataset pickle file
+        'evaluation_dataset': None,
         # window size of the evaluation videos
         'window_size': 20,
         # number of time steps to use the counterfactual policy

@@ -98,10 +98,10 @@ class StudyBuilder:
             self.trial_heading(trial_heading_text)
             if self.task == BEHAVIOR_CONTINUATION:
                 explain_video_paths = get_explain_name(self.explanation_method, self.config, explanation_dir, trial,
-                                                      self.extension)
+                                                       self.extension)
             elif self.task == PERFORMANCE_SELECTION:
                 explain_video_paths = get_explain_names(self.explanation_method, self.policy_names, self.config,
-                                                       explanation_dir, trial, self.extension)
+                                                        explanation_dir, trial, self.extension)
             else:
                 raise NotImplementedError
             if self.config['eval_config']['side_by_side']:
