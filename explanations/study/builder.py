@@ -11,9 +11,11 @@ from explanations.study.text import get_introduction_text, get_explain_study_tex
 
 BEHAVIOR_CONTINUATION = 'behavior_continuation'
 PERFORMANCE_SELECTION = 'performance_selection'
+PERFORMANCE_EVALUATION = 'performance_evaluation'
 TASKS = [
     BEHAVIOR_CONTINUATION,
     PERFORMANCE_SELECTION,
+    PERFORMANCE_EVALUATION,
 ]
 
 
@@ -96,7 +98,7 @@ class StudyBuilder:
             eval_dir = 'eval'
             trial_heading_text = f'Trial {trial + 1}'
             self.trial_heading(trial_heading_text)
-            if self.task == BEHAVIOR_CONTINUATION:
+            if self.task == BEHAVIOR_CONTINUATION or self.task == PERFORMANCE_EVALUATION:
                 explain_video_paths = get_explain_name(self.explanation_method, self.config, explanation_dir, trial,
                                                        self.extension)
             elif self.task == PERFORMANCE_SELECTION:

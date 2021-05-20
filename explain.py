@@ -12,6 +12,7 @@ from explanations.generate_counterfactuals import main as generate_counterfactua
 
 PERFORMANCE_SELECTION = 'performance_selection'
 BEHAVIOR_CONTINUATION = 'behavior_continuation'
+PERFORMANCE_EVALUATION = 'performance_evaluation'
 
 DEFAULT_CONFIG = {
     # experiment name
@@ -368,6 +369,10 @@ def main(argv=None):
         assert config['behavior_policy_config']['run'] is not None
     elif config['eval_task'] == PERFORMANCE_SELECTION:
         assert len(config['eval_config']['eval_policies']) > 1
+    elif config['eval_task'] == PERFORMANCE_EVALUATION:
+        assert len(config['eval_config']['eval_policies']) == 0
+        assert config['behavior_policy_config']['checkpoint'] is not None
+        assert config['behavior_policy_config']['run'] is not None
     assert config['env'] is not None
     assert config['eval_env'] is not None
 
